@@ -1,0 +1,23 @@
+{
+  "name": "crawlab-test",
+  "version": "1.0.0",
+  "description": "End-to-End (E2E) tests for Crawlab",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/crawlab-team/crawlab-test.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/crawlab-team/crawlab-test/issues"
+  },
+  "homepage": "https://github.com/crawlab-team/crawlab-test#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.21.1",
+    "dotenv": "^16.0.0"
+  }
+}

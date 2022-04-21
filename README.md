@@ -1,2 +1,3 @@
-# crawlab-test
-End-to-End (E2E) tests for Crawlab
+# Crawlab Test
+
+Automated Test Framework for [Crawlab](https://github.com/crawlab-team/crawlab).
