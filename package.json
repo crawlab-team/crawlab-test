@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "End-to-End (E2E) tests for Crawlab",
   "scripts": {
-    "test": "playwright test"
+    "test": "playwright test",
+    "show-report": "playwright show-report"
   },
   "repository": {
     "type": "git",
@@ -18,6 +19,7 @@
   "homepage": "https://github.com/crawlab-team/crawlab-test#readme",
   "devDependencies": {
     "@playwright/test": "^1.21.1",
+    "axios": "^0.26.1",
     "dotenv": "^16.0.0"
   }
 }
