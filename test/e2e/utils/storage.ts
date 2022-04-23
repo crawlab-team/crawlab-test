@@ -1,4 +1,4 @@
-import {join} from 'path';
+import {join} from 'test/e2e/utils/path';
 import {getRootPath} from './path';
 import {existsSync, mkdirSync} from 'fs';
 import {BrowserContext} from '@playwright/test';
