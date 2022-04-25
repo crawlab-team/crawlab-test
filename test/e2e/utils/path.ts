@@ -1,5 +1,5 @@
-import * as path from 'test/e2e/utils/path';
+import {join, resolve} from 'path';
 
 export const getRootPath = (): string => {
-  return path.resolve(path.join(__dirname, '..', '..'));
+  return resolve(join(__dirname, '..', '..'));
 };

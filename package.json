@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "End-to-End (E2E) tests for Crawlab",
   "scripts": {
-    "test": "playwright test",
-    "show-report": "playwright show-report"
+    "setup": "docker-compose up -d --scale worker=10",
+    "test": "npm run test:e2e",
+    "test:e2e": "playwright test",
+    "test:load": "node ./test/load/main.js"
   },
   "repository": {
     "type": "git",
