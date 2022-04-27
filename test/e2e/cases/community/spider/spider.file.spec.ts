@@ -3,7 +3,12 @@ import {getStorageFilePath} from '../../../utils/storage';
 import {getRandomName} from '../../../utils/name';
 import {createSpider, deleteSpider} from '../../../actions/spider/operate';
 import {clickTableCellByKey, getTableCellByKey} from '../../../utils/table';
-import {createSpiderFile, openSpiderFile} from '../../../actions/spider/file';
+import {
+  createSpiderFile,
+  editSpiderFileContent,
+  getSpiderFileContent,
+  openSpiderFile, renameSpiderFile
+} from '../../../actions/spider/file';
 
 // basic configuration
 test.use({storageState: getStorageFilePath()});
@@ -15,40 +20,78 @@ test.describe('spider - file', () => {
   const name = getRandomName('spider');
   const cmd = 'python3 main.py';
   const fileName = 'main.py';
+  const fileNameRenamed = 'main2.py';
   const fileContent = 'print(\'hello world\')';
+  const fileContentEdited = 'print(\'hello crawlab\')';
 
-  test.beforeEach(async ({page}) => {
+  test('should create spider file', async ({page}) => {
     // go to page
     await page.goto('/#/spiders');
     await page.waitForSelector('#add-btn');
-  });
 
-  test('should create spider file', async ({page}) => {
     // create spider
     await createSpider(page, {name, cmd});
 
+    // click on created spider
+    await clickTableCellByKey(page, 'name', name);
+    await page.waitForSelector('.nav-sidebar');
+
     // create spider file
-    await createSpiderFile(page, {spiderName: name, fileName, fileContent});
+    await createSpiderFile(page, {fileName, fileContent});
 
     // refresh page
     await page.reload();
     await page.click('.el-menu-item.files');
 
-    // double-click on saved file
+    // open spider file
     await openSpiderFile(page, {fileName});
 
     // expect file content to be the same as the saved one
-    const actualContent = await page.evaluate(() => {
-      const lines = [];
-      document.querySelectorAll('.code-mirror-editor .CodeMirror-line')
-        .forEach(el => lines.push(el.textContent));
-      return lines.join('\n');
-    });
+    const actualContent = await getSpiderFileContent(page);
     await expect(actualContent).toEqual(fileContent);
+  });
 
-    // delete spider
+  test('should edit spider file', async ({page}) => {
+    // go to spider detail page
     await page.goto('/#/spiders');
-    await page.waitForSelector('#add-btn');
-    await deleteSpider(page, {name});
+    await clickTableCellByKey(page, 'name', name);
+
+    // click on files tab
+    await page.click('.el-menu-item.files');
+
+    // open spider file
+    await openSpiderFile(page, {fileName});
+
+    // edit spider file content
+    await editSpiderFileContent(page, {fileContent: fileContentEdited});
+
+    // refresh page
+    await page.reload();
+    await page.click('.el-menu-item.files');
+
+    // open spider file
+    await openSpiderFile(page, {fileName});
+
+    // expect file content to be the same as the saved one
+    const actualContent = await getSpiderFileContent(page);
+    await expect(actualContent).toEqual(fileContentEdited);
+  });
+
+  test('should rename spider file', async ({page}) => {
+    // go to spider detail page
+    await page.goto('/#/spiders');
+    await clickTableCellByKey(page, 'name', name);
+
+    // click on files tab
+    await page.click('.el-menu-item.files');
+
+    // rename spider file
+    await renameSpiderFile(page, {fileName, newFileName: fileNameRenamed});
+
+    // expect original file not exists
+    await expect(await page.$(`.el-tree-node[data-key="/${fileName}"]`)).toBeNull();
+
+    // expect new file to exist
+    await expect(await page.$(`.el-tree-node[data-key="/${fileNameRenamed}"]`)).not.toBeNull();
   });
 });

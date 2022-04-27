@@ -24,8 +24,8 @@ export const login = async ({browser, close}: LoginProps = {}) => {
   await expect(page.url()).toContain('login');
 
   // enter username and password and click login button
-  await page.type('input[name="username"]', process.env.USERNAME || DEFAULT_USERNAME);
-  await page.type('input[name="password"]', process.env.PASSWORD || DEFAULT_PASSWORD);
+  await page.fill('input[name="username"]', process.env.USERNAME || DEFAULT_USERNAME);
+  await page.fill('input[name="password"]', process.env.PASSWORD || DEFAULT_PASSWORD);
   await page.click('.el-form-item button');
 
   // expect url to have 'home'

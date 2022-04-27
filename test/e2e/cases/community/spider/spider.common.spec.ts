@@ -1,7 +1,7 @@
 import {expect, test} from '@playwright/test';
 import {getStorageFilePath} from '../../../utils/storage';
 import {getRandomName} from '../../../utils/name';
-import {getTableCellByTargetKey} from '../../../utils/table';
+import {clickTableCellByKey, getTableCellByTargetKey} from '../../../utils/table';
 import {createSpider, deleteSpider, runSpider} from '../../../actions/spider/operate';
 
 // basic configuration
@@ -20,13 +20,19 @@ test.describe('spider - crud', () => {
     await page.waitForSelector('#add-btn');
   });
 
-  test('should create spider', async ({page, context}) => {
+  test('should create spider', async ({page}) => {
     // create spider
     await createSpider(page, {name, cmd});
 
     // expect table to display created row
-    const elNames = await page.$$('.table table.el-table__body tr.el-table__row > td.el-table__cell.name');
-    const names = await Promise.all(elNames.map(el => el.innerText()));
+    const names = await page.evaluate(() => {
+      const names = [];
+      const els = document.querySelectorAll('.table table.el-table__body tr.el-table__row > td.el-table__cell.name');
+      els.forEach(el => {
+        names.push(el.textContent);
+      });
+      return names;
+    });
     await expect(names).toContain(name);
   });
 

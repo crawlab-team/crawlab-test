@@ -1,18 +1,13 @@
 import {Page} from '@playwright/test';
-import {getTableCellByTargetKey} from '../../utils/table';
+import {clickTableCellByKey, getTableCellByTargetKey} from '../../utils/table';
 
 interface CreateSpiderOptions {
   name?: string;
   cmd?: string;
+  waitDuration?: number;
 }
 
-export const createSpider = async (page: Page, opts: CreateSpiderOptions) => {
-  if (!opts) opts = {};
-  const {
-    name,
-    cmd,
-  } = opts;
-
+export const createSpider = async (page: Page, {name, cmd, waitDuration}: CreateSpiderOptions = {}) => {
   // click add button
   await page.click('#add-btn');
   await page.waitForSelector('.create-edit-dialog');
@@ -22,7 +17,7 @@ export const createSpider = async (page: Page, opts: CreateSpiderOptions) => {
   await page.type('#cmd', cmd);
   await page.click('.create-edit-dialog .confirm-btn');
   await page.waitForSelector('.create-edit-dialog.hidden');
-  await page.waitForTimeout(500); // TODO: replace hard-coded timeout with a mechanical way
+  await page.waitForTimeout(waitDuration || 1000);
 };
 
 export const deleteSpider = async (page: Page, {name}) => {
