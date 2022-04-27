@@ -4,10 +4,11 @@ import {getRandomName} from '../../../utils/name';
 import {createSpider, deleteSpider} from '../../../actions/spider/operate';
 import {clickTableCellByKey, getTableCellByKey} from '../../../utils/table';
 import {
-  createSpiderFile,
+  cloneSpiderFile, createSpiderDirectory,
+  createSpiderFile, deleteSpiderFile,
   editSpiderFileContent,
-  getSpiderFileContent,
-  openSpiderFile, renameSpiderFile
+  getSpiderFileContent, moveSpiderFile,
+  openSpiderFile, renameSpiderFile, rightClickSpiderFileAction
 } from '../../../actions/spider/file';
 
 // basic configuration
@@ -21,8 +22,10 @@ test.describe('spider - file', () => {
   const cmd = 'python3 main.py';
   const fileName = 'main.py';
   const fileNameRenamed = 'main2.py';
+  const fileNameCloned = 'main3.py';
   const fileContent = 'print(\'hello world\')';
   const fileContentEdited = 'print(\'hello crawlab\')';
+  const directoryName = 'test';
 
   test('should create spider file', async ({page}) => {
     // go to page
@@ -35,6 +38,9 @@ test.describe('spider - file', () => {
     // click on created spider
     await clickTableCellByKey(page, 'name', name);
     await page.waitForSelector('.nav-sidebar');
+
+    // click on files tab
+    await page.click('.el-menu-item.files');
 
     // create spider file
     await createSpiderFile(page, {fileName, fileContent});
@@ -93,5 +99,69 @@ test.describe('spider - file', () => {
 
     // expect new file to exist
     await expect(await page.$(`.el-tree-node[data-key="/${fileNameRenamed}"]`)).not.toBeNull();
+  });
+
+  test('should move spider file', async ({page}) => {
+    // go to spider detail page
+    await page.goto('/#/spiders');
+    await clickTableCellByKey(page, 'name', name);
+
+    // click on files tab
+    await page.click('.el-menu-item.files');
+
+    // create directory
+    await createSpiderDirectory(page, {directoryName});
+
+    // create file
+    await createSpiderFile(page, {fileName, fileContent});
+
+    // move file to created folder
+    await moveSpiderFile(page, {fileName, targetName: directoryName});
+
+    // expect original file not exists
+    await expect(await page.$(`.el-tree-node[data-key="/${fileName}"]`)).toBeNull();
+
+    // expect new file to exist
+    await expect(await page.$(`.el-tree-node[data-key="/${directoryName}/${fileName}"]`)).not.toBeNull();
+  });
+
+  test('should clone spider file', async ({page}) => {
+    // go to spider detail page
+    await page.goto('/#/spiders');
+    await clickTableCellByKey(page, 'name', name);
+
+    // click on files tab
+    await page.click('.el-menu-item.files');
+
+    // create file
+    await createSpiderFile(page, {fileName, fileContent});
+
+    // rename spider file
+    await cloneSpiderFile(page, {fileName, newFileName: fileNameCloned});
+
+    // expect original file not exists
+    await expect(await page.$(`.el-tree-node[data-key="/${fileName}"]`)).not.toBeNull();
+
+    // expect new file to exist
+    await expect(await page.$(`.el-tree-node[data-key="/${fileNameCloned}"]`)).not.toBeNull();
+
+    // expect new file content to be the same as original
+    await openSpiderFile(page, {fileName: fileNameCloned});
+    await expect(await getSpiderFileContent(page)).toEqual(fileContent);
+  });
+
+  test('should delete spider file', async ({page}) => {
+    // go to spider detail page
+    await page.goto('/#/spiders');
+    await clickTableCellByKey(page, 'name', name);
+
+    // click on files tab
+    await page.click('.el-menu-item.files');
+
+    // delete spider file
+    await deleteSpiderFile(page, {fileName});
+
+    // expect file not exists
+    await expect(await page.$(`.el-tree-node[data-key="/${fileName}"]`)).toBeNull();
   });
 });
