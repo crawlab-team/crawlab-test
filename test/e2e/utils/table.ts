@@ -34,3 +34,8 @@ export const getTableCellByTargetKey = async (page: Page, key: string, text: str
   const elRow = await getTableRowByKey(page, key, text);
   return await elRow.$(`td.el-table__cell.${targetKey}`);
 };
+
+export const clickTableCellByKey = async (page: Page, key: string, text: string) => {
+  const el = await getTableCellByKey(page, key, text);
+  await el.click();
+};

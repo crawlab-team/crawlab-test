@@ -1,13 +1,16 @@
 import {expect, test} from '@playwright/test';
 import {getStorageFilePath} from '../../../utils/storage';
 import {getRandomName} from '../../../utils/name';
-import {getTableCellByKey, getTableCellByTargetKey} from '../../../utils/table';
+import {getTableCellByTargetKey} from '../../../utils/table';
+import {createSpider, deleteSpider, runSpider} from '../../../actions/spider/operate';
 
+// basic configuration
 test.use({storageState: getStorageFilePath()});
-
 test.describe.configure({mode: 'serial'});
 
+// case
 test.describe('spider - crud', () => {
+  // settings
   const name = getRandomName('spider');
   const cmd = 'echo "hello world"';
 
@@ -18,16 +21,8 @@ test.describe('spider - crud', () => {
   });
 
   test('should create spider', async ({page, context}) => {
-    // click add button
-    await page.click('#add-btn');
-    await page.waitForSelector('.create-edit-dialog');
-
-    // fill form and click confirm button
-    await page.type('#name', name);
-    await page.type('#cmd', cmd);
-    await page.click('.create-edit-dialog .confirm-btn');
-    await page.waitForSelector('.create-edit-dialog.hidden');
-    await page.waitForTimeout(500); // TODO: replace hard-coded timeout with a mechanical way
+    // create spider
+    await createSpider(page, {name, cmd});
 
     // expect table to display created row
     const elNames = await page.$$('.table table.el-table__body tr.el-table__row > td.el-table__cell.name');
@@ -36,16 +31,8 @@ test.describe('spider - crud', () => {
   });
 
   test('should run spider', async ({page}) => {
-    // click run button
-    const elAct = await getTableCellByTargetKey(page, 'name', name, 'actions');
-    const elRunBtn = await elAct.$('.run-btn');
-    await elRunBtn.click();
-    await page.waitForSelector('.run-spider-dialog');
-
-    // click confirm button
-    await page.click('.run-spider-dialog .confirm-btn');
-    await page.waitForFunction(() => !document.querySelector('.el-message-box'));
-    await page.waitForTimeout(500);
+    // run spider
+    await runSpider(page, {name});
 
     // last status
     const elLs = await getTableCellByTargetKey(page, 'name', name, 'last_status');
@@ -57,15 +44,8 @@ test.describe('spider - crud', () => {
   });
 
   test('should delete spider', async ({page}) => {
-    // click delete button
-    const elAct = await getTableCellByTargetKey(page, 'name', name, 'actions');
-    const elDelBtn = await elAct.$('.delete-btn');
-    await elDelBtn.click();
-
-    // click confirm button
-    await page.click('.delete-confirm-btn');
-    await page.waitForFunction(() => !document.querySelector('.el-message-box'));
-    await page.waitForTimeout(500);
+    // delete spider
+    await deleteSpider(page, {name});
 
     // expect table to not contains created row
     const elNames = await page.$$('.table table.el-table__body tr.el-table__row > td.el-table__cell.name');

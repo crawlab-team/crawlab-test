@@ -1,9 +1,14 @@
 import {Browser, expect} from '@playwright/test';
-import {saveStorageState} from '../utils/storage';
-import {getDefaultBrowser} from '../utils/browser';
-import {DEFAULT_APP_URL, DEFAULT_PASSWORD, DEFAULT_USERNAME} from '../constants/default';
+import {saveStorageState} from '../../utils/storage';
+import {getDefaultBrowser} from '../../utils/browser';
+import {DEFAULT_APP_URL, DEFAULT_PASSWORD, DEFAULT_USERNAME} from '../../constants/default';
 
-export const login = async (browser?: Browser) => {
+export interface LoginProps {
+  browser?: Browser,
+  close?: boolean,
+}
+
+export const login = async ({browser, close}: LoginProps = {}) => {
   // browser
   if (!browser) {
     browser = await getDefaultBrowser();
@@ -32,5 +37,7 @@ export const login = async (browser?: Browser) => {
   await saveStorageState(browser.contexts()[0]);
 
   // close browser
-  await browser.close();
+  if (close) {
+    await browser.close();
+  }
 };
