@@ -21,7 +21,10 @@
   "homepage": "https://github.com/crawlab-team/crawlab-test#readme",
   "devDependencies": {
     "@playwright/test": "^1.21.1",
+    "@types/mime": "^2.0.3",
     "axios": "^0.26.1",
-    "dotenv": "^16.0.0"
+    "dotenv": "^16.0.0",
+    "mime": "^3.0.0",
+    "rd": "^2.0.1"
   }
 }

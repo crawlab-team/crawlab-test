@@ -15,7 +15,6 @@ import {
 test.use({storageState: getStorageFilePath()});
 test.describe.configure({mode: 'serial'});
 
-// case
 test.describe('spider - file', () => {
   // settings
   const name = getRandomName('spider');

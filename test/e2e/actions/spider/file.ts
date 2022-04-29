@@ -1,52 +1,50 @@
 import {Page} from '@playwright/test';
+import {ZERO_WIDTH_SPACE} from '../../constants/file';
+import {BaseActionOptions} from '../base';
 
-interface CreateSpiderFileOptions {
+interface CreateSpiderFileOptions extends BaseActionOptions {
   fileName?: string;
   fileContent?: string;
   targetName?: string;
-  waitDuration?: number;
 }
 
-interface CreateSpiderDirectoryOptions {
+interface CreateSpiderDirectoryOptions extends BaseActionOptions {
   directoryName?: string;
   targetName?: string;
-  waitDuration?: number;
 }
 
-interface OpenSpiderFileOptions {
+interface OpenSpiderFileOptions extends BaseActionOptions {
   fileName?: string;
-  waitDuration?: number;
 }
 
-interface EditSpiderFileContentOptions {
+interface ExpandSpiderDirectoryOptions extends BaseActionOptions {
+  directoryName?: string;
+}
+
+interface EditSpiderFileContentOptions extends BaseActionOptions {
   fileContent?: string;
-  waitDuration?: number;
 }
 
-interface RenameSpiderFileOptions {
+interface RenameSpiderFileOptions extends BaseActionOptions {
   fileName?: string;
   newFileName?: string;
-  waitDuration?: number;
 }
 
-interface CloneSpiderFileOptions {
+interface CloneSpiderFileOptions extends BaseActionOptions {
   fileName?: string;
   newFileName?: string;
-  waitDuration?: number;
 }
 
-interface MoveSpiderFileOptions {
+interface MoveSpiderFileOptions extends BaseActionOptions {
   fileName?: string;
   targetName?: string;
-  waitDuration?: number;
 }
 
-interface DeleteSpiderFileOptions {
+interface DeleteSpiderFileOptions extends BaseActionOptions {
   fileName?: string;
-  waitDuration?: number;
 }
 
-interface RightClickSpiderFileOptions {
+interface RightClickSpiderFileOptions extends BaseActionOptions {
   targetName?: string;
   action?: string;
 }
@@ -92,6 +90,14 @@ export const createSpiderDirectory = async (page: Page, {
 export const openSpiderFile = async (page: Page, {fileName, waitDuration}: OpenSpiderFileOptions = {}) => {
   await page.dblclick(`.el-tree-node[data-key="/${fileName}"]`);
   await page.click('.CodeMirror');
+  await page.waitForTimeout(waitDuration || 1000);
+};
+
+export const expandSpiderDirectory = async (page: Page, {
+  directoryName,
+  waitDuration,
+}: ExpandSpiderDirectoryOptions = {}) => {
+  await page.click(`.el-tree-node[data-key="/${directoryName}"] .el-tree-node__expand-icon`);
   await page.waitForTimeout(waitDuration || 1000);
 };
 
@@ -170,10 +176,11 @@ export const rightClickSpiderFileAction = async (page: Page, {targetName, action
 };
 
 export const getSpiderFileContent = async (page: Page): Promise<string> => {
-  return await page.evaluate(() => {
+  const lines = await page.evaluate(() => {
     const lines = [];
     document.querySelectorAll('.code-mirror-editor .CodeMirror-line')
       .forEach(el => lines.push(el.textContent));
-    return lines.join('\n');
+    return lines;
   });
+  return lines.join('\n').split(ZERO_WIDTH_SPACE).join('');
 };
