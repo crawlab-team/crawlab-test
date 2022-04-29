@@ -50,7 +50,7 @@ test.describe('spider - upload', () => {
     await page.click('.el-menu-item.files');
   });
 
-  test.only('should upload spider directory', async ({page}) => {
+  test('should upload spider directory', async ({page}) => {
     // upload directory
     await uploadSpiderDirectory(page, {directoryPath: localDirectoryPath});
 
@@ -72,7 +72,7 @@ test.describe('spider - upload', () => {
     await expect(configFileContentActual.trim()).toEqual(configFileContent.toString().trim());
   });
 
-  test.only('should upload spider file', async ({page}) => {
+  test('should upload spider file', async ({page}) => {
     // upload files
     await uploadSpiderFiles(page, {
       files: [
