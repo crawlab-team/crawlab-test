@@ -1,7 +1,7 @@
 import {expect, test} from '@playwright/test';
 import {getStorageFilePath} from '../../../utils/storage';
 import {getRandomName} from '../../../utils/name';
-import {createSpider, deleteSpider} from '../../../actions/spider/operate';
+import {createSpider, deleteSpider} from '../../../actions/spider/common';
 import {clickTableCellByKey, getTableCellByKey} from '../../../utils/table';
 import {
   cloneSpiderFile, createSpiderDirectory,
@@ -15,7 +15,7 @@ import {
 test.use({storageState: getStorageFilePath()});
 test.describe.configure({mode: 'serial'});
 
-test.describe('spider - file', () => {
+test.describe('spider: file', () => {
   // settings
   const name = getRandomName('spider');
   const cmd = 'python3 main.py';

@@ -4,7 +4,7 @@ import {getStorageFilePath} from '../../../utils/storage';
 import {readFileSync} from 'fs';
 import {clickTableCellByKey} from '../../../utils/table';
 import {getRandomName} from '../../../utils/name';
-import {createSpider} from '../../../actions/spider/operate';
+import {createSpider} from '../../../actions/spider/common';
 import {uploadSpiderDirectory, uploadSpiderFiles} from '../../../actions/spider/upload';
 import {expandSpiderDirectory, getSpiderFileContent, openSpiderFile} from '../../../actions/spider/file';
 
@@ -12,7 +12,7 @@ import {expandSpiderDirectory, getSpiderFileContent, openSpiderFile} from '../..
 test.use({storageState: getStorageFilePath()});
 test.describe.configure({mode: 'serial'});
 
-test.describe('spider - upload', () => {
+test.describe('spider: upload', () => {
   // settings
   const name = getRandomName('spider');
   const cmd = 'python3 main.py';

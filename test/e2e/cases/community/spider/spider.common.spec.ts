@@ -2,14 +2,14 @@ import {expect, test} from '@playwright/test';
 import {getStorageFilePath} from '../../../utils/storage';
 import {getRandomName} from '../../../utils/name';
 import {clickTableCellByKey, getTableCellByTargetKey} from '../../../utils/table';
-import {createSpider, deleteSpider, runSpider} from '../../../actions/spider/operate';
+import {createSpider, deleteSpider, runSpider} from '../../../actions/spider/common';
 
 // basic configuration
 test.use({storageState: getStorageFilePath()});
 test.describe.configure({mode: 'serial'});
 
 // case
-test.describe('spider - crud', () => {
+test.describe('spider: crud', () => {
   // settings
   const name = getRandomName('spider');
   const cmd = 'echo "hello world"';
