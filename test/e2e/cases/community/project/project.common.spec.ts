@@ -17,7 +17,7 @@ test.describe('project: common', () => {
     description: project.description + '_edited',
   };
 
-  test.only('should create project', async ({page}) => {
+  test('should create project', async ({page}) => {
     // go to list page
     await page.goto('/#/projects');
 
@@ -36,7 +36,7 @@ test.describe('project: common', () => {
     await expect(names).toContain(project.name);
   });
 
-  test.only('should edit project', async ({page}) => {
+  test('should edit project', async ({page}) => {
     // go to list page
     await page.goto('/#/projects');
     await page.waitForSelector('#add-btn');
@@ -60,7 +60,7 @@ test.describe('project: common', () => {
     await editProject(page, {...project});
   });
 
-  test.only('should delete project', async ({page}) => {
+  test('should delete project', async ({page}) => {
     // go to list page
     await page.goto('/#/projects');
     await page.waitForSelector('#add-btn');
