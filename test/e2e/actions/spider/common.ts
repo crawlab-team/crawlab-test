@@ -1,5 +1,6 @@
 import {Page} from '@playwright/test';
 import {clickTableCellByKey, getTableCellByTargetKey} from '../../utils/table';
+import {deleteTableRowByName} from '../base/table';
 
 interface CreateSpiderOptions {
   name?: string;
@@ -21,15 +22,7 @@ export const createSpider = async (page: Page, {name, cmd, waitDuration}: Create
 };
 
 export const deleteSpider = async (page: Page, {name}) => {
-  // click delete button
-  const elAct = await getTableCellByTargetKey(page, 'name', name, 'actions');
-  const elDelBtn = await elAct.$('.delete-btn');
-  await elDelBtn.click();
-
-  // click confirm button
-  await page.click('.delete-confirm-btn');
-  await page.waitForFunction(() => !document.querySelector('.el-message-box'));
-  await page.waitForTimeout(500);
+  return deleteTableRowByName(page, {name});
 };
 
 export const runSpider = async (page: Page, {name}) => {

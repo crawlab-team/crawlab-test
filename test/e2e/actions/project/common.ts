@@ -1,0 +1,44 @@
+import {Page} from '@playwright/test';
+import {BaseActionOptions} from '../base';
+import {getTableCellByTargetKey} from '../../utils/table';
+import {deleteTableRowByName} from '../base/table';
+
+interface CreateProjectOptions extends BaseActionOptions {
+  name?: string;
+  description?: string;
+}
+
+interface EditProjectOptions extends BaseActionOptions {
+  name?: string;
+  description?: string;
+}
+
+export const createProject = async (page: Page, {
+  name,
+  description,
+  waitDuration
+}: EditProjectOptions = {}) => {
+  await page.click('#add-btn');
+  await page.waitForSelector('.create-edit-dialog');
+  await page.fill('#name input', name);
+  await page.fill('#description textarea', description);
+  await page.click('#confirm-btn button');
+  await page.waitForTimeout(waitDuration || 1000);
+};
+
+export const editProject = async (page: Page, {
+  name,
+  description,
+  waitDuration
+}: EditProjectOptions = {}) => {
+  await page.fill('#name input', name);
+  await page.fill('#description textarea', description);
+  await page.click('#save-btn');
+  await page.waitForTimeout(waitDuration || 1000);
+};
+
+export const deleteProject = async (page: Page, {
+  name,
+}: EditProjectOptions = {}) => {  // click delete button
+  return deleteTableRowByName(page, {name});
+};

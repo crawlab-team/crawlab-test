@@ -20,7 +20,7 @@ test.describe('node: common', () => {
     maxRunners: 4,
   };
 
-  test.only('should edit node', async ({page}) => {
+  test('should edit node', async ({page}) => {
     // go to list page
     await page.goto('/#/nodes');
     await page.waitForSelector('#add-btn');
