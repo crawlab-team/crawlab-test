@@ -1,6 +1,6 @@
 import {expect, test} from '@playwright/test';
 import {getStorageFilePath} from '../../../utils/storage';
-import {clickTableCellByKey} from '../../../utils/table';
+import {clickTableCellByKey} from '../../../actions/components/table';
 import {editNode} from '../../../actions/node/common';
 
 test.use({storageState: getStorageFilePath()});

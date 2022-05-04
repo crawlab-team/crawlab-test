@@ -2,7 +2,7 @@ import {expect, test} from '@playwright/test';
 import {getStorageFilePath} from '../../../utils/storage';
 import {getRandomName} from '../../../utils/name';
 import {createSpider, deleteSpider} from '../../../actions/spider/common';
-import {clickTableCellByKey, getTableCellByKey} from '../../../utils/table';
+import {clickTableCellByKey, getTableCellByKey} from '../../../actions/components/table';
 import {
   cloneSpiderFile, createSpiderDirectory,
   createSpiderFile, deleteSpiderFile,

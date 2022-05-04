@@ -1,4 +1,9 @@
 import {ElementHandle, Page} from '@playwright/test';
+import {BaseActionOptions} from '../base';
+
+interface DeleteTableRowByNameOptions extends BaseActionOptions {
+  name?: string;
+}
 
 export const getTableColumnIndexByKey = async (page: Page, key: string): Promise<number> => {
   const els = await page.$$('.table table.el-table__header tr > th');
@@ -38,4 +43,36 @@ export const getTableCellByTargetKey = async (page: Page, key: string, text: str
 export const clickTableCellByKey = async (page: Page, key: string, text: string) => {
   const el = await getTableCellByKey(page, key, text);
   await el.click();
+};
+
+export const getTableCellTextsByKey = async (page: Page, key: string) => {
+  return await page.evaluate((key) => {
+    const names = [];
+    const els = document.querySelectorAll(`.table table.el-table__body tr.el-table__row > td.el-table__cell.${key}`);
+    els.forEach(el => {
+      names.push(el.textContent);
+    });
+    return names;
+  }, key);
+};
+
+export const deleteTableRowByName = async (page: Page, {name}: DeleteTableRowByNameOptions = {}) => {
+  const elAct = await getTableCellByTargetKey(page, 'name', name, 'actions');
+  const elDelBtn = await elAct.$('.delete-btn');
+  await elDelBtn.click();
+
+  // click confirm button
+  await page.click('.delete-confirm-btn');
+  await page.waitForFunction(() => !document.querySelector('.el-message-box'));
+  await page.waitForTimeout(500);
+};
+
+export const getTableRowId = async (page: Page, key: string, text: string): Promise<string> => {
+  await clickTableCellByKey(page, key, text);
+  const regex = /([a-f\d]{24})/;
+  await page.waitForURL(regex);
+  const m = await page.url().match(regex);
+  await page.click('#back-btn');
+  await page.waitForSelector('#add-btn');
+  return m?.[1];
 };

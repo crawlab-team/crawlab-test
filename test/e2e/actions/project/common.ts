@@ -1,7 +1,6 @@
 import {Page} from '@playwright/test';
 import {BaseActionOptions} from '../base';
-import {getTableCellByTargetKey} from '../../utils/table';
-import {deleteTableRowByName} from '../base/table';
+import {deleteTableRowByName, getTableCellByTargetKey} from '../components/table';
 
 interface CreateProjectOptions extends BaseActionOptions {
   name?: string;
@@ -17,7 +16,7 @@ export const createProject = async (page: Page, {
   name,
   description,
   waitDuration
-}: EditProjectOptions = {}) => {
+}: CreateProjectOptions = {}) => {
   await page.click('#add-btn');
   await page.waitForSelector('.create-edit-dialog');
   await page.fill('#name input', name);

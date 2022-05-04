@@ -1,6 +1,6 @@
 import {expect, test} from '@playwright/test';
 import {getStorageFilePath} from '../../../utils/storage';
-import {clickTableCellByKey} from '../../../utils/table';
+import {clickTableCellByKey, getTableCellTextsByKey} from '../../../actions/components/table';
 import {createProject, deleteProject, editProject} from '../../../actions/project/common';
 import {getRandomName} from '../../../utils/name';
 
@@ -25,14 +25,7 @@ test.describe('project: common', () => {
     await createProject(page, {...project});
 
     // expect table to display created row
-    const names = await page.evaluate(() => {
-      const names = [];
-      const els = document.querySelectorAll('.table table.el-table__body tr.el-table__row > td.el-table__cell.name');
-      els.forEach(el => {
-        names.push(el.textContent);
-      });
-      return names;
-    });
+    const names = await getTableCellTextsByKey(page, 'name');
     await expect(names).toContain(project.name);
   });
 
@@ -69,8 +62,7 @@ test.describe('project: common', () => {
     await deleteProject(page, {name: project.name});
 
     // expect table to not contains created row
-    const elNames = await page.$$('.table table.el-table__body tr.el-table__row > td.el-table__cell.name');
-    const names = await Promise.all(elNames.map(el => el.innerText()));
-    await expect(names.includes(project.name)).toBeFalsy();
+    const names = await getTableCellTextsByKey(page, 'name');
+    await expect(names).not.toContain(project.name);
   });
 });

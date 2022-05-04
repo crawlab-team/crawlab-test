@@ -1,6 +1,5 @@
 import {Page} from '@playwright/test';
-import {clickTableCellByKey, getTableCellByTargetKey} from '../../utils/table';
-import {deleteTableRowByName} from '../base/table';
+import {clickTableCellByKey, deleteTableRowByName, getTableCellByTargetKey} from '../components/table';
 
 interface CreateSpiderOptions {
   name?: string;

@@ -2,7 +2,7 @@ import {expect, test} from '@playwright/test';
 import {resolve, join} from 'path';
 import {getStorageFilePath} from '../../../utils/storage';
 import {readFileSync} from 'fs';
-import {clickTableCellByKey} from '../../../utils/table';
+import {clickTableCellByKey} from '../../../actions/components/table';
 import {getRandomName} from '../../../utils/name';
 import {createSpider} from '../../../actions/spider/common';
 import {uploadSpiderDirectory, uploadSpiderFiles} from '../../../actions/spider/upload';

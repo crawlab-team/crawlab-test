@@ -1,7 +1,7 @@
 import {expect, test} from '@playwright/test';
 import {getStorageFilePath} from '../../../utils/storage';
 import {getRandomName} from '../../../utils/name';
-import {clickTableCellByKey, getTableCellByTargetKey} from '../../../utils/table';
+import {clickTableCellByKey, getTableCellByTargetKey, getTableCellTextsByKey} from '../../../actions/components/table';
 import {createSpider, deleteSpider, runSpider} from '../../../actions/spider/common';
 
 // basic configuration
@@ -25,14 +25,7 @@ test.describe('spider: crud', () => {
     await createSpider(page, {name, cmd});
 
     // expect table to display created row
-    const names = await page.evaluate(() => {
-      const names = [];
-      const els = document.querySelectorAll('.table table.el-table__body tr.el-table__row > td.el-table__cell.name');
-      els.forEach(el => {
-        names.push(el.textContent);
-      });
-      return names;
-    });
+    const names = await getTableCellTextsByKey(page, 'name');
     await expect(names).toContain(name);
   });
 
@@ -54,8 +47,7 @@ test.describe('spider: crud', () => {
     await deleteSpider(page, {name});
 
     // expect table to not contains created row
-    const elNames = await page.$$('.table table.el-table__body tr.el-table__row > td.el-table__cell.name');
-    const names = await Promise.all(elNames.map(el => el.innerText()));
-    await expect(names.includes(name)).toBeFalsy();
+    const names = await getTableCellTextsByKey(page, 'name');
+    await expect(names).not.toContain(name);
   });
 });
