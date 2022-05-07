@@ -8,13 +8,9 @@ import {uploadSpiderDirectory, uploadSpiderFiles} from '../../../actions/spider/
 import {expandSpiderDirectory, openSpiderFile} from '../../../actions/spider/file';
 import {goToNavTab} from '../../../actions/components/nav';
 import {getFileContent} from '../../../actions/components/file';
-import {wrapUpdateTestCaseResultFn} from '../../../../sdk';
-import {caseMapping} from '../../../../sdk/mapping/case';
 import {test} from '../../../base/authTest';
 
 test.describe.serial('spider: upload', () => {
-  test.afterEach(wrapUpdateTestCaseResultFn(test, caseMapping.community.spider.upload));
-
   // settings
   const name = getRandomName('spider');
   const cmd = 'python3 main.py';

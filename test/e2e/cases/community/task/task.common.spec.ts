@@ -12,13 +12,9 @@ import {
 import {cancelTask, createTask, deleteTask, viewTaskData, viewTaskLogs} from '../../../actions/task/common';
 import {goToNavTab} from '../../../actions/components/nav';
 import {getFileContent} from '../../../actions/components/file';
-import {wrapUpdateTestCaseResultFn} from '../../../../sdk';
-import {caseMapping} from '../../../../sdk/mapping/case';
 import {test} from '../../../base/authTest';
 
 test.describe.serial('task: common', () => {
-  test.afterEach(wrapUpdateTestCaseResultFn(test, caseMapping.community.task.common));
-
   const spiderName = getRandomName('spider');
   const spiderCmd = 'python3 main.py';
   const longTaskCmd = 'python3 long_task.py';

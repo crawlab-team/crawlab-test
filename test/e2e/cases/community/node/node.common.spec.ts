@@ -2,13 +2,9 @@ import {expect} from '@playwright/test';
 import {clickTableCellByKey} from '../../../actions/components/table';
 import {editNode} from '../../../actions/node/common';
 import {goToNavTab} from '../../../actions/components/nav';
-import {wrapUpdateTestCaseResultFn} from '../../../../sdk';
-import {caseMapping} from '../../../../sdk/mapping/case';
 import {test} from '../../../base/authTest';
 
 test.describe.serial('node: common', () => {
-  test.afterEach(wrapUpdateTestCaseResultFn(test, caseMapping.community.node.common));
-
   const node = {
     name: 'Master Node',
     description: '',

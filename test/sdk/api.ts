@@ -1,29 +1,38 @@
 import {post} from './request';
 import {getTestRunState, saveTestRunState, TestRunState} from './state';
-import {test, TestType} from '@playwright/test';
-import {getTestCaseCamelCaseName} from '../e2e/utils/name';
+import {TEST_RUN_EXECUTE_TYPE_AUTO} from './constants/testRun';
 
 interface CreateTestRunOptions {
   name?: string;
   includeAll?: boolean;
-  casesN?: number[];
+  cases?: number[];
   description?: string;
   executeType?: number;
 }
 
-type TestResult = 'UNTESTED' | 'PASSED' | 'BLOCKED' | 'RETEST' | 'FAILED';
+export type CodingTestStatus = 'UNTESTED' | 'PASSED' | 'BLOCKED' | 'RETEST' | 'FAILED';
 
 interface UpdateTestCaseResultOptions {
   runId?: number;
   caseId?: number;
-  status?: TestResult;
-  customStepStatusN?: TestResult[];
+  status?: CodingTestStatus;
+  customStepStatus?: CodingTestStatus[];
 }
 
 interface UpdateTestCaseResultsOptions {
   runId?: number;
-  caseIdsN?: number[];
-  status?: TestResult;
+  caseIds?: number[];
+  status?: CodingTestStatus;
+}
+
+interface CreateAttachmentPrepareSignUrlOptions {
+  fileName?: string;
+}
+
+interface CreateTestReportOptions {
+  name?: string;
+  runIds?: number[];
+  attachmentIds?: number[];
 }
 
 const _createTestRun = async (opts: CreateTestRunOptions = {}): Promise<number> => {
@@ -31,11 +40,12 @@ const _createTestRun = async (opts: CreateTestRunOptions = {}): Promise<number> 
     Action: 'CreateTestRun',
     ProjectName: process.env.CODING_API_PROJECT_NAME || 'crawlab',
     Name: opts.name || `Test_Plan_${new Date().getTime()}`,
-    IncludeAll: opts.includeAll || !opts.casesN,
-    'Case.N': opts.casesN,
+    IncludeAll: opts.includeAll || !opts.cases,
+    Cases: opts.cases,
     Description: opts.description,
-    ExecuteType: opts.executeType || 2,
+    ExecuteType: opts.executeType || TEST_RUN_EXECUTE_TYPE_AUTO,
   });
+  console.debug('_createTestRun', res, opts);
   return res?.Response?.Data?.Run?.Id;
 };
 
@@ -46,30 +56,50 @@ const _updateTestCaseResult = async (opts: UpdateTestCaseResultOptions = {}) => 
     RunId: opts.runId,
     CaseId: opts.caseId,
     Status: opts.status,
-    'CustomStepStatus.N': opts.customStepStatusN,
+    CustomStepStatus: opts.customStepStatus,
   });
-  console.debug(res, opts);
+  console.debug('_updateTestCaseResult', res, opts);
 };
 
 const _updateTestCaseResults = async (opts: UpdateTestCaseResultsOptions = {}) => {
-  if (!opts.caseIdsN?.length) return;
+  if (!opts.caseIds?.length) return;
   const res = await post({
     Action: 'CreateTestResults',
     ProjectName: process.env.CODING_API_PROJECT_NAME || 'crawlab',
     RunId: opts.runId,
-    'CaseIds.N': opts.caseIdsN,
+    CaseIds: opts.caseIds,
     Status: opts.status,
   });
-  console.debug(res);
+  console.debug('_updateTestCaseResults', res, opts);
 };
 
-export const initTestRun = async () => {
-  const state: TestRunState = {};
-  state.runId = await _createTestRun();
-  saveTestRunState(state);
+const _createAttachmentPrepareSignUrl = async (opts: CreateAttachmentPrepareSignUrlOptions = {}) => {
+  if (!opts.fileName) return;
+  const res = await post({
+    Action: 'CreateAttachmentPrepareSignUrl',
+    ProjectName: process.env.CODING_API_PROJECT_NAME || 'crawlab',
+    FileName: opts.fileName,
+  });
+  console.debug('_createAttachmentPrepareSignUrl', res, opts);
 };
 
-export const updateTestCaseResult = async (caseId: number, status: TestResult) => {
+const _createTestReport = async (opts: CreateTestReportOptions = {}) => {
+  if (!opts.runIds?.length) return;
+  const res = await post({
+    Action: 'CreateReport',
+    ProjectName: process.env.CODING_API_PROJECT_NAME || 'crawlab',
+    Name: opts.name || `Test_Report_${new Date().getTime()}`,
+    RunIds: opts.runIds,
+    AttachmentIds: opts.attachmentIds,
+  });
+  console.debug('_createTestReport', res, opts);
+};
+
+export const createTestRun = async (opts?: CreateTestRunOptions) => {
+  return await _createTestRun(opts);
+};
+
+export const updateTestCaseResult = async (caseId: number, status: CodingTestStatus) => {
   const {runId} = getTestRunState();
   await _updateTestCaseResult({
     runId,
@@ -78,9 +108,6 @@ export const updateTestCaseResult = async (caseId: number, status: TestResult) =
   });
 };
 
-export const wrapUpdateTestCaseResultFn = (test: TestType<any, any>, mapping: { [key: string]: number }): () => Promise<void> => {
-  return async () => {
-    const id = mapping[getTestCaseCamelCaseName(test.info().title)];
-    await updateTestCaseResult(id, test.info().error ? 'FAILED' : 'PASSED');
-  };
+export const createTestReport = async (opts?: CreateTestReportOptions) => {
+  return await _createTestReport(opts);
 };

@@ -3,13 +3,9 @@ import {clickTableCellByKey, getTableCellTextsByKey} from '../../../actions/comp
 import {createProject, deleteProject, editProject} from '../../../actions/project/common';
 import {getRandomName} from '../../../utils/name';
 import {goToNavTab} from '../../../actions/components/nav';
-import {wrapUpdateTestCaseResultFn} from '../../../../sdk';
-import {caseMapping} from '../../../../sdk/mapping/case';
 import {test} from '../../../base/authTest';
 
 test.describe.serial('project: common', () => {
-  test.afterEach(wrapUpdateTestCaseResultFn(test, caseMapping.community.project.common));
-
   const project = {
     name: getRandomName('project'),
     description: getRandomName('project_description'),

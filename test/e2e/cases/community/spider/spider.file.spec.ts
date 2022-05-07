@@ -1,23 +1,22 @@
 import {expect} from '@playwright/test';
 import {getRandomName} from '../../../utils/name';
-import {createSpider, deleteSpider} from '../../../actions/spider/common';
-import {clickTableCellByKey, getTableCellByKey} from '../../../actions/components/table';
+import {createSpider} from '../../../actions/spider/common';
+import {clickTableCellByKey} from '../../../actions/components/table';
 import {
-  cloneSpiderFile, createSpiderDirectory,
-  createSpiderFile, deleteSpiderFile,
+  cloneSpiderFile,
+  createSpiderDirectory,
+  createSpiderFile,
+  deleteSpiderFile,
   editSpiderFileContent,
   moveSpiderFile,
-  openSpiderFile, renameSpiderFile, rightClickSpiderFileAction
+  openSpiderFile,
+  renameSpiderFile
 } from '../../../actions/spider/file';
 import {goToNavTab} from '../../../actions/components/nav';
 import {getFileContent} from '../../../actions/components/file';
-import {wrapUpdateTestCaseResultFn} from '../../../../sdk';
-import {caseMapping} from '../../../../sdk/mapping/case';
 import {test} from '../../../base/authTest';
 
 test.describe.serial('spider: file', () => {
-  test.afterEach(wrapUpdateTestCaseResultFn(test, caseMapping.community.spider.file));
-
   // settings
   const name = getRandomName('spider');
   const cmd = 'python3 main.py';

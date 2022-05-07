@@ -5,6 +5,7 @@ import {DEFAULT_SDK_STATE_FILE_NAME} from './constants/default';
 
 export interface TestRunState {
   runId?: number;
+  caseIds?: number[];
 }
 
 export const getTestRunDirectoryPath = () => {

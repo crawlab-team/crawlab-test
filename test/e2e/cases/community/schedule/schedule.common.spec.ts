@@ -4,13 +4,9 @@ import {createSchedule, deleteSchedule, editSchedule} from '../../../actions/sch
 import {clickTableCellByKey, getTableCellTextsByKey, getTableRowId} from '../../../actions/components/table';
 import {createSpider} from '../../../actions/spider/common';
 import {goToNavTab} from '../../../actions/components/nav';
-import {wrapUpdateTestCaseResultFn} from '../../../../sdk';
-import {caseMapping} from '../../../../sdk/mapping/case';
 import {test} from '../../../base/authTest';
 
 test.describe.serial('schedule: common', () => {
-  test.afterEach(wrapUpdateTestCaseResultFn(test, caseMapping.community.schedule.common));
-
   const schedule = {
     name: getRandomName('schedule'),
     cron: '* * * * *',
