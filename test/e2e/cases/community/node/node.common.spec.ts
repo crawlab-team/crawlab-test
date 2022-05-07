@@ -1,12 +1,14 @@
-import {expect, test} from '@playwright/test';
-import {getStorageFilePath} from '../../../utils/storage';
+import {expect} from '@playwright/test';
 import {clickTableCellByKey} from '../../../actions/components/table';
 import {editNode} from '../../../actions/node/common';
+import {goToNavTab} from '../../../actions/components/nav';
+import {wrapUpdateTestCaseResultFn} from '../../../../sdk';
+import {caseMapping} from '../../../../sdk/mapping/case';
+import {test} from '../../../base/authTest';
 
-test.use({storageState: getStorageFilePath()});
-test.describe.configure({mode: 'serial'});
+test.describe.serial('node: common', () => {
+  test.afterEach(wrapUpdateTestCaseResultFn(test, caseMapping.community.node.common));
 
-test.describe('node: common', () => {
   const node = {
     name: 'Master Node',
     description: '',
@@ -33,7 +35,7 @@ test.describe('node: common', () => {
 
     // refresh page
     await page.reload();
-    await page.click('.el-menu-item.overview');
+    await goToNavTab(page, 'overview');
 
     // expect fields to be the same as edited
     await expect(await page.inputValue('#name input')).toEqual(nodeEdited.name);

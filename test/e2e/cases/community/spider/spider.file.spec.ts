@@ -1,5 +1,4 @@
-import {expect, test} from '@playwright/test';
-import {getStorageFilePath} from '../../../utils/storage';
+import {expect} from '@playwright/test';
 import {getRandomName} from '../../../utils/name';
 import {createSpider, deleteSpider} from '../../../actions/spider/common';
 import {clickTableCellByKey, getTableCellByKey} from '../../../actions/components/table';
@@ -7,15 +6,18 @@ import {
   cloneSpiderFile, createSpiderDirectory,
   createSpiderFile, deleteSpiderFile,
   editSpiderFileContent,
-  getSpiderFileContent, moveSpiderFile,
+  moveSpiderFile,
   openSpiderFile, renameSpiderFile, rightClickSpiderFileAction
 } from '../../../actions/spider/file';
+import {goToNavTab} from '../../../actions/components/nav';
+import {getFileContent} from '../../../actions/components/file';
+import {wrapUpdateTestCaseResultFn} from '../../../../sdk';
+import {caseMapping} from '../../../../sdk/mapping/case';
+import {test} from '../../../base/authTest';
 
-// basic configuration
-test.use({storageState: getStorageFilePath()});
-test.describe.configure({mode: 'serial'});
+test.describe.serial('spider: file', () => {
+  test.afterEach(wrapUpdateTestCaseResultFn(test, caseMapping.community.spider.file));
 
-test.describe('spider: file', () => {
   // settings
   const name = getRandomName('spider');
   const cmd = 'python3 main.py';
@@ -39,20 +41,20 @@ test.describe('spider: file', () => {
     await page.waitForSelector('.nav-sidebar');
 
     // click on files tab
-    await page.click('.el-menu-item.files');
+    await goToNavTab(page, 'files');
 
     // create spider file
     await createSpiderFile(page, {fileName, fileContent});
 
     // refresh page
     await page.reload();
-    await page.click('.el-menu-item.files');
+    await goToNavTab(page, 'files');
 
     // open spider file
     await openSpiderFile(page, {fileName});
 
     // expect file content to be the same as the saved one
-    const actualContent = await getSpiderFileContent(page);
+    const actualContent = await getFileContent(page);
     await expect(actualContent).toEqual(fileContent);
   });
 
@@ -62,7 +64,7 @@ test.describe('spider: file', () => {
     await clickTableCellByKey(page, 'name', name);
 
     // click on files tab
-    await page.click('.el-menu-item.files');
+    await goToNavTab(page, 'files');
 
     // open spider file
     await openSpiderFile(page, {fileName});
@@ -72,13 +74,13 @@ test.describe('spider: file', () => {
 
     // refresh page
     await page.reload();
-    await page.click('.el-menu-item.files');
+    await goToNavTab(page, 'files');
 
     // open spider file
     await openSpiderFile(page, {fileName});
 
     // expect file content to be the same as the saved one
-    const actualContent = await getSpiderFileContent(page);
+    const actualContent = await getFileContent(page);
     await expect(actualContent).toEqual(fileContentEdited);
   });
 
@@ -88,7 +90,7 @@ test.describe('spider: file', () => {
     await clickTableCellByKey(page, 'name', name);
 
     // click on files tab
-    await page.click('.el-menu-item.files');
+    await goToNavTab(page, 'files');
 
     // rename spider file
     await renameSpiderFile(page, {fileName, newFileName: fileNameRenamed});
@@ -106,7 +108,7 @@ test.describe('spider: file', () => {
     await clickTableCellByKey(page, 'name', name);
 
     // click on files tab
-    await page.click('.el-menu-item.files');
+    await goToNavTab(page, 'files');
 
     // create directory
     await createSpiderDirectory(page, {directoryName});
@@ -130,7 +132,7 @@ test.describe('spider: file', () => {
     await clickTableCellByKey(page, 'name', name);
 
     // click on files tab
-    await page.click('.el-menu-item.files');
+    await goToNavTab(page, 'files');
 
     // create file
     await createSpiderFile(page, {fileName, fileContent});
@@ -146,7 +148,7 @@ test.describe('spider: file', () => {
 
     // expect new file content to be the same as original
     await openSpiderFile(page, {fileName: fileNameCloned});
-    await expect(await getSpiderFileContent(page)).toEqual(fileContent);
+    await expect(await getFileContent(page)).toEqual(fileContent);
   });
 
   test('should delete spider file', async ({page}) => {
@@ -155,7 +157,7 @@ test.describe('spider: file', () => {
     await clickTableCellByKey(page, 'name', name);
 
     // click on files tab
-    await page.click('.el-menu-item.files');
+    await goToNavTab(page, 'files');
 
     // delete spider file
     await deleteSpiderFile(page, {fileName});

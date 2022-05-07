@@ -12,6 +12,10 @@ interface EditProjectOptions extends BaseActionOptions {
   description?: string;
 }
 
+interface DeleteProjectOptions extends BaseActionOptions {
+  name?: string;
+}
+
 export const createProject = async (page: Page, {
   name,
   description,
@@ -38,6 +42,6 @@ export const editProject = async (page: Page, {
 
 export const deleteProject = async (page: Page, {
   name,
-}: EditProjectOptions = {}) => {  // click delete button
+}: DeleteProjectOptions = {}) => {  // click delete button
   return deleteTableRowByName(page, {name});
 };

@@ -1,5 +1,4 @@
 import {Page} from '@playwright/test';
-import {ZERO_WIDTH_SPACE} from '../../constants/file';
 import {BaseActionOptions} from '../base';
 
 interface CreateSpiderFileOptions extends BaseActionOptions {
@@ -173,14 +172,4 @@ export const rightClickSpiderFileAction = async (page: Page, {targetName, action
 
   // click on new file button
   await page.click(`.context-menu[aria-hidden=false] .context-menu-item.${action}`);
-};
-
-export const getSpiderFileContent = async (page: Page): Promise<string> => {
-  const lines = await page.evaluate(() => {
-    const lines = [];
-    document.querySelectorAll('.code-mirror-editor .CodeMirror-line')
-      .forEach(el => lines.push(el.textContent));
-    return lines;
-  });
-  return lines.join('\n').split(ZERO_WIDTH_SPACE).join('');
 };

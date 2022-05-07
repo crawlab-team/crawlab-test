@@ -20,6 +20,10 @@ interface EditScheduleOptions extends BaseActionOptions {
   description?: string;
 }
 
+interface DeleteScheduleOptions extends BaseActionOptions {
+  name?: string;
+}
+
 export const createSchedule = async (page: Page, {
   name,
   spiderName,
@@ -58,6 +62,6 @@ export const editSchedule = async (page: Page, {
 
 export const deleteSchedule = async (page: Page, {
   name,
-}: EditScheduleOptions = {}) => {  // click delete button
+}: DeleteScheduleOptions = {}) => {  // click delete button
   return deleteTableRowByName(page, {name});
 };

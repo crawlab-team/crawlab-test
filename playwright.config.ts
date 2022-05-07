@@ -14,6 +14,7 @@ require('dotenv').config();
 const config: PlaywrightTestConfig = {
   testDir: './test/e2e',
   globalSetup: './global-setup',
+  globalTeardown: './global-teardown',
   /* Maximum time one test can run for. */
   timeout: 30 * 1000,
   expect: {

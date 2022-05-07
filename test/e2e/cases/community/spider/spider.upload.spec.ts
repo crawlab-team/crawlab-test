@@ -1,18 +1,20 @@
-import {expect, test} from '@playwright/test';
+import {expect} from '@playwright/test';
 import {resolve, join} from 'path';
-import {getStorageFilePath} from '../../../utils/storage';
 import {readFileSync} from 'fs';
 import {clickTableCellByKey} from '../../../actions/components/table';
 import {getRandomName} from '../../../utils/name';
 import {createSpider} from '../../../actions/spider/common';
 import {uploadSpiderDirectory, uploadSpiderFiles} from '../../../actions/spider/upload';
-import {expandSpiderDirectory, getSpiderFileContent, openSpiderFile} from '../../../actions/spider/file';
+import {expandSpiderDirectory, openSpiderFile} from '../../../actions/spider/file';
+import {goToNavTab} from '../../../actions/components/nav';
+import {getFileContent} from '../../../actions/components/file';
+import {wrapUpdateTestCaseResultFn} from '../../../../sdk';
+import {caseMapping} from '../../../../sdk/mapping/case';
+import {test} from '../../../base/authTest';
 
-// basic configuration
-test.use({storageState: getStorageFilePath()});
-test.describe.configure({mode: 'serial'});
+test.describe.serial('spider: upload', () => {
+  test.afterEach(wrapUpdateTestCaseResultFn(test, caseMapping.community.spider.upload));
 
-test.describe('spider: upload', () => {
   // settings
   const name = getRandomName('spider');
   const cmd = 'python3 main.py';
@@ -47,7 +49,7 @@ test.describe('spider: upload', () => {
     await page.waitForSelector('.nav-sidebar');
 
     // click on files tab
-    await page.click('.el-menu-item.files');
+    await goToNavTab(page, 'files');
   });
 
   test('should upload spider directory', async ({page}) => {
@@ -60,7 +62,7 @@ test.describe('spider: upload', () => {
 
     // open file main.py and expect content to be the same as original
     await openSpiderFile(page, {fileName: mainFileName});
-    let mainFileContentActual = await getSpiderFileContent(page);
+    let mainFileContentActual = await getFileContent(page);
     await expect(mainFileContentActual.trim()).toEqual(mainFileContent.toString().trim());
 
     // expand directory config
@@ -68,7 +70,7 @@ test.describe('spider: upload', () => {
 
     // open file config/config.py and expect content to be the same as original
     await openSpiderFile(page, {fileName: configFileName});
-    const configFileContentActual = await getSpiderFileContent(page);
+    const configFileContentActual = await getFileContent(page);
     await expect(configFileContentActual.trim()).toEqual(configFileContent.toString().trim());
   });
 
@@ -85,7 +87,7 @@ test.describe('spider: upload', () => {
 
     // open file main.py and expect content to be the same as original
     await openSpiderFile(page, {fileName: mainFileName});
-    let mainFileContentActual = await getSpiderFileContent(page);
+    let mainFileContentActual = await getFileContent(page);
     await expect(mainFileContentActual.trim()).toEqual(mainFileContent.toString().trim());
   });
 });

@@ -1,13 +1,15 @@
-import {expect, test} from '@playwright/test';
-import {getStorageFilePath} from '../../../utils/storage';
+import {expect} from '@playwright/test';
 import {clickTableCellByKey, getTableCellTextsByKey} from '../../../actions/components/table';
 import {createProject, deleteProject, editProject} from '../../../actions/project/common';
 import {getRandomName} from '../../../utils/name';
+import {goToNavTab} from '../../../actions/components/nav';
+import {wrapUpdateTestCaseResultFn} from '../../../../sdk';
+import {caseMapping} from '../../../../sdk/mapping/case';
+import {test} from '../../../base/authTest';
 
-test.use({storageState: getStorageFilePath()});
-test.describe.configure({mode: 'serial'});
+test.describe.serial('project: common', () => {
+  test.afterEach(wrapUpdateTestCaseResultFn(test, caseMapping.community.project.common));
 
-test.describe('project: common', () => {
   const project = {
     name: getRandomName('project'),
     description: getRandomName('project_description'),
@@ -36,14 +38,14 @@ test.describe('project: common', () => {
 
     // go to detail page
     await clickTableCellByKey(page, 'name', project.name);
-    await page.click('.el-menu-item.overview');
+    await goToNavTab(page, 'overview');
 
     // edit project
     await editProject(page, {...projectEdited});
 
     // refresh page
     await page.reload();
-    await page.click('.el-menu-item.overview');
+    await goToNavTab(page, 'overview');
 
     // expect fields to be the same as edited
     await expect(await page.inputValue('#name input')).toEqual(projectEdited.name);

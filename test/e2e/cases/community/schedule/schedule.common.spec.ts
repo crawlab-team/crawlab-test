@@ -1,14 +1,16 @@
-import {expect, test} from '@playwright/test';
-import {getStorageFilePath} from '../../../utils/storage';
+import {expect} from '@playwright/test';
 import {getRandomName} from '../../../utils/name';
 import {createSchedule, deleteSchedule, editSchedule} from '../../../actions/schedule/common';
 import {clickTableCellByKey, getTableCellTextsByKey, getTableRowId} from '../../../actions/components/table';
 import {createSpider} from '../../../actions/spider/common';
+import {goToNavTab} from '../../../actions/components/nav';
+import {wrapUpdateTestCaseResultFn} from '../../../../sdk';
+import {caseMapping} from '../../../../sdk/mapping/case';
+import {test} from '../../../base/authTest';
 
-test.use({storageState: getStorageFilePath()});
-test.describe.configure({mode: 'serial'});
+test.describe.serial('schedule: common', () => {
+  test.afterEach(wrapUpdateTestCaseResultFn(test, caseMapping.community.schedule.common));
 
-test.describe.only('schedule: common', () => {
   const schedule = {
     name: getRandomName('schedule'),
     cron: '* * * * *',
@@ -50,14 +52,14 @@ test.describe.only('schedule: common', () => {
 
     // go to detail page
     await clickTableCellByKey(page, 'name', schedule.name);
-    await page.click('.el-menu-item.overview');
+    await goToNavTab(page, 'overview');
 
     // edit schedule
     await editSchedule(page, {...scheduleEdited});
 
     // refresh page
     await page.reload();
-    await page.click('.el-menu-item.overview');
+    await goToNavTab(page, 'overview');
 
     // expect fields to be the same as edited
     await expect(await page.inputValue('#name input')).toEqual(scheduleEdited.name);
