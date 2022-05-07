@@ -1,13 +1,15 @@
 import {expect} from '@playwright/test';
 import {getRandomName} from '../../../utils/name';
-import {getTableCellByTargetKey, getTableCellTextsByKey} from '../../../actions/components/table';
-import {createSpider, deleteSpider, runSpider} from '../../../actions/spider/common';
+import {clickTableCellByKey, getTableCellByTargetKey, getTableCellTextsByKey} from '../../../actions/components/table';
+import {createSpider, deleteSpider, editSpider, runSpider} from '../../../actions/spider/common';
 import {test} from '../../../base/authTest';
+import {goToNavTab} from '../../../actions/components/nav';
 
 test.describe.serial('spider: crud', () => {
   // settings
   const name = getRandomName('spider');
   const cmd = 'echo "hello world"';
+  const cmdEdited = 'echo "hello crawlab"';
 
   test.beforeEach(async ({page}) => {
     // go to page
@@ -33,8 +35,16 @@ test.describe.serial('spider: crud', () => {
     await elLs.waitForSelector('.task-status.el-tag--success');
   });
 
-  test.skip('should edit spider', async ({page}) => {
-    // TODO: implement
+  test('should edit spider', async ({page}) => {
+    await clickTableCellByKey(page, 'name', name);
+
+    await editSpider(page, {cmd: cmdEdited});
+
+    // refresh page
+    await page.reload();
+    await goToNavTab(page, 'overview');
+
+    await expect(await page.inputValue('#cmd')).toEqual(cmdEdited);
   });
 
   test('should delete spider', async ({page}) => {

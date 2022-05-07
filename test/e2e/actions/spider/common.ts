@@ -1,10 +1,15 @@
 import {Page} from '@playwright/test';
 import {clickTableCellByKey, deleteTableRowByName, getTableCellByTargetKey} from '../components/table';
+import {BaseActionOptions} from '../base';
 
-interface CreateSpiderOptions {
+interface CreateSpiderOptions extends BaseActionOptions {
   name?: string;
   cmd?: string;
-  waitDuration?: number;
+}
+
+interface EditSpiderOptions extends BaseActionOptions {
+  name?: string;
+  cmd?: string;
 }
 
 export const createSpider = async (page: Page, {name, cmd, waitDuration}: CreateSpiderOptions = {}) => {
@@ -17,6 +22,14 @@ export const createSpider = async (page: Page, {name, cmd, waitDuration}: Create
   await page.type('#cmd', cmd);
   await page.click('.create-edit-dialog .confirm-btn');
   await page.waitForSelector('.create-edit-dialog.hidden');
+  await page.waitForTimeout(waitDuration || 1000);
+};
+
+export const editSpider = async (page: Page, {name, cmd, waitDuration}: EditSpiderOptions = {}) => {
+  if (name) await page.fill('#name', name);
+  if (cmd) await page.fill('#cmd', cmd);
+
+  await page.click('#save-btn');
   await page.waitForTimeout(waitDuration || 1000);
 };
 
