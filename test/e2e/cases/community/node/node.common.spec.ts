@@ -4,7 +4,7 @@ import {editNode} from '../../../actions/node/common';
 import {goToNavTab} from '../../../actions/components/nav';
 import {test} from '../../../base/authTest';
 
-test.describe.serial('node: common', () => {
+test.describe.serial('node:common', () => {
   const node = {
     name: 'Master Node',
     description: '',

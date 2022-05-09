@@ -14,7 +14,7 @@ import {goToNavTab} from '../../../actions/components/nav';
 import {getFileContent} from '../../../actions/components/file';
 import {test} from '../../../base/authTest';
 
-test.describe.serial('task: common', () => {
+test.describe.serial('task:common', () => {
   const spiderName = getRandomName('spider');
   const spiderCmd = 'python3 main.py';
   const longTaskCmd = 'python3 long_task.py';

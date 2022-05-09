@@ -16,7 +16,7 @@ import {goToNavTab} from '../../../actions/components/nav';
 import {getFileContent} from '../../../actions/components/file';
 import {test} from '../../../base/authTest';
 
-test.describe.serial('spider: file', () => {
+test.describe.serial('spider:file', () => {
   // settings
   const name = getRandomName('spider');
   const cmd = 'python3 main.py';
@@ -54,6 +54,9 @@ test.describe.serial('spider: file', () => {
 
     // expect file content to be the same as the saved one
     const actualContent = await getFileContent(page);
+    await expect(actualContent).not.toBeUndefined();
+    await expect(actualContent).not.toBeNull();
+    await expect(actualContent.length).toBeGreaterThan(0);
     await expect(actualContent).toEqual(fileContent);
   });
 

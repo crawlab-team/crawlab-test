@@ -10,7 +10,7 @@ import {goToNavTab} from '../../../actions/components/nav';
 import {getFileContent} from '../../../actions/components/file';
 import {test} from '../../../base/authTest';
 
-test.describe.serial('spider: upload', () => {
+test.describe.serial('spider:upload', () => {
   // settings
   const name = getRandomName('spider');
   const cmd = 'python3 main.py';

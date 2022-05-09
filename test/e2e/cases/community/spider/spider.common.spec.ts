@@ -5,7 +5,7 @@ import {createSpider, deleteSpider, editSpider, runSpider} from '../../../action
 import {test} from '../../../base/authTest';
 import {goToNavTab} from '../../../actions/components/nav';
 
-test.describe.serial('spider: crud', () => {
+test.describe.serial('spider:common', () => {
   // settings
   const name = getRandomName('spider');
   const cmd = 'echo "hello world"';

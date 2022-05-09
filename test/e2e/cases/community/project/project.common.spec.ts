@@ -5,7 +5,7 @@ import {getRandomName} from '../../../utils/name';
 import {goToNavTab} from '../../../actions/components/nav';
 import {test} from '../../../base/authTest';
 
-test.describe.serial('project: common', () => {
+test.describe.serial('project:common', () => {
   const project = {
     name: getRandomName('project'),
     description: getRandomName('project_description'),
