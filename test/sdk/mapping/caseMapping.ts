@@ -41,6 +41,16 @@ export const caseMapping = {
     upload: {
       shouldUploadSpiderDirectory: 133,
       shouldUploadSpiderFile: 147,
+      shouldUploadSpiderDirectoryFromList: 2308,
+      shouldUploadSpiderFileFromList: 2390,
+    },
+    ui: {
+      shouldSwitchSpiderOverview: 2566,
+      shouldSwitchSpiderFiles: 2607,
+      shouldSwitchSpiderGit: 2648,
+      shouldSwitchSpiderTasks: 2689,
+      shouldSwitchSpiderSchedules: 2730,
+      shouldSwitchSpiderData: 2771,
     },
   },
 

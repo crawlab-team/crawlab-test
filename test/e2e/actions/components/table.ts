@@ -44,12 +44,7 @@ export const getTableRowByKey = async (page: Page, key: string, text: string): P
 };
 
 export const getTableCellByKey = async (page: Page, key: string, text: string): Promise<ElementHandle | undefined> => {
-  const els = await page.$$(`.table table.el-table__body tr.el-table__row > td.el-table__cell.${key}`);
-  for (let el of els) {
-    if (text === await el.innerText()) {
-      return el;
-    }
-  }
+  return await page.locator(`.table table.el-table__body tr.el-table__row > td.el-table__cell.${key} :text-is("${text}")`).elementHandle();
 };
 
 export const getTableCellByTargetKey = async (page: Page, key: string, text: string, targetKey: string): Promise<ElementHandle | undefined> => {

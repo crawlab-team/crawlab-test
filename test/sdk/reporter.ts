@@ -3,7 +3,7 @@ import {FullConfig, TestStatus} from '@playwright/test';
 import {get} from 'object-path';
 import {saveTestRunState, TestRunState} from './state';
 import {CodingTestStatus, createTestRun, updateTestCaseResult} from './api';
-import {caseMapping} from './mapping/case';
+import {caseMapping} from './mapping/caseMapping';
 import {getTestCaseCamelCaseName} from '../e2e/utils/name';
 
 export const getCodingTestCaseStatus = (status: TestStatus): CodingTestStatus => {

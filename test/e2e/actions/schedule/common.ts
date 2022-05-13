@@ -38,7 +38,7 @@ export const createSchedule = async (page: Page, {
   await page.fill('#cron input', cron);
   await page.waitForTimeout(waitDuration || 1000);
   await selectFromItems(page, {key: '#spider_id', label: spiderName});
-  await page.fill('#description textarea', description);
+  if (description) await page.fill('#description textarea', description);
   await toggleSwitch(page, enabled);
   await page.click('#confirm-btn button');
   await page.waitForTimeout(waitDuration || 1000);
