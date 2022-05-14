@@ -1,7 +1,7 @@
 import {Browser, expect} from '@playwright/test';
-import {saveStorageState} from '../../utils/storage';
-import {getDefaultBrowser} from '../../utils/browser';
-import {DEFAULT_APP_URL, DEFAULT_PASSWORD, DEFAULT_USERNAME} from '../../constants/default';
+import {saveStorageState} from '@/e2e/utils/storage';
+import {getDefaultBrowser} from '@/e2e/utils/browser';
+import {DEFAULT_APP_URL, DEFAULT_PASSWORD, DEFAULT_USERNAME} from '@/e2e/constants/default';
 
 export interface LoginProps {
   browser?: Browser,

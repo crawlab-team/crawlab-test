@@ -60,7 +60,11 @@ export const caseMapping = {
       shouldCreateSchedule: 161,
       shouldEditSchedule: 162,
       shouldDeleteSchedule: 164,
-    }
+    },
+    ui: {
+      shouldSwitchScheduleOverview: 3005,
+      shouldSwitchScheduleTasks: 3046,
+    },
   },
 
   // task

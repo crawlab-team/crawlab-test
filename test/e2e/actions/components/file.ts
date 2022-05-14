@@ -1,5 +1,5 @@
 import {Page} from '@playwright/test';
-import {ZERO_WIDTH_SPACE} from '../../constants/file';
+import {ZERO_WIDTH_SPACE} from '@/e2e/constants/file';
 
 export const getFileContent = async (page: Page): Promise<string> => {
   const lines = await page.evaluate(() => {

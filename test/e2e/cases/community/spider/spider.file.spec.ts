@@ -1,7 +1,7 @@
 import {expect} from '@playwright/test';
-import {getRandomName} from '../../../utils/name';
-import {createSpider} from '../../../actions/spider/common';
-import {clickTableCellByKey} from '../../../actions/components/table';
+import {getRandomName} from '@/e2e/utils/name';
+import {createSpider} from '@/e2e/actions/spider/common';
+import {clickTableCellByKey} from '@/e2e/actions/components/table';
 import {
   cloneSpiderFile,
   createSpiderDirectory,
@@ -11,10 +11,10 @@ import {
   moveSpiderFile,
   openSpiderFile,
   renameSpiderFile
-} from '../../../actions/spider/file';
-import {goToNavTab} from '../../../actions/components/nav';
-import {getFileContent} from '../../../actions/components/file';
-import {test} from '../../../base/authTest';
+} from '@/e2e/actions/spider/file';
+import {goToListPage, goToNavTab} from '@/e2e/actions/components/nav';
+import {getFileContent} from '@/e2e/actions/components/file';
+import {test} from '@/e2e/base/authTest';
 
 test.describe.serial('spider:file', () => {
   // settings
@@ -29,8 +29,7 @@ test.describe.serial('spider:file', () => {
 
   test('should create spider file', async ({page}) => {
     // go to page
-    await page.goto('/#/spiders');
-    await page.waitForSelector('#add-btn');
+    await goToListPage(page, 'spiders');
 
     // create spider
     await createSpider(page, {name, cmd});
@@ -62,7 +61,7 @@ test.describe.serial('spider:file', () => {
 
   test('should edit spider file', async ({page}) => {
     // go to spider detail page
-    await page.goto('/#/spiders');
+    await goToListPage(page, 'spiders');
     await clickTableCellByKey(page, 'name', name);
 
     // click on files tab
@@ -88,7 +87,7 @@ test.describe.serial('spider:file', () => {
 
   test('should rename spider file', async ({page}) => {
     // go to spider detail page
-    await page.goto('/#/spiders');
+    await goToListPage(page, 'spiders');
     await clickTableCellByKey(page, 'name', name);
 
     // click on files tab
@@ -106,7 +105,7 @@ test.describe.serial('spider:file', () => {
 
   test('should move spider file', async ({page}) => {
     // go to spider detail page
-    await page.goto('/#/spiders');
+    await goToListPage(page, 'spiders');
     await clickTableCellByKey(page, 'name', name);
 
     // click on files tab
@@ -130,7 +129,7 @@ test.describe.serial('spider:file', () => {
 
   test('should clone spider file', async ({page}) => {
     // go to spider detail page
-    await page.goto('/#/spiders');
+    await goToListPage(page, 'spiders');
     await clickTableCellByKey(page, 'name', name);
 
     // click on files tab
@@ -155,7 +154,7 @@ test.describe.serial('spider:file', () => {
 
   test('should delete spider file', async ({page}) => {
     // go to spider detail page
-    await page.goto('/#/spiders');
+    await goToListPage(page, 'spiders');
     await clickTableCellByKey(page, 'name', name);
 
     // click on files tab

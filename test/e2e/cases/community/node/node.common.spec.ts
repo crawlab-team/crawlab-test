@@ -1,8 +1,8 @@
 import {expect} from '@playwright/test';
-import {clickTableCellByKey} from '../../../actions/components/table';
-import {editNode} from '../../../actions/node/common';
-import {goToNavTab} from '../../../actions/components/nav';
-import {test} from '../../../base/authTest';
+import {clickTableCellByKey} from '@/e2e/actions/components/table';
+import {editNode} from '@/e2e/actions/node/common';
+import {goToListPage, goToNavTab} from '@/e2e/actions/components/nav';
+import {test} from '@/e2e/base/authTest';
 
 test.describe.serial('node:common', () => {
   const node = {
@@ -20,8 +20,7 @@ test.describe.serial('node:common', () => {
 
   test('should edit node', async ({page}) => {
     // go to list page
-    await page.goto('/#/nodes');
-    await page.waitForSelector('#add-btn');
+    await goToListPage(page, 'nodes');
 
     // go to detail page
     await clickTableCellByKey(page, 'name', node.name);

@@ -1,18 +1,18 @@
 import {expect} from '@playwright/test';
-import {createSpider} from '../../../actions/spider/common';
-import {getRandomName} from '../../../utils/name';
-import {uploadSpiderDirectory} from '../../../actions/spider/upload';
+import {createSpider} from '@/e2e/actions/spider/common';
+import {getRandomName} from '@/e2e/utils/name';
+import {uploadSpiderDirectory} from '@/e2e/actions/spider/upload';
 import {join, resolve} from 'path';
 import {
   clickTableCellActionByKey,
   clickTableCellByKey,
   getTableCellByTargetKey,
   getTableCellTextsByKey, waitForTableColumnToBeReady
-} from '../../../actions/components/table';
-import {cancelTask, createTask, deleteTask, viewTaskData, viewTaskLogs} from '../../../actions/task/common';
-import {goToNavTab} from '../../../actions/components/nav';
-import {getFileContent} from '../../../actions/components/file';
-import {test} from '../../../base/authTest';
+} from '@/e2e/actions/components/table';
+import {cancelTask, createTask, deleteTask, viewTaskData, viewTaskLogs} from '@/e2e/actions/task/common';
+import {goToListPage, goToNavTab} from '@/e2e/actions/components/nav';
+import {getFileContent} from '@/e2e/actions/components/file';
+import {test} from '@/e2e/base/authTest';
 
 test.describe.serial('task:common', () => {
   const spiderName = getRandomName('spider');
@@ -23,8 +23,7 @@ test.describe.serial('task:common', () => {
 
   test.beforeAll(async ({browser}) => {
     const page = await browser.newPage();
-    await page.goto('/#/spiders');
-    await page.waitForSelector('#add-btn');
+    await goToListPage(page, 'spiders');
     await createSpider(page, {name: spiderName, cmd: spiderCmd});
     await clickTableCellByKey(page, 'name', spiderName);
     await page.waitForSelector('.nav-sidebar');
@@ -34,8 +33,7 @@ test.describe.serial('task:common', () => {
   });
 
   test.beforeEach(async ({page}) => {
-    await page.goto('/#/tasks');
-    await page.waitForSelector('#add-btn');
+    await goToListPage(page, 'tasks');
   });
 
   test('should create task', async ({page}) => {
@@ -47,6 +45,7 @@ test.describe.serial('task:common', () => {
 
     // expect result count to be greater than 0
     const elRc = await getTableCellByTargetKey(page, 'spider_id', spiderName, 'stat_result_count');
+    await expect(elRc).not.toBeNull();
     await elRc.waitForSelector('.task-results.el-tag--success');
     await expect(await elRc.textContent()).toEqual('1');
   });

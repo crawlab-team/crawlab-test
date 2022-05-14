@@ -1,10 +1,10 @@
 import {expect} from '@playwright/test';
-import {getRandomName} from '../../../utils/name';
-import {createSchedule, deleteSchedule, editSchedule} from '../../../actions/schedule/common';
-import {clickTableCellByKey, getTableCellTextsByKey, getTableRowId} from '../../../actions/components/table';
-import {createSpider} from '../../../actions/spider/common';
-import {goToNavTab} from '../../../actions/components/nav';
-import {test} from '../../../base/authTest';
+import {getRandomName} from '@/e2e/utils/name';
+import {createSchedule, deleteSchedule, editSchedule} from '@/e2e/actions/schedule/common';
+import {clickTableCellByKey, getTableCellTextsByKey} from '@/e2e/actions/components/table';
+import {createSpider} from '@/e2e/actions/spider/common';
+import {goToListPage, goToNavTab} from '@/e2e/actions/components/nav';
+import {test} from '@/e2e/base/authTest';
 
 test.describe.serial('schedule:common', () => {
   const schedule = {
@@ -24,14 +24,13 @@ test.describe.serial('schedule:common', () => {
 
   test.beforeAll(async ({browser}) => {
     const page = await browser.newPage();
-    await page.goto('/#/spiders');
+    await goToListPage(page, 'spiders');
     await createSpider(page, {name: schedule.spiderName, cmd: 'echo hello'});
   });
 
   test('should create schedule', async ({page}) => {
     // go to list page
-    await page.goto('/#/schedules');
-    await page.waitForSelector('#add-btn');
+    await goToListPage(page, 'schedules');
 
     // create schedule
     await createSchedule(page, {...schedule});
@@ -43,8 +42,7 @@ test.describe.serial('schedule:common', () => {
 
   test('should edit schedule', async ({page}) => {
     // go to list page
-    await page.goto('/#/schedules');
-    await page.waitForSelector('#add-btn');
+    await goToListPage(page, 'schedules');
 
     // go to detail page
     await clickTableCellByKey(page, 'name', schedule.name);
@@ -69,8 +67,7 @@ test.describe.serial('schedule:common', () => {
 
   test('should delete schedule', async ({page}) => {
     // go to list page
-    await page.goto('/#/schedules');
-    await page.waitForSelector('#add-btn');
+    await goToListPage(page, 'schedules');
 
     // delete spider
     await deleteSchedule(page, {name: schedule.name});

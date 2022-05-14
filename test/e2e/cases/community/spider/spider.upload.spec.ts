@@ -1,19 +1,19 @@
 import {expect} from '@playwright/test';
 import {resolve, join} from 'path';
 import {readFileSync} from 'fs';
-import {clickTableCellByKey} from '../../../actions/components/table';
-import {getRandomName} from '../../../utils/name';
-import {createSpider, deleteSpider} from '../../../actions/spider/common';
+import {clickTableCellByKey} from '@/e2e/actions/components/table';
+import {getRandomName} from '@/e2e/utils/name';
+import {createSpider, deleteSpider} from '@/e2e/actions/spider/common';
 import {
   uploadSpiderDirectory,
   uploadSpiderDirectoryFromList,
   uploadSpiderFiles,
   uploadSpiderFilesFromList
-} from '../../../actions/spider/upload';
-import {expandSpiderDirectory, openSpiderFile} from '../../../actions/spider/file';
-import {goToNavTab} from '../../../actions/components/nav';
-import {getFileContent} from '../../../actions/components/file';
-import {test} from '../../../base/authTest';
+} from '@/e2e/actions/spider/upload';
+import {expandSpiderDirectory, openSpiderFile} from '@/e2e/actions/spider/file';
+import {goToListPage, goToNavTab} from '@/e2e/actions/components/nav';
+import {getFileContent} from '@/e2e/actions/components/file';
+import {test} from '@/e2e/base/authTest';
 
 test.describe.serial('spider:upload', () => {
   // settings
@@ -31,8 +31,7 @@ test.describe.serial('spider:upload', () => {
 
   test.beforeEach(async ({page}) => {
     // go to page
-    await page.goto('/#/spiders');
-    await page.waitForSelector('#add-btn');
+    await goToListPage(page, 'spiders');
 
     // create spider
     await createSpider(page, {name, cmd});
@@ -40,8 +39,7 @@ test.describe.serial('spider:upload', () => {
 
   test.afterEach(async ({page}) => {
     // go to page
-    await page.goto('/#/spiders');
-    await page.waitForSelector('#add-btn');
+    await goToListPage(page, 'spiders');
 
     // delete spider
     await deleteSpider(page, {name});

@@ -1,9 +1,9 @@
 import {expect} from '@playwright/test';
-import {clickTableCellByKey, getTableCellTextsByKey} from '../../../actions/components/table';
-import {createProject, deleteProject, editProject} from '../../../actions/project/common';
-import {getRandomName} from '../../../utils/name';
-import {goToNavTab} from '../../../actions/components/nav';
-import {test} from '../../../base/authTest';
+import {clickTableCellByKey, getTableCellTextsByKey} from '@/e2e/actions/components/table';
+import {createProject, deleteProject, editProject} from '@/e2e/actions/project/common';
+import {getRandomName} from '@/e2e/utils/name';
+import {goToListPage, goToNavTab} from '@/e2e/actions/components/nav';
+import {test} from '@/e2e/base/authTest';
 
 test.describe.serial('project:common', () => {
   const project = {
@@ -17,7 +17,7 @@ test.describe.serial('project:common', () => {
 
   test('should create project', async ({page}) => {
     // go to list page
-    await page.goto('/#/projects');
+    await goToListPage(page, 'projects');
 
     // create project
     await createProject(page, {...project});
@@ -29,8 +29,7 @@ test.describe.serial('project:common', () => {
 
   test('should edit project', async ({page}) => {
     // go to list page
-    await page.goto('/#/projects');
-    await page.waitForSelector('#add-btn');
+    await goToListPage(page, 'projects');
 
     // go to detail page
     await clickTableCellByKey(page, 'name', project.name);
@@ -53,8 +52,7 @@ test.describe.serial('project:common', () => {
 
   test('should delete project', async ({page}) => {
     // go to list page
-    await page.goto('/#/projects');
-    await page.waitForSelector('#add-btn');
+    await goToListPage(page, 'projects');
 
     // delete spider
     await deleteProject(page, {name: project.name});

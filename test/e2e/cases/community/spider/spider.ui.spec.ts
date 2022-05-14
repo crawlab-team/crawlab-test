@@ -1,12 +1,12 @@
-import {test} from '../../../base/authTest';
-import {createSpider, runSpider} from '../../../actions/spider/common';
-import {getRandomName} from '../../../utils/name';
-import {clickTableCellByKey, getTableCellByKey, getTableCellByTargetKey} from '../../../actions/components/table';
-import {goToListPage, goToNavTab, selectNavSidebarItem} from '../../../actions/components/nav';
+import {test} from '@/e2e/base/authTest';
+import {createSpider, runSpider} from '@/e2e/actions/spider/common';
+import {getRandomName} from '@/e2e/utils/name';
+import {clickTableCellByKey, getTableCellByKey, getTableCellByTargetKey} from '@/e2e/actions/components/table';
+import {goToListPage, goToNavTab, selectNavSidebarItem} from '@/e2e/actions/components/nav';
 import {expect} from '@playwright/test';
-import {uploadSpiderDirectoryFromList} from '../../../actions/spider/upload';
+import {uploadSpiderDirectoryFromList} from '@/e2e/actions/spider/upload';
 import {join, resolve} from 'path';
-import {createSchedule} from '../../../actions/schedule/common';
+import {createSchedule} from '@/e2e/actions/schedule/common';
 
 test.describe.serial('spider:ui', () => {
   const spiders = [
@@ -29,16 +29,14 @@ test.describe.serial('spider:ui', () => {
   ];
 
   test.beforeAll(async ({browser}) => {
+    // slow test
+    test.slow();
+
     // page
     const page = await browser.newPage({});
 
-    // prevent timeout
-    page.setDefaultTimeout(90 * 1e3);
-
-    // go to page
-    await page.goto('/#/spiders');
-    await page.waitForSelector('#add-btn');
-
+    // create spiders
+    await goToListPage(page, 'spiders');
     for (let i = 0; i < spiders.length; i++) {
       // spider
       const spider = spiders[i];
@@ -56,6 +54,7 @@ test.describe.serial('spider:ui', () => {
       await elLs.waitForSelector('.task-status.el-tag--success');
     }
 
+    // create schedules
     await goToListPage(page, 'schedules');
     for (let i = 0; i < spiders.length; i++) {
       // spider
@@ -70,8 +69,7 @@ test.describe.serial('spider:ui', () => {
   });
 
   test.beforeEach(async ({page}) => {
-    await page.goto('/#/spiders');
-    await page.waitForSelector('#add-btn');
+    await goToListPage(page, 'spiders');
   });
 
   test('should switch spider overview', async ({page}) => {
@@ -132,7 +130,7 @@ test.describe.serial('spider:ui', () => {
     await expect(await getTableCellByKey(page, 'spider_id', spiders[1].name)).not.toBeNull();
   });
 
-  test.only('should switch spider schedules', async ({page}) => {
+  test('should switch spider schedules', async ({page}) => {
     // go to tab
     await clickTableCellByKey(page, 'name', spiders[0].name);
     await goToNavTab(page, 'schedules');

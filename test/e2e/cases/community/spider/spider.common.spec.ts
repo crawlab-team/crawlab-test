@@ -1,9 +1,9 @@
 import {expect} from '@playwright/test';
-import {getRandomName} from '../../../utils/name';
-import {clickTableCellByKey, getTableCellByTargetKey, getTableCellTextsByKey} from '../../../actions/components/table';
-import {createSpider, deleteSpider, editSpider, runSpider} from '../../../actions/spider/common';
-import {test} from '../../../base/authTest';
-import {goToNavTab} from '../../../actions/components/nav';
+import {getRandomName} from '@/e2e/utils/name';
+import {clickTableCellByKey, getTableCellByTargetKey, getTableCellTextsByKey} from '@/e2e/actions/components/table';
+import {createSpider, deleteSpider, editSpider, runSpider} from '@/e2e/actions/spider/common';
+import {test} from '@/e2e/base/authTest';
+import {goToListPage, goToNavTab} from '@/e2e/actions/components/nav';
 
 test.describe.serial('spider:common', () => {
   // settings
@@ -13,8 +13,7 @@ test.describe.serial('spider:common', () => {
 
   test.beforeEach(async ({page}) => {
     // go to page
-    await page.goto('/#/spiders');
-    await page.waitForSelector('#add-btn');
+    await goToListPage(page, 'spiders');
   });
 
   test('should create spider', async ({page}) => {
