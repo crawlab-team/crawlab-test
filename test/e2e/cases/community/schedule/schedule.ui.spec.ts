@@ -8,7 +8,7 @@ import {clickTableCellByKey, getTableCellByKey} from '@/e2e/actions/components/t
 import {createSchedule} from '@/e2e/actions/schedule/common';
 import {expect} from '@playwright/test';
 
-test.describe.serial.only('schedule:ui', () => {
+test.describe.serial('schedule:ui', () => {
   const spiders = [
     {
       name: getRandomName('spider'),
