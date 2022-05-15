@@ -5,9 +5,38 @@ on:
   pull_request:
     branches: [ main ]
 jobs:
+  crawlab-master:
+    runs-on: ubuntu-latest
+    container:
+      image: crawlab-team/crawlab:develop
+      env:
+        CRAWLAB_NODE_MASTER: Y
+        CRAWLAB_MONGO_HOST: mongo
+      ports:
+        - 8080
+  mongo:
+    runs-on: ubuntu-latest
+    container:
+      image: mongo:4.2
+      env:
+        MONGO_INITDB_ROOT_USERNAME: username  # mongo username
+        MONGO_INITDB_ROOT_PASSWORD: password  # mongo password
+      ports:
+        - 27017
+
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    env:
+      APP_URL: http://localhost:8081
+      API_ENDPOINT: http://localhost:8000
+      DISPLAY_BROWSER: false
+      CODING_API_ENDPOINT: https://crawlab.coding.net/open-api
+      CODING_API_TOKEN: ${{ secrets.CODING_API_TOKEN }}
+      CODING_API_PROJECT_NAME: crawlab
+      LOG_LEVEL: info
+      RETRIES: 2
+      WORKERS: 2
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
