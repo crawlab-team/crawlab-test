@@ -13,6 +13,7 @@ jobs:
         image: crawlabteam/crawlab:develop
         env:
           CRAWLAB_NODE_MASTER: Y
+          CRAWLAB_NODE_NAME: Master Node
           CRAWLAB_MONGO_HOST: mongo
           CRAWLAB_MONGO_PORT: 27017
           CRAWLAB_MONGO_DB: crawlab  # mongo database
