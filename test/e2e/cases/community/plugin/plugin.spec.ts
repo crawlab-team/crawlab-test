@@ -16,12 +16,26 @@ test.describe.serial('plugin:common', () => {
     shortName: 'dependency',
   };
   const settings = {
-    installSource: 'GitHub',
-    goProxy: 'Goproxy.cn',
+    installSource: process.env.PLUGIN_INSTALL_SOURCE || 'GitHub',
+    goProxy: process.env.PLUGIN_GOPROXY || 'Goproxy.cn',
   };
 
   test.beforeEach(async ({page}) => {
     await goToListPage(page, 'plugins');
+  });
+
+  test('should edit plugin global settings', async ({page}) => {
+    // edit settings
+    await editPluginGlobalSettings(page, {...settings});
+
+    // reload page
+    await page.reload();
+
+    // expect info to be correct
+    await page.click('#settings-btn');
+    await page.waitForTimeout(500);
+    await expect(await page.locator('#install-source input')).toHaveValue(settings.installSource);
+    await expect(await page.locator('#go-proxy input')).toHaveValue(settings.goProxy);
   });
 
   test('should install plugin', async ({page}) => {
@@ -61,19 +75,5 @@ test.describe.serial('plugin:common', () => {
     // expect table to not contains created row
     const names = await getTableCellTextsByKey(page, 'name');
     await expect(names).not.toContain(plugin.shortName);
-  });
-
-  test('should edit plugin global settings', async ({page}) => {
-    // edit settings
-    await editPluginGlobalSettings(page, {...settings});
-
-    // reload page
-    await page.reload();
-
-    // expect info to be correct
-    await page.click('#settings-btn');
-    await page.waitForTimeout(500);
-    await expect(await page.locator('#install-source input')).toHaveValue(settings.installSource);
-    await expect(await page.locator('#go-proxy input')).toHaveValue(settings.goProxy);
   });
 });

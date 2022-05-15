@@ -15,7 +15,7 @@ import {goToListPage, goToNavTab} from '@/e2e/actions/components/nav';
 import {getFileContent} from '@/e2e/actions/components/file';
 import {test} from '@/e2e/base/authTest';
 
-test.describe.serial('spider:upload', () => {
+test.describe('spider:upload', () => {
   // settings
   const name = getRandomName('spider');
   const cmd = 'python3 main.py';

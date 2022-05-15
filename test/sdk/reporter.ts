@@ -7,7 +7,7 @@ import {caseMapping} from '@/sdk/mapping/caseMapping';
 import {getTestCaseCamelCaseName} from '@/e2e/utils/name';
 import logger from '@/logger';
 
-export const getCodingTestCaseStatus = (status: TestStatus): CodingTestStatus => {
+export const getCodingTestCaseStatus = ({status}: TestResult): CodingTestStatus => {
   switch (status) {
     case 'failed':
     case 'timedOut':
@@ -60,7 +60,14 @@ class SdkReporter implements Reporter {
     const id = getIdFromTest(t);
 
     // update test case result
-    await updateTestCaseResult(id, getCodingTestCaseStatus(result.status));
+    await updateTestCaseResult(id, getCodingTestCaseStatus(result));
+
+    // print stack trace
+    if (result.error?.stack) {
+      if (logger.level === 'debug') {
+        logger.error(result.error.stack);
+      }
+    }
 
     // remove from status
     this.status.delete(id);

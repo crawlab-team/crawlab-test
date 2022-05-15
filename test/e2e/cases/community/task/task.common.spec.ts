@@ -32,7 +32,7 @@ test.describe.serial('task:common', () => {
     await uploadSpiderDirectory(page, {directoryPath: localDirectoryPath});
 
     // close browser
-    await browser.close();
+    await page.close();
   });
 
   test.beforeEach(async ({page}) => {

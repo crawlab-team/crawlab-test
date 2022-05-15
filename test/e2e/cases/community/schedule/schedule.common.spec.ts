@@ -23,10 +23,17 @@ test.describe.serial('schedule:common', () => {
   };
 
   test.beforeAll(async ({browser}) => {
+    // page
     const page = await browser.newPage();
+
+    // go to page
     await goToListPage(page, 'spiders');
+
+    // create spider
     await createSpider(page, {name: schedule.spiderName, cmd: 'echo hello'});
-    await browser.close();
+
+    // close page
+    await page.close();
   });
 
   test('should create schedule', async ({page}) => {

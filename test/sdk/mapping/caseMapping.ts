@@ -93,11 +93,11 @@ export const caseMapping = {
   // plugin
   plugin: {
     common: {
+      shouldEditPluginGlobalSettings: 3673,
       shouldInstallPlugin: 83,
       shouldStartPlugin: 3102,
       shouldStopPlugin: 3184,
       shouldUninstallPlugin: 3143,
-      shouldEditPluginGlobalSettings: 3673,
     },
   },
 };

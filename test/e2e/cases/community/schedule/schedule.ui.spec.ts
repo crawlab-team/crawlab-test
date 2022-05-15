@@ -67,8 +67,8 @@ test.describe.serial('schedule:ui', () => {
     await getTableCellByKey(page, 'schedule_id', schedules[0].name);
     await getTableCellByKey(page, 'schedule_id', schedules[1].name);
 
-    // close browser
-    await browser.close();
+    // close page
+    await page.close();
   });
 
   test.beforeEach(async ({page}) => {
