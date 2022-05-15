@@ -15,9 +15,9 @@ import {goToListPage, goToNavTab} from '@/e2e/actions/components/nav';
 import {getFileContent} from '@/e2e/actions/components/file';
 import {test} from '@/e2e/base/authTest';
 
-test.describe('spider:upload', () => {
+test.describe.serial('spider:upload', () => {
   // settings
-  const name = getRandomName('spider');
+  let name: string;
   const cmd = 'python3 main.py';
   const localDirectoryPath = resolve(join(__dirname, 'template', 'upload'));
   const mainFileName = 'main.py';
@@ -30,6 +30,9 @@ test.describe('spider:upload', () => {
   process.chdir(localDirectoryPath);
 
   test.beforeEach(async ({page}) => {
+    // spider name
+    name = getRandomName('spider');
+
     // go to page
     await goToListPage(page, 'spiders');
 
@@ -44,6 +47,9 @@ test.describe('spider:upload', () => {
     // delete spider
     await deleteSpider(page, {name});
     await page.reload();
+
+    // reset spider name
+    name = undefined;
   });
 
   test('should upload spider directory', async ({page}) => {
