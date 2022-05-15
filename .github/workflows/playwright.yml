@@ -12,8 +12,8 @@ jobs:
       crawlab:
         image: crawlabteam/crawlab:develop
         env:
-          CRAWLAB_NODE_MASTER: Y  # Y: 主节点
-          CRAWLAB_MONGO_HOST: mongo  # mongo host address. 在 Docker-Compose 网络中，直接引用 service 名称
+          CRAWLAB_NODE_MASTER: Y
+          CRAWLAB_MONGO_HOST: mongo
         ports:
           - 8080:8080
       mongo:
