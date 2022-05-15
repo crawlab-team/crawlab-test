@@ -36,9 +36,9 @@ jobs:
         with:
           node-version: '14.x'
       - name: Install dependencies
-        run: |
-          npx playwright install
-          yarn install
+        run: yarn install
+      - name: Install Playwright
+        run: npx playwright install
       - name: Run tests
         run: yarn test
       - uses: actions/upload-artifact@v2
