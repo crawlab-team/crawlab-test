@@ -1,7 +1,8 @@
-import {post} from './request';
-import {getTestRunState} from './state';
-import {TEST_RUN_EXECUTE_TYPE_AUTO} from './constants/testRun';
+import {post} from '@/sdk/request';
+import {getTestRunState} from '@/sdk/state';
+import {TEST_RUN_EXECUTE_TYPE_AUTO} from '@/sdk/constants/testRun';
 import logger from '@/logger';
+import dayjs from 'dayjs';
 
 interface CreateTestRunOptions {
   name?: string;
@@ -40,7 +41,7 @@ const _createTestRun = async (opts: CreateTestRunOptions = {}): Promise<number> 
   const res = await post({
     Action: 'CreateTestRun',
     ProjectName: process.env.CODING_API_PROJECT_NAME || 'crawlab',
-    Name: opts.name || `Test_Plan_${new Date().getTime()}`,
+    Name: opts.name || `Test_Plan_${dayjs().format('YYYYMMDDHHmmss')}`,
     IncludeAll: opts.includeAll || !opts.cases,
     Cases: opts.cases,
     Description: opts.description,
@@ -89,7 +90,7 @@ const _createTestReport = async (opts: CreateTestReportOptions = {}) => {
   const res = await post({
     Action: 'CreateReport',
     ProjectName: process.env.CODING_API_PROJECT_NAME || 'crawlab',
-    Name: opts.name || `Test_Report_${new Date().getTime()}`,
+    Name: opts.name || `Test_Report_${dayjs().format('YYYYMMDDHHmmss')}`,
     RunIds: opts.runIds,
     AttachmentIds: opts.attachmentIds,
   });

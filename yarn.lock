@@ -697,6 +697,11 @@ date-format@^4.0.10:
   resolved "https://registry.npmmirror.com/date-format/-/date-format-4.0.10.tgz#7aa4bc0ad0c79f4ba858290e5dbb47f27d602e79"
   integrity sha512-RuMIHocrVjF84bUSTcd1uokIsLsOsk1Awb7TexNOI3f48ukCu39mjslWquDTA08VaDMF2umr3MB9ow5EyJTWyA==
 
+dayjs@^1.11.2:
+  version "1.11.2"
+  resolved "https://registry.npmmirror.com/dayjs/-/dayjs-1.11.2.tgz#fa0f5223ef0d6724b3d8327134890cfe3d72fbe5"
+  integrity sha512-F4LXf1OeU9hrSYRPTTj/6FbO4HTjPKXvEIC1P2kcnFurViINCVk3ZV0xAS3XVx9MkMsXbbqlK6hjseaYbgKEHw==
+
 debug@4, debug@^4.1.0, debug@^4.1.1, debug@^4.3.1, debug@^4.3.4:
   version "4.3.4"
   resolved "https://registry.npmmirror.com/debug/-/debug-4.3.4.tgz#1319f6579357f2338d3337d2cdd4914bb5dcc865"

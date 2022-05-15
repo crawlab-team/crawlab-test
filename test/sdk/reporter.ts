@@ -1,10 +1,10 @@
-import {Reporter, Suite, TestCase, TestResult, FullResult, TestError} from '@playwright/test/reporter';
+import {Reporter, Suite, TestCase, TestResult, FullResult} from '@playwright/test/reporter';
 import {FullConfig, TestStatus} from '@playwright/test';
 import {get} from 'object-path';
-import {getTestRunState, saveTestRunState, TestRunState} from './state';
-import {CodingTestStatus, createTestReport, createTestRun, updateTestCaseResult} from './api';
-import {caseMapping} from './mapping/caseMapping';
-import {getTestCaseCamelCaseName} from '../e2e/utils/name';
+import {saveTestRunState, TestRunState} from '@/sdk/state';
+import {CodingTestStatus, createTestRun, updateTestCaseResult} from '@/sdk/api';
+import {caseMapping} from '@/sdk/mapping/caseMapping';
+import {getTestCaseCamelCaseName} from '@/e2e/utils/name';
 import logger from '@/logger';
 
 export const getCodingTestCaseStatus = (status: TestStatus): CodingTestStatus => {
