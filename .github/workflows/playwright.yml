@@ -8,8 +8,20 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    services:
+      crawlab:
+        image: crawlabteam/crawlab:develop
+        env:
+          CRAWLAB_NODE_MASTER: Y  # Y: 主节点
+          CRAWLAB_MONGO_HOST: mongo  # mongo host address. 在 Docker-Compose 网络中，直接引用 service 名称
+        ports:
+          - 8080:8080
+      mongo:
+        image: mongo:5
+        ports:
+          - 27017:27017
     env:
-      APP_URL: http://localhost:8080
+      APP_URL: http://crawlab:8080
       API_ENDPOINT: http://localhost:8000
       DISPLAY_BROWSER: false
       CODING_API_ENDPOINT: https://crawlab.coding.net/open-api
@@ -20,12 +32,6 @@ jobs:
       WORKERS: 2
     steps:
       - uses: actions/checkout@v2
-      - name: Install docker
-        run: sh ./bin/install-docker.sh
-      - name: Start docker
-        run: |
-          cd ./deploy/single-node
-          docker-compose up -d -f
       - uses: actions/setup-node@v2
         with:
           node-version: '14.x'
