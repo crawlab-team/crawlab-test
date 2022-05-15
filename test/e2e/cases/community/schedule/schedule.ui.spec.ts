@@ -5,7 +5,7 @@ import {createSpider} from '@/e2e/actions/spider/common';
 import {join, resolve} from 'path';
 import {uploadSpiderDirectoryFromList} from '@/e2e/actions/spider/upload';
 import {clickTableCellByKey, getTableCellByKey} from '@/e2e/actions/components/table';
-import {createSchedule} from '@/e2e/actions/schedule/common';
+import {createSchedule, deleteSchedule} from '@/e2e/actions/schedule/common';
 import {expect} from '@playwright/test';
 
 test.describe.serial('schedule:ui', () => {
@@ -66,10 +66,21 @@ test.describe.serial('schedule:ui', () => {
     await goToListPage(page, 'tasks');
     await getTableCellByKey(page, 'schedule_id', schedules[0].name);
     await getTableCellByKey(page, 'schedule_id', schedules[1].name);
+
+    // close browser
+    await browser.close();
   });
 
   test.beforeEach(async ({page}) => {
     await goToListPage(page, 'schedules');
+  });
+
+  test.afterAll(async ({browser}) => {
+    const page = await browser.newPage();
+    await goToListPage(page, 'schedules');
+    for (const schedule of schedules) {
+      await deleteSchedule(page, {name: schedule.name});
+    }
   });
 
   test('should switch schedule overview', async ({page}) => {

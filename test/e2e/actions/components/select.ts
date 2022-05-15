@@ -12,12 +12,16 @@ export const selectFromItems = async (page: Page, {key, label, value, waitDurati
   await page.waitForSelector(`${key} .el-input.is-focus`);
   await page.waitForTimeout(waitDuration || 1000);
 
-  const elOps = await page.$$('.el-select-dropdown__item');
-  for (const el of elOps) {
-    if (await el.textContent() === label) {
-      await el.click();
-      await page.waitForTimeout(waitDuration || 1000);
-      return;
+  if (label !== undefined) {
+    const elOps = await page.$$('.el-select-dropdown__item');
+    for (const el of elOps) {
+      if (await el.textContent() === label) {
+        await el.click();
+        await page.waitForTimeout(waitDuration || 1000);
+        return;
+      }
     }
+  } else {
+    await page.click(`#${value}`);
   }
 };

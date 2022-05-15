@@ -30,6 +30,9 @@ test.describe.serial('task:common', () => {
     await goToNavTab(page, 'files');
     process.chdir(localDirectoryPath);
     await uploadSpiderDirectory(page, {directoryPath: localDirectoryPath});
+
+    // close browser
+    await browser.close();
   });
 
   test.beforeEach(async ({page}) => {

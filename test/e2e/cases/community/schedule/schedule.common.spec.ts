@@ -26,6 +26,7 @@ test.describe.serial('schedule:common', () => {
     const page = await browser.newPage();
     await goToListPage(page, 'spiders');
     await createSpider(page, {name: schedule.spiderName, cmd: 'echo hello'});
+    await browser.close();
   });
 
   test('should create schedule', async ({page}) => {

@@ -66,6 +66,9 @@ test.describe.serial('spider:ui', () => {
       // create schedule
       await createSchedule(page, {name: schedule.name, spiderName: spider.name, cron: '* * * * *', enabled: false});
     }
+
+    // close browser
+    await browser.close();
   });
 
   test.beforeEach(async ({page}) => {

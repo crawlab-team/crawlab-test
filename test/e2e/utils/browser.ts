@@ -1,8 +1,8 @@
 import {Browser, chromium, LaunchOptions} from '@playwright/test';
 
-export const getDefaultBrowser = async (options?: LaunchOptions): Promise<Browser> => {
+export const createBrowser = async (options?: LaunchOptions): Promise<Browser> => {
   return await chromium.launch({
-    headless: true,
+    headless: !process.env.DISPLAY_BROWSER,
     ...options,
   });
 };

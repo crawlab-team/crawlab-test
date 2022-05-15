@@ -1,43 +1,42 @@
-import {Browser, expect} from '@playwright/test';
+import {Browser, Page} from '@playwright/test';
 import {saveStorageState} from '@/e2e/utils/storage';
-import {getDefaultBrowser} from '@/e2e/utils/browser';
-import {DEFAULT_APP_URL, DEFAULT_PASSWORD, DEFAULT_USERNAME} from '@/e2e/constants/default';
+import {DEFAULT_PASSWORD, DEFAULT_USERNAME} from '@/e2e/constants/default';
+import {createBrowser} from '@/e2e/utils/browser';
 
-export interface LoginProps {
-  browser?: Browser,
-  close?: boolean,
+export interface LoginOptions {
+  username?: string;
+  password?: string;
+  saveContext?: boolean;
 }
 
-export const login = async ({browser, close}: LoginProps = {}) => {
-  // browser
-  if (!browser) {
-    browser = await getDefaultBrowser();
-  }
+interface LoginIncognitoOptions {
+  browser?: Browser;
+  username?: string;
+  password?: string;
+}
 
-  // page
-  const page = await browser.newPage({baseURL: process.env.APP_URL || DEFAULT_APP_URL});
-
-  // go to default page
-  await page.goto('/');
-
-  // expect url to have 'login'
-  await expect(page.url()).toContain('login');
-
+export const login = async (page: Page, {username, password, saveContext}: LoginOptions = {}) => {
   // enter username and password and click login button
-  await page.fill('input[name="username"]', process.env.USERNAME || DEFAULT_USERNAME);
-  await page.fill('input[name="password"]', process.env.PASSWORD || DEFAULT_PASSWORD);
+  await page.fill('input[name="username"]', username || process.env.USERNAME || DEFAULT_USERNAME);
+  await page.fill('input[name="password"]', password || process.env.PASSWORD || DEFAULT_PASSWORD);
   await page.click('.el-form-item button');
 
-  // expect url to have 'home'
-  await page.waitForSelector('.basic-layout'); // TODO: parameterize wait selector
-  await expect(page.url()).toContain('home');
+  // wait
+  await page.waitForURL(/home/);
   await page.waitForTimeout(1000);
 
   // store storage state into the file
-  await saveStorageState(browser.contexts()[0]);
+  if (saveContext) await saveStorageState(page.context());
+};
 
-  // close browser
-  if (close) {
-    await browser.close();
-  }
+export const logout = async (page: Page) => {
+  await page.hover('#me');
+  await page.click('#logout');
+};
+
+export const loginIncognito = async ({browser, username, password}: LoginIncognitoOptions = {}) => {
+  if (!browser) browser = await createBrowser();
+  const page = await browser.newPage({storageState: undefined});
+  await page.goto('/');
+  await login(page, {username, password});
 };

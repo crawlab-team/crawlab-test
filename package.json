@@ -25,6 +25,7 @@
     "@types/object-path": "^0.11.1",
     "axios": "^0.26.1",
     "dotenv": "^16.0.0",
+    "log4js": "^6.4.7",
     "mime": "^3.0.0",
     "object-path": "^0.11.8",
     "rd": "^2.0.1",

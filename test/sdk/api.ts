@@ -1,6 +1,7 @@
 import {post} from './request';
-import {getTestRunState, saveTestRunState, TestRunState} from './state';
+import {getTestRunState} from './state';
 import {TEST_RUN_EXECUTE_TYPE_AUTO} from './constants/testRun';
+import logger from '@/logger';
 
 interface CreateTestRunOptions {
   name?: string;
@@ -45,7 +46,7 @@ const _createTestRun = async (opts: CreateTestRunOptions = {}): Promise<number> 
     Description: opts.description,
     ExecuteType: opts.executeType || TEST_RUN_EXECUTE_TYPE_AUTO,
   });
-  console.debug('_createTestRun', res, opts);
+  logger.debug('_createTestRun', res, opts);
   return res?.Response?.Data?.Run?.Id;
 };
 
@@ -58,7 +59,7 @@ const _updateTestCaseResult = async (opts: UpdateTestCaseResultOptions = {}) => 
     Status: opts.status,
     CustomStepStatus: opts.customStepStatus,
   });
-  console.debug('_updateTestCaseResult', res, opts);
+  logger.debug('_updateTestCaseResult', res, opts);
 };
 
 const _updateTestCaseResults = async (opts: UpdateTestCaseResultsOptions = {}) => {
@@ -70,7 +71,7 @@ const _updateTestCaseResults = async (opts: UpdateTestCaseResultsOptions = {}) =
     CaseIds: opts.caseIds,
     Status: opts.status,
   });
-  console.debug('_updateTestCaseResults', res, opts);
+  logger.debug('_updateTestCaseResults', res, opts);
 };
 
 const _createAttachmentPrepareSignUrl = async (opts: CreateAttachmentPrepareSignUrlOptions = {}) => {
@@ -80,7 +81,7 @@ const _createAttachmentPrepareSignUrl = async (opts: CreateAttachmentPrepareSign
     ProjectName: process.env.CODING_API_PROJECT_NAME || 'crawlab',
     FileName: opts.fileName,
   });
-  console.debug('_createAttachmentPrepareSignUrl', res, opts);
+  logger.debug('_createAttachmentPrepareSignUrl', res, opts);
 };
 
 const _createTestReport = async (opts: CreateTestReportOptions = {}) => {
@@ -92,7 +93,7 @@ const _createTestReport = async (opts: CreateTestReportOptions = {}) => {
     RunIds: opts.runIds,
     AttachmentIds: opts.attachmentIds,
   });
-  console.debug('_createTestReport', res, opts);
+  logger.debug('_createTestReport', res, opts);
 };
 
 export const createTestRun = async (opts?: CreateTestRunOptions) => {

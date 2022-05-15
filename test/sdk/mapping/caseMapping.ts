@@ -3,7 +3,8 @@
  */
 export const caseMapping = {
   login: {
-    shouldLogin: 88,
+    shouldLoginAdmin: 88,
+    shouldLogout: 3464,
   },
 
   // node
@@ -76,6 +77,27 @@ export const caseMapping = {
       shouldRestartTask: 166,
       shouldDeleteTask: 167,
       shouldCancelTask: 252,
+    },
+  },
+
+  // user
+  user: {
+    common: {
+      shouldCreateUser: 3225,
+      shouldEditUser: 3266,
+      shouldEditUserPassword: 3348,
+      shouldDeleteUser: 3307,
+    },
+  },
+
+  // plugin
+  plugin: {
+    common: {
+      shouldInstallPlugin: 83,
+      shouldStartPlugin: 3102,
+      shouldStopPlugin: 3184,
+      shouldUninstallPlugin: 3143,
+      shouldEditPluginGlobalSettings: 3673,
     },
   },
 };
