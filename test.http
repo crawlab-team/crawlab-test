@@ -1,0 +1,40 @@
+GET https://crawlab.coding.net/api/current_user
+Authorization: Bearer 5bec944afb069282fac2a7e01c484487dcd69f16
+
+###
+POST https://crawlab.coding.net/open-api
+Content-Type: application/json
+Authorization: Bearer 5bec944afb069282fac2a7e01c484487dcd69f16
+
+{
+  "Action": "DescribeTestCase",
+  "CaseId": 156,
+  "ProjectName": "crawlab"
+}
+
+###
+POST https://crawlab.coding.net/open-api
+Content-Type: application/json
+Authorization: Bearer 5bec944afb069282fac2a7e01c484487dcd69f16
+
+{
+  "Action": "CreateTestRun",
+  "ProjectName": "crawlab",
+  "Name": "Test_Plan_11111",
+  "IncludeAll": true,
+  "ExecuteType": 2
+}
+
+###
+
+POST https://crawlab.coding.net/open-api
+Content-Type: application/json
+Authorization: Bearer 5bec944afb069282fac2a7e01c484487dcd69f16
+
+{
+  "Action": "CreateAttachmentPrepareSignUrl",
+  "ProjectName": "crawlab",
+  "FileName": "DSC_2372.jpg"
+}
+
+###

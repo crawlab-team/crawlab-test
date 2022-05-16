@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "End-to-End (E2E) tests for Crawlab",
   "scripts": {
-    "test": "playwright test",
-    "show-report": "playwright show-report"
+    "setup": "docker-compose up -d --scale worker=10",
+    "test": "npm run test:e2e",
+    "test:e2e": "playwright test",
+    "test:load": "node ./test/load/main.js"
   },
   "repository": {
     "type": "git",
@@ -19,7 +21,15 @@
   "homepage": "https://github.com/crawlab-team/crawlab-test#readme",
   "devDependencies": {
     "@playwright/test": "^1.21.1",
+    "@types/mime": "^2.0.3",
+    "@types/object-path": "^0.11.1",
     "axios": "^0.26.1",
-    "dotenv": "^16.0.0"
+    "dayjs": "^1.11.2",
+    "dotenv": "^16.0.0",
+    "log4js": "^6.4.7",
+    "mime": "^3.0.0",
+    "object-path": "^0.11.8",
+    "rd": "^2.0.1",
+    "typescript": "^4.5.3"
   }
 }

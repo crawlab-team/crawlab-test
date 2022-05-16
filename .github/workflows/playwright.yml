@@ -1,24 +1,82 @@
 name: Playwright Tests
 on:
+  workflow_dispatch:
+    inputs:
+      appUrl:
+        required: false
+        description: App URL
+        default: http://localhost:8080
+      apiEndpoint:
+        required: false
+        description: API Endpoint
+        default: http://localhost:8000
+      logLevel:
+        required: false
+        description: Log Level
+        default: info
+        type: choice
+        options:
+          - info
+          - warning
+          - debug
+      retries:
+        required: false
+        description: Retries
+        default: '2'
+      workers:
+        required: false
+        description: Workers
+        default: '2'
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    services:
+      crawlab:
+        image: crawlabteam/crawlab:develop
+        env:
+          CRAWLAB_NODE_MASTER: Y
+          CRAWLAB_NODE_NAME: Master Node
+          CRAWLAB_MONGO_HOST: mongo
+          CRAWLAB_MONGO_PORT: 27017
+          CRAWLAB_MONGO_DB: crawlab  # mongo database
+          CRAWLAB_MONGO_USERNAME: username  # mongo username
+          CRAWLAB_MONGO_PASSWORD: password  # mongo password
+          CRAWLAB_MONGO_AUTHSOURCE: admin  # mongo auth source
+        ports:
+          - 8080:8080
+      mongo:
+        image: mongo:4.2
+        env:
+          MONGO_INITDB_ROOT_USERNAME: username  # mongo username
+          MONGO_INITDB_ROOT_PASSWORD: password  # mongo password
+        ports:
+          - 27017:27017
+    env:
+      APP_URL: ${{ github.event.inputs.appUrl }}
+      API_ENDPOINT: ${{ github.event.inputs.apiEndpoint }}
+      CODING_API_ENDPOINT: ${{ secrets.CODING_API_ENDPOINT }}
+      CODING_API_TOKEN: ${{ secrets.CODING_API_TOKEN }}
+      CODING_API_PROJECT_NAME: ${{ secrets.CODING_API_PROJECT_NAME }}
+      LOG_LEVEL: ${{ github.event.inputs.logLevel }}
+      RETRIES: ${{ github.event.inputs.retries }}
+      WORKERS: ${{ github.event.inputs.workers }}
+      DISPLAY_BROWSER: false
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
           node-version: '14.x'
       - name: Install dependencies
-        run: npm ci
+        run: yarn install
       - name: Install Playwright
-        run: npx playwright install --with-deps
-      - name: Run Playwright tests
-        run: npx playwright test
+        run: npx playwright install
+      - name: Run tests
+        run: yarn test
       - uses: actions/upload-artifact@v2
         if: always()
         with:
