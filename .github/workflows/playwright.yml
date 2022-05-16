@@ -55,8 +55,8 @@ jobs:
           CRAWLAB_MONGO_USERNAME: username  # mongo username
           CRAWLAB_MONGO_PASSWORD: password  # mongo password
           CRAWLAB_MONGO_AUTHSOURCE: admin  # mongo auth source
-          CRAWLAB_INIT_UMENG: false
-          CRAWLAB_INIT_BAIDU_TONGJI: false
+          CRAWLAB_INIT_UMENG: "false"
+          CRAWLAB_INIT_BAIDU_TONGJI: "false"
         ports:
           - 8080:8080
       mongo:
