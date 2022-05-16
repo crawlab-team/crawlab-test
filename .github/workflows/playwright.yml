@@ -1,5 +1,32 @@
 name: Playwright Tests
 on:
+  workflow_dispatch:
+    inputs:
+      appUrl:
+        required: false
+        description: App URL
+        default: http://localhost:8080
+      apiEndpoint:
+        required: false
+        description: API Endpoint
+        default: http://localhost:8000
+      logLevel:
+        required: false
+        description: Log Level
+        default: info
+        type: choice
+        options:
+          - info
+          - warning
+          - debug
+      retries:
+        required: false
+        description: Retries
+        default: '2'
+      workers:
+        required: false
+        description: Workers
+        default: '2'
   push:
     branches: [ main, develop ]
   pull_request:
@@ -30,15 +57,15 @@ jobs:
         ports:
           - 27017:27017
     env:
-      APP_URL: http://localhost:8080
-      API_ENDPOINT: http://localhost:8000
-      DISPLAY_BROWSER: false
-      CODING_API_ENDPOINT: https://crawlab.coding.net/open-api
+      APP_URL: ${{ github.event.inputs.appUrl }}
+      API_ENDPOINT: ${{ github.event.inputs.apiEndpoint }}
+      CODING_API_ENDPOINT: ${{ secrets.CODING_API_ENDPOINT }}
       CODING_API_TOKEN: ${{ secrets.CODING_API_TOKEN }}
-      CODING_API_PROJECT_NAME: crawlab
-      LOG_LEVEL: info
-      RETRIES: 2
-      WORKERS: 2
+      CODING_API_PROJECT_NAME: ${{ secrets.CODING_API_PROJECT_NAME }}
+      LOG_LEVEL: ${{ github.event.inputs.logLevel }}
+      RETRIES: ${{ github.event.inputs.retries }}
+      WORKERS: ${{ github.event.inputs.workers }}
+      DISPLAY_BROWSER: false
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
