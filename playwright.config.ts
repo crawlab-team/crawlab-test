@@ -1,6 +1,6 @@
 import type {PlaywrightTestConfig} from '@playwright/test';
 import {devices} from '@playwright/test';
-import {DEFAULT_APP_URL} from './test/e2e/constants/default';
+import {DEFAULT_APP_URL} from '@/e2e/constants/default';
 import {parseBoolean} from '@/e2e/utils/bool';
 
 /**

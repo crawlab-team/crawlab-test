@@ -80,6 +80,8 @@ jobs:
         run: yarn install
       - name: Install Playwright
         run: npx playwright install
+      - name: Validate containers
+        run: curl http://localhost:8080
       - name: Run tests
         run: yarn test
       - uses: actions/upload-artifact@v2
