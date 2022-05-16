@@ -31,6 +31,10 @@ on:
         required: false
         description: Timeout
         default: '120'
+      version:
+        required: false
+        description: Version
+        default: latest
   push:
     branches: [ main, develop ]
   pull_request:
@@ -41,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       crawlab:
-        image: crawlabteam/crawlab:develop
+        image: crawlabteam/crawlab:${{ github.}}
         env:
           CRAWLAB_NODE_MASTER: Y
           CRAWLAB_NODE_NAME: Master Node
@@ -81,7 +85,9 @@ jobs:
       - name: Install Playwright
         run: npx playwright install
       - name: Validate containers
-        run: curl http://localhost:8080
+        run: |
+          curl http://localhost:8080
+          curl http://localhost:27017
       - name: Run tests
         run: yarn test
       - uses: actions/upload-artifact@v2
