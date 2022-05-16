@@ -91,6 +91,7 @@ jobs:
           curl -v http://localhost:8080 > /dev/null
           curl -v http://localhost:27017 > /dev/null
           curl -v http://localhost:8080/js/chunk-vendors.js > /dev/null
+          curl -v http://umini.shujupie.com/web_logs > /dev/null
       - name: Run tests
         run: yarn test
       - uses: actions/upload-artifact@v2
