@@ -30,7 +30,7 @@ on:
       timeout:
         required: false
         description: Timeout
-        default: '120'
+        default: '60'
       version:
         required: false
         description: Version
@@ -73,7 +73,7 @@ jobs:
       LOG_LEVEL: ${{ github.event.inputs.logLevel || 'info' }}
       RETRIES: ${{ github.event.inputs.retries || '2' }}
       WORKERS: ${{ github.event.inputs.workers || '2' }}
-      TIMEOUT: ${{ github.event.inputs.timeout || '120' }}
+      TIMEOUT: ${{ github.event.inputs.timeout || '60' }}
       DISPLAY_BROWSER: false
     steps:
       - uses: actions/checkout@v2
