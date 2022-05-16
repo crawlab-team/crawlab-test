@@ -55,6 +55,8 @@ jobs:
           CRAWLAB_MONGO_USERNAME: username  # mongo username
           CRAWLAB_MONGO_PASSWORD: password  # mongo password
           CRAWLAB_MONGO_AUTHSOURCE: admin  # mongo auth source
+          CRAWLAB_INIT_UMENG: false
+          CRAWLAB_INIT_BAIDU_TONGJI: false
         ports:
           - 8080:8080
       mongo:
@@ -86,9 +88,9 @@ jobs:
         run: npx playwright install
       - name: Validate containers
         run: |
-          curl -v http://localhost:8080
-          curl -v http://localhost:27017
-          curl -v http://localhost:8080/js/chunk-vendors.js
+          curl -v http://localhost:8080 > /dev/null
+          curl -v http://localhost:27017 > /dev/null
+          curl -v http://localhost:8080/js/chunk-vendors.js > /dev/null
       - name: Run tests
         run: yarn test
       - uses: actions/upload-artifact@v2
