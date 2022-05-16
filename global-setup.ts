@@ -10,7 +10,7 @@ async function globalSetup(config: FullConfig) {
 
   // page
   const page = await browser.newPage({baseURL: process.env.APP_URL});
-  await page.goto('/');
+  await page.goto('/', {waitUntil: 'domcontentloaded'});
 
   // login and save storage state
   await login(page, {saveContext: true});
