@@ -34,6 +34,7 @@ const config: PlaywrightTestConfig = {
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['list'],
+    ['html', {open: process.env.REPORT_HTML_OPEN || 'never'}],
     ['./test/sdk/reporter'],
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
