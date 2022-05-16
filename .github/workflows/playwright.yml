@@ -86,14 +86,16 @@ jobs:
         run: yarn install
       - name: Install Playwright
         run: npx playwright install
-      - name: Validate network
+      - name: Validate containers
         run: |
           url="http://localhost:8080" && echo $url && curl -v $url > /dev/null
           url="http://localhost:8080/js/chunk-vendors.js" && echo $url && curl -v $url > /dev/null
           url="http://localhost:27017" && echo $url && curl -v $url > /dev/null
-          url="https://umini.shujupie.com/eg.js" && echo $url && curl -v $url > /dev/null
-          url="https://hm.baidu.com/hm.js" && echo $url && curl -v $url > /dev/null
-          url="https://d.alicdn.com/alilog/mlog/aplus/203467608.js" && echo $url && curl -v $url > /dev/null
+      #      - name: Validate network
+      #        run: |
+      #          #url="https://umini.shujupie.com/eg.js" && echo $url && curl -v $url > /dev/null
+      #          #url="https://hm.baidu.com/hm.js" && echo $url && curl -v $url > /dev/null
+      #          #url="https://d.alicdn.com/alilog/mlog/aplus/203467608.js" && echo $url && curl -v $url > /dev/null
       - name: Run tests
         run: yarn test
       - uses: actions/upload-artifact@v2
