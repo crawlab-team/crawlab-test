@@ -57,14 +57,14 @@ jobs:
         ports:
           - 27017:27017
     env:
-      APP_URL: ${{ github.event.inputs.appUrl }}
-      API_ENDPOINT: ${{ github.event.inputs.apiEndpoint }}
+      APP_URL: ${{ github.event.inputs.appUrl || "http://localhost:8080" }}
+      API_ENDPOINT: ${{ github.event.inputs.apiEndpoint || "http://localhost:8000" }}
       CODING_API_ENDPOINT: ${{ secrets.CODING_API_ENDPOINT }}
       CODING_API_TOKEN: ${{ secrets.CODING_API_TOKEN }}
       CODING_API_PROJECT_NAME: ${{ secrets.CODING_API_PROJECT_NAME }}
-      LOG_LEVEL: ${{ github.event.inputs.logLevel }}
-      RETRIES: ${{ github.event.inputs.retries }}
-      WORKERS: ${{ github.event.inputs.workers }}
+      LOG_LEVEL: ${{ github.event.inputs.logLevel || "info" }}
+      RETRIES: ${{ github.event.inputs.retries || "2" }}
+      WORKERS: ${{ github.event.inputs.workers || "2" }}
       DISPLAY_BROWSER: false
     steps:
       - uses: actions/checkout@v2
