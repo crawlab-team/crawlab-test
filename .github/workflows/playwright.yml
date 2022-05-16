@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       crawlab:
-        image: crawlabteam/crawlab:${{ github.}}
+        image: crawlabteam/crawlab:${{ github.ref_name }}
         env:
           CRAWLAB_NODE_MASTER: Y
           CRAWLAB_NODE_NAME: Master Node
