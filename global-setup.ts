@@ -1,6 +1,7 @@
 import {login} from '@/e2e/actions/auth/login';
 import {createBrowser} from '@/e2e/utils/browser';
 import {FullConfig} from '@playwright/test';
+import {goToPage} from '@/e2e/actions/components/nav';
 
 async function globalSetup(config: FullConfig) {
   // browser
@@ -10,7 +11,7 @@ async function globalSetup(config: FullConfig) {
 
   // page
   const page = await browser.newPage({baseURL: process.env.APP_URL});
-  await page.goto('/', {waitUntil: 'domcontentloaded'});
+  await goToPage(page, '/');
 
   // login and save storage state
   await login(page, {saveContext: true});

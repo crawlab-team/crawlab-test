@@ -2,8 +2,12 @@ import {Page} from '@playwright/test';
 
 type ListPage = 'nodes' | 'projects' | 'spiders' | 'schedules' | 'tasks' | 'users' | 'tokens' | 'plugins';
 
+export const goToPage = async (page: Page, path: string) => {
+  await page.goto(path, {waitUntil: 'domcontentloaded'});
+};
+
 export const goToListPage = async (page: Page, name: ListPage) => {
-  await page.goto(`/#/${name}`);
+  await page.goto(`/#/${name}`, {waitUntil: 'domcontentloaded'});
   await page.waitForSelector('#add-btn');
 };
 

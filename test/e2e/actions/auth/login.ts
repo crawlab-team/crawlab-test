@@ -2,6 +2,7 @@ import {Browser, Page} from '@playwright/test';
 import {saveStorageState} from '@/e2e/utils/storage';
 import {DEFAULT_PASSWORD, DEFAULT_USERNAME} from '@/e2e/constants/default';
 import {createBrowser} from '@/e2e/utils/browser';
+import {goToPage} from '@/e2e/actions/components/nav';
 
 export interface LoginOptions {
   username?: string;
@@ -22,7 +23,7 @@ export const login = async (page: Page, {username, password, saveContext}: Login
   await page.click('.el-form-item button');
 
   // wait
-  await page.waitForURL(/home/);
+  await page.waitForURL(/home/, {waitUntil: 'domcontentloaded'});
   await page.waitForTimeout(1000);
 
   // store storage state into the file
@@ -37,6 +38,6 @@ export const logout = async (page: Page) => {
 export const loginIncognito = async ({browser, username, password}: LoginIncognitoOptions = {}) => {
   if (!browser) browser = await createBrowser();
   const page = await browser.newPage({storageState: undefined});
-  await page.goto('/');
+  await goToPage(page, '/');
   await login(page, {username, password});
 };
