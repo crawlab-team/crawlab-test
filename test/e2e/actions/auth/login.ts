@@ -23,7 +23,7 @@ export const login = async (page: Page, {username, password, saveContext}: Login
   await page.click('.el-form-item button');
 
   // wait
-  await page.waitForURL(/home/, {waitUntil: 'domcontentloaded'});
+  await page.waitForURL(/home/);
   await page.waitForTimeout(1000);
 
   // store storage state into the file
