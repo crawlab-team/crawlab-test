@@ -1,9 +1,10 @@
 import {expect, test} from '@playwright/test';
 import {login, logout} from '@/e2e/actions/auth/login';
+import {goToPage} from '@/e2e/actions/components/nav';
 
 test.describe.serial('login', () => {
   test.beforeEach(async ({page}) => {
-    await page.goto('/');
+    await goToPage(page, '/');
   });
 
   test('should login admin', async ({page}) => {

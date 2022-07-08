@@ -1,7 +1,8 @@
 import type {PlaywrightTestConfig} from '@playwright/test';
 import {devices} from '@playwright/test';
-import {DEFAULT_APP_URL} from './test/e2e/constants/default';
-import {parseBoolean} from '@/e2e/utils/bool';
+import {DEFAULT_APP_URL} from '@/e2e/constants/default';
+import {parseBoolean} from '@/utils/dataType';
+import {getHeadless, getRetries, getTimeout, getWorkers} from '@/utils/config';
 
 /**
  * Read environment variables from file.
@@ -17,7 +18,7 @@ const config: PlaywrightTestConfig = {
   globalSetup: './global-setup',
   globalTeardown: './global-teardown',
   /* Maximum time one test can run for. */
-  timeout: process.env.TIMEOUT ? Number(process.env.TIMEOUT) : 30 * 1000,
+  timeout: getTimeout(),
   expect: {
     /**
      * Maximum time expect() should wait for the condition to be met.
@@ -28,18 +29,19 @@ const config: PlaywrightTestConfig = {
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
-  retries: process.env.RETRIES ? Number(process.env.RETRIES) : 2,
+  retries: getRetries(),
   /* Opt out of parallel tests on CI. */
-  workers: process.env.WORKERS ? Number(process.env.WORKERS) : 2,
+  workers: getWorkers(),
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['list'],
+    ['html', {open: process.env.REPORT_HTML_OPEN || 'never'}],
     ['./test/sdk/reporter'],
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Headless mode */
-    headless: !parseBoolean(process.env.DISPLAY_BROWSER),
+    headless: getHeadless(),
     /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
     actionTimeout: 0,
     /* Base URL to use in actions like `await page.goto('/')`. */

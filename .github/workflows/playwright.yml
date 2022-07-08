@@ -26,7 +26,15 @@ on:
       workers:
         required: false
         description: Workers
-        default: '2'
+        default: '1'
+      timeout:
+        required: false
+        description: Timeout
+        default: '60'
+      version:
+        required: false
+        description: Version
+        default: latest
   push:
     branches: [ main, develop ]
   pull_request:
@@ -37,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       crawlab:
-        image: crawlabteam/crawlab:develop
+        image: crawlabteam/crawlab:${{ github.ref_name }}
         env:
           CRAWLAB_NODE_MASTER: Y
           CRAWLAB_NODE_NAME: Master Node
@@ -47,24 +55,27 @@ jobs:
           CRAWLAB_MONGO_USERNAME: username  # mongo username
           CRAWLAB_MONGO_PASSWORD: password  # mongo password
           CRAWLAB_MONGO_AUTHSOURCE: admin  # mongo auth source
+          CRAWLAB_INIT_UMENG: "false"
+          CRAWLAB_INIT_BAIDU_TONGJI: "false"
         ports:
           - 8080:8080
       mongo:
-        image: mongo:4.2
+        image: mongo:5
         env:
           MONGO_INITDB_ROOT_USERNAME: username  # mongo username
           MONGO_INITDB_ROOT_PASSWORD: password  # mongo password
         ports:
           - 27017:27017
     env:
-      APP_URL: ${{ github.event.inputs.appUrl }}
-      API_ENDPOINT: ${{ github.event.inputs.apiEndpoint }}
+      APP_URL: ${{ github.event.inputs.appUrl || 'http://localhost:8080' }}
+      API_ENDPOINT: ${{ github.event.inputs.apiEndpoint || 'http://localhost:8000' }}
       CODING_API_ENDPOINT: ${{ secrets.CODING_API_ENDPOINT }}
       CODING_API_TOKEN: ${{ secrets.CODING_API_TOKEN }}
       CODING_API_PROJECT_NAME: ${{ secrets.CODING_API_PROJECT_NAME }}
-      LOG_LEVEL: ${{ github.event.inputs.logLevel }}
-      RETRIES: ${{ github.event.inputs.retries }}
-      WORKERS: ${{ github.event.inputs.workers }}
+      LOG_LEVEL: ${{ github.event.inputs.logLevel || 'info' }}
+      RETRIES: ${{ github.event.inputs.retries || '2' }}
+      WORKERS: ${{ github.event.inputs.workers || '2' }}
+      TIMEOUT: ${{ github.event.inputs.timeout || '60' }}
       DISPLAY_BROWSER: false
     steps:
       - uses: actions/checkout@v2
@@ -75,6 +86,16 @@ jobs:
         run: yarn install
       - name: Install Playwright
         run: npx playwright install
+      - name: Validate containers
+        run: |
+          url="http://localhost:8080" && echo $url && curl -v $url > /dev/null
+          url="http://localhost:8080/js/chunk-vendors.js" && echo $url && curl -v $url > /dev/null
+          url="http://localhost:27017" && echo $url && curl -v $url > /dev/null
+      #      - name: Validate network
+      #        run: |
+      #          #url="https://umini.shujupie.com/eg.js" && echo $url && curl -v $url > /dev/null
+      #          #url="https://hm.baidu.com/hm.js" && echo $url && curl -v $url > /dev/null
+      #          #url="https://d.alicdn.com/alilog/mlog/aplus/203467608.js" && echo $url && curl -v $url > /dev/null
       - name: Run tests
         run: yarn test
       - uses: actions/upload-artifact@v2
