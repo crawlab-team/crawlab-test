@@ -14,9 +14,9 @@ graph TB
     TR -.-> COP
     UI -.-> COP
     
-    style TR fill:#ffcccc
-    style UI fill:#ffcccc
-    style COP fill:#ffcccc
+    style TR fill:#ff6b6b,stroke:#333,stroke-width:2px,color:#000
+    style UI fill:#ff6b6b,stroke:#333,stroke-width:2px,color:#000
+    style COP fill:#ff6b6b,stroke:#333,stroke-width:2px,color:#000
     
     note1[❌ OVERLAPPING RESPONSIBILITIES]
     note2[❌ UNCLEAR ENTRY POINTS]
@@ -50,10 +50,14 @@ graph TB
     
     CB -.MCP.-> PT[Playwright Tools<br/>Browser automation]
     
-    style CLI fill:#90EE90
-    style SB fill:#87CEEB
-    style CB fill:#87CEEB
-    style PT fill:#DDA0DD
+    style CLI fill:#4CAF50,stroke:#333,stroke-width:3px,color:#fff
+    style SB fill:#2196F3,stroke:#333,stroke-width:2px,color:#fff
+    style CB fill:#2196F3,stroke:#333,stroke-width:2px,color:#fff
+    style PT fill:#9C27B0,stroke:#333,stroke-width:2px,color:#fff
+    style SF fill:#e3f2fd,stroke:#333,stroke-width:1px,color:#000
+    style RH fill:#e3f2fd,stroke:#333,stroke-width:1px,color:#000
+    style DD fill:#e3f2fd,stroke:#333,stroke-width:1px,color:#000
+    style CF fill:#e3f2fd,stroke:#333,stroke-width:1px,color:#000
 ```
 
 ## Component Responsibilities
