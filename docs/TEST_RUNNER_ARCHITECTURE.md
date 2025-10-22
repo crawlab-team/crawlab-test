@@ -1,65 +1,59 @@
 # Test Runner Architecture
 
-## Current Architecture (Before Refactoring)
+## Legacy Architecture (Deprecated)
 
-```
-┌─────────────────┐    ┌──────────────────┐    ┌───────────────────┐
-│ test-runner.py  │    │ run-ui-tests.py  │    │run-with-copilot.py│
-│                 │    │                  │    │                   │
-│ • Spec lookup   │    │ • pnpm install   │    │ • Auth check      │
-│ • Fuzzy search  │    │ • Run Playwright │    │ • Prompt building │
-│ • CI mode       │    │ • Parse results  │    │ • Validation      │
-│ • Docker detect │    │ • Generate report│    │ • Summary gen     │
-│ • Exec scripts  │    │                  │    │                   │
-│ • Call copilot  │◄───┼──────────────────┼────┤ (sometimes)       │
-└─────────────────┘    └──────────────────┘    └───────────────────┘
-         │                      │                        │
-         └──────────────────────┴────────────────────────┘
-                                 │
-                    ❌ OVERLAPPING RESPONSIBILITIES
-                    ❌ UNCLEAR ENTRY POINTS
-                    ❌ DUPLICATED CODE
+```mermaid
+graph TB
+    subgraph "❌ OLD - Multiple Entry Points"
+        TR[test-runner.py<br/>• Spec lookup<br/>• Fuzzy search<br/>• CI mode]
+        UI[run-ui-tests.py<br/>• pnpm install<br/>• Run Playwright]
+        COP[run-with-copilot.py<br/>• Auth check<br/>• Prompt building]
+    end
+    
+    TR -.-> UI
+    TR -.-> COP
+    UI -.-> COP
+    
+    style TR fill:#ffcccc
+    style UI fill:#ffcccc
+    style COP fill:#ffcccc
+    
+    note1[❌ OVERLAPPING RESPONSIBILITIES]
+    note2[❌ UNCLEAR ENTRY POINTS]
+    note3[❌ DUPLICATED CODE]
 ```
 
-## Proposed Architecture (After Refactoring)
+## Current Architecture (Implemented)
 
-```
-                    ┌──────────────────────┐
-                    │      cli.py          │
-                    │  (Main Entry Point)  │
-                    │                      │
-                    │  • Parse arguments   │
-                    │  • Select backend    │
-                    │  • Handle results    │
-                    └──────────┬───────────┘
-                               │
-              ┌────────────────┼────────────────┐
-              │                │                │
-    ┌─────────▼────────┐  ┌───▼────────┐  ┌───▼─────────────┐
-    │ test-runner.py   │  │run-ui-tests│  │run-with-copilot │
-    │  (wrapper)       │  │  (wrapper) │  │    (wrapper)    │
-    │  → cli.py        │  │  → cli.py  │  │    → cli.py     │
-    └──────────────────┘  └────────────┘  └─────────────────┘
-                               │
-                    ┌──────────┴───────────┐
-                    │    Core Modules      │
-                    ├──────────────────────┤
-                    │ • spec_finder.py     │
-                    │ • result_handler.py  │
-                    │ • docker_detector.py │
-                    │ • config.py          │
-                    └──────────┬───────────┘
-                               │
-              ┌────────────────┼────────────────┐
-              │                │                │
-    ┌─────────▼────────┐  ┌───▼────────┐  ┌───▼─────────────┐
-    │ script_backend   │  │ copilot    │  │ playwright      │
-    │                  │  │ backend    │  │ backend         │
-    ├──────────────────┤  ├────────────┤  ├─────────────────┤
-    │ • Run Python/sh  │  │ • Auth     │  │ • pnpm install  │
-    │ • Parse output   │  │ • Prompts  │  │ • Run tests     │
-    │ • Retry logic    │  │ • Validate │  │ • Parse JSON    │
-    └──────────────────┘  └────────────┘  └─────────────────┘
+```mermaid
+graph TB
+    CLI[cli.py<br/>Main Entry Point<br/>• Parse arguments<br/>• Select backend<br/>• Handle results]
+    
+    subgraph "Core Modules"
+        SF[spec_finder.py<br/>Find & search specs]
+        RH[result_handler.py<br/>Save results]
+        DD[docker_detector.py<br/>Detect Docker env]
+        CF[config.py<br/>Load config]
+    end
+    
+    subgraph "Backends"
+        SB[script_backend<br/>• Run Python/shell<br/>• Parse output<br/>• Retry logic]
+        CB[copilot_backend<br/>• Auth & setup<br/>• AI execution<br/>• MCP tools]
+    end
+    
+    CLI --> SF
+    CLI --> RH
+    CLI --> DD
+    CLI --> CF
+    CLI --> SB
+    CLI --> CB
+    
+    CB -.MCP.-> PT[Playwright Tools<br/>Browser automation]
+    
+    style CLI fill:#90EE90
+    style SB fill:#87CEEB
+    style CB fill:#87CEEB
+    style PT fill:#DDA0DD
 ```
 
 ## Component Responsibilities

@@ -7,7 +7,6 @@ Crawlab UI tests use Python's Playwright library for browser automation. Playwri
 ## Quick Setup
 
 ```bash
-cd tests
 ./setup-playwright.sh
 ```
 

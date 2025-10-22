@@ -70,8 +70,8 @@ All test specifications follow the naming convention `[CODE]-[descriptive-name].
 ### Infrastructure Tests
 **Triggers when changes are detected in:**
 - `core/**` - Core application code
-- `tests/specs/infrastructure/**` - Infrastructure test specs
-- `tests/helpers/infrastructure/**` - Infrastructure test helpers
+- `specs/infrastructure/**` - Infrastructure test specs
+- `helpers/infrastructure/**` - Infrastructure test helpers
 - `docker/**` - Docker configuration
 - `k8s/**` - Kubernetes configuration
 
@@ -86,9 +86,8 @@ All test specifications follow the naming convention `[CODE]-[descriptive-name].
 **Triggers when changes are detected in:**
 - `**/go.mod`, `**/go.sum` - Go dependencies
 - `**/requirements.txt` - Python dependencies
-- `**/package.json`, `**/package-lock.json` - Node.js dependencies
-- `tests/specs/dependencies/**` - Dependency test specs
-- `tests/helpers/dependencies/**` - Dependency test helpers
+- `specs/dependencies/**` - Dependency test specs
+- `helpers/dependencies/**` - Dependency test helpers
 
 **Test Specs:**
 - `DEP-002-dependency-handler-network-reconnection-resilience.md` - Tests dependency reconnection
@@ -150,7 +149,7 @@ The following environment variables can be set in GitHub repository settings:
 
 ### CI Configuration File
 
-The `tests/ci.env` file contains CI-specific settings:
+The `ci.env` file contains CI-specific settings:
 
 ```bash
 # Test Execution Settings
@@ -188,13 +187,12 @@ EXCLUDED_TESTS=manual-interaction,browser-specific
 1. **Review the workflow log**: Check GitHub Actions logs for detailed execution
 2. **Download artifacts**: Get test results and logs for local analysis
 3. **Run locally**: Execute the same test spec locally using the test runner
-4. **Check CI config**: Verify settings in `tests/ci.env` are appropriate
+4. **Check CI config**: Verify settings in `ci.env` are appropriate
 
 ### Example Debugging Commands
 
 ```bash
 # Run the same test locally using the new unified CLI
-cd tests/
 ./cli.py --spec specs/infrastructure/INF-003-docker-container-node-disconnection-and-recovery.md --ci
 
 # Or use spec ID directly
@@ -308,15 +306,15 @@ For more details, see [MCP_SETUP.md](MCP_SETUP.md).
 
 1. Create test specs in `specs/[new-category]/`
 2. Add runners in `runners/[new-category]/` (for script backend)
-3. Optionally add helpers in `tests/helpers/[new-category]/`
-4. Create a `_matrix.json` configuration file in `tests/specs/[new-category]/`:
+3. Optionally add helpers in `helpers/[new-category]/`
+4. Create a `_matrix.json` configuration file in `specs/[new-category]/`:
    ```json
    {
      "timeout": 30,
      "default_method": "script",
      "paths": [
        "path/to/trigger/files/**",
-       "tests/specs/[new-category]/**"
+       "specs/[new-category]/**"
      ]
    }
    ```
@@ -333,7 +331,7 @@ For more details, see [MCP_SETUP.md](MCP_SETUP.md).
 
 ### Adding New Test Specs
 
-1. Use `tests/SPEC_TEMPLATE.md` as starting point
+1. Use `SPEC_TEMPLATE.md` as starting point
 2. Place in appropriate category directory
 3. Create helper scripts if needed
 4. Test locally before committing
@@ -341,7 +339,7 @@ For more details, see [MCP_SETUP.md](MCP_SETUP.md).
 
 ### Customizing Test Execution
 
-Modify `tests/ci.env` to adjust:
+Modify `ci.env` to adjust:
 - Timeout values per category
 - Retry counts for flaky tests
 - Test exclusions for CI environment

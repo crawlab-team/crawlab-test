@@ -13,7 +13,6 @@ The framework is organized into three main layers:
 3. **Browser Layer** (`helpers/ui/browser/`) - Browser automation abstraction (Playwright)
 
 ```
-tests/
 ├── runners/ui/                         # Test runner scripts
 │   └── UI_001_spider_management.py    # Example: Spider management test
 ├── helpers/ui/                         # UI testing helpers
