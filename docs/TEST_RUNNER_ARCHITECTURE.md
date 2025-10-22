@@ -1,29 +1,6 @@
 # Test Runner Architecture
 
-## Legacy Architecture (Deprecated)
-
-```mermaid
-graph TB
-    subgraph "❌ OLD - Multiple Entry Points"
-        TR[test-runner.py<br/>• Spec lookup<br/>• Fuzzy search<br/>• CI mode]
-        UI[run-ui-tests.py<br/>• pnpm install<br/>• Run Playwright]
-        COP[run-with-copilot.py<br/>• Auth check<br/>• Prompt building]
-    end
-    
-    TR -.-> UI
-    TR -.-> COP
-    UI -.-> COP
-    
-    style TR fill:#ff6b6b,stroke:#333,stroke-width:2px,color:#000
-    style UI fill:#ff6b6b,stroke:#333,stroke-width:2px,color:#000
-    style COP fill:#ff6b6b,stroke:#333,stroke-width:2px,color:#000
-    
-    note1[❌ OVERLAPPING RESPONSIBILITIES]
-    note2[❌ UNCLEAR ENTRY POINTS]
-    note3[❌ DUPLICATED CODE]
-```
-
-## Current Architecture (Implemented)
+## Architecture Overview
 
 ```mermaid
 graph TB
@@ -122,53 +99,27 @@ graph TB
 
 ## Data Flow
 
-```
-User Command
-    │
-    ▼
-┌───────────────────────────────────────────────┐
-│  cli.py: Parse arguments                      │
-│  --spec UI-001 --backend auto                 │
-└───────────────────┬───────────────────────────┘
-                    │
-                    ▼
-┌───────────────────────────────────────────────┐
-│  core/spec_finder.py: Find spec               │
-│  UI-001 → specs/ui/UI-001-....md              │
-└───────────────────┬───────────────────────────┘
-                    │
-                    ▼
-┌───────────────────────────────────────────────┐
-│  core/config.py: Load configuration           │
-│  Load ci.env, env vars, timeouts              │
-└───────────────────┬───────────────────────────┘
-                    │
-                    ▼
-┌───────────────────────────────────────────────┐
-│  cli.py: Select backend                       │
-│  auto → script (runner found)                 │
-└───────────────────┬───────────────────────────┘
-                    │
-                    ▼
-┌───────────────────────────────────────────────┐
-│  backends/script_backend.py                   │
-│  • Check prerequisites                        │
-│  • Execute runner script                      │
-│  • Capture output                             │
-│  • Return result dict                         │
-└───────────────────┬───────────────────────────┘
-                    │
-                    ▼
-┌───────────────────────────────────────────────┐
-│  core/result_handler.py                       │
-│  • Save to results/result_TIMESTAMP.json      │
-│  • Generate summary                           │
-│  • GitHub Actions output (if CI)              │
-└───────────────────┬───────────────────────────┘
-                    │
-                    ▼
-                Exit Code
-            (0=success, 1=fail)
+```mermaid
+flowchart TD
+    A[User Command<br/>./cli.py --spec UI-001 --backend auto]
+    B[cli.py: Parse arguments]
+    C[spec_finder.py<br/>Find spec<br/>UI-001 → specs/ui/UI-001-....md]
+    D[config.py<br/>Load configuration<br/>ci.env, env vars, timeouts]
+    E[cli.py: Select backend<br/>auto → script runner found]
+    F[script_backend.py<br/>• Check prerequisites<br/>• Execute runner<br/>• Capture output<br/>• Return result]
+    G[result_handler.py<br/>• Save to results/<br/>• Generate summary<br/>• GitHub Actions output]
+    H[Exit Code<br/>0=success, 1=fail]
+    
+    A --> B --> C --> D --> E --> F --> G --> H
+    
+    style A fill:#e1f5ff,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#fff3e0,stroke:#333,stroke-width:2px,color:#000
+    style C fill:#e8f5e9,stroke:#333,stroke-width:2px,color:#000
+    style D fill:#e8f5e9,stroke:#333,stroke-width:2px,color:#000
+    style E fill:#fff3e0,stroke:#333,stroke-width:2px,color:#000
+    style F fill:#e3f2fd,stroke:#333,stroke-width:2px,color:#000
+    style G fill:#e8f5e9,stroke:#333,stroke-width:2px,color:#000
+    style H fill:#c8e6c9,stroke:#333,stroke-width:3px,color:#000
 ```
 
 ## Backend Selection Logic
@@ -213,30 +164,32 @@ def select_backend(spec_path: Path, backend_arg: str) -> TestBackend:
 
 ## Migration Path
 
-### Phase 1: No Breaking Changes
-```bash
-# Old way still works (uses wrapper)
-./test-runner.py --spec UI-001
-
-# New way available
-./cli.py --spec UI-001
-```
-
-### Phase 2: Deprecation Notices
-```bash
-# Old way shows deprecation warning
-./test-runner.py --spec UI-001
-# Warning: test-runner.py is deprecated, use cli.py instead
-
-# New way is recommended
-./cli.py --spec UI-001
-```
-
-### Phase 3: Symlinks (Optional)
-```bash
-# test-runner.py → cli.py (symlink)
-./test-runner.py --spec UI-001
-# Transparently uses cli.py
+```mermaid
+graph LR
+    subgraph "Phase 1: Coexistence"
+        P1A[Legacy Scripts<br/>Still work]
+        P1B[New CLI<br/>Available]
+    end
+    
+    subgraph "Phase 2: Deprecation"
+        P2A[Legacy Scripts<br/>Show warnings]
+        P2B[New CLI<br/>Recommended]
+    end
+    
+    subgraph "Phase 3: Complete"
+        P3[cli.py<br/>Single entry point]
+    end
+    
+    P1A -.-> P1B
+    P1B --> P2A
+    P2A -.-> P2B
+    P2B --> P3
+    
+    style P1A fill:#fff3e0,stroke:#333,color:#000
+    style P1B fill:#e8f5e9,stroke:#333,color:#000
+    style P2A fill:#ffe0b2,stroke:#333,color:#000
+    style P2B fill:#c8e6c9,stroke:#333,color:#000
+    style P3 fill:#4CAF50,stroke:#333,stroke-width:3px,color:#fff
 ```
 
 ## Benefits Summary
