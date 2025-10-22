@@ -77,8 +77,23 @@ When manually triggering the **Test Specs** workflow:
 
 Set in GitHub repository settings under **Settings** → **Secrets and variables** → **Actions**:
 
-- `CRAWLAB_LICENSE` - Crawlab Pro license key (required for some tests)
+- `CRAWLAB_LICENSE` - **Required**: Crawlab Pro license key for running tests
 - `GITHUB_TOKEN` - Automatically provided by GitHub Actions
+
+### Docker Image Configuration
+
+The CI workflow uses **Crawlab Pro** by default (`crawlabteam/crawlab-pro:develop`). This is required for:
+- gRPC file synchronization tests (CLS-003)
+- Advanced clustering features (CLS-001, CLS-002)
+- Pro-specific API endpoints
+- Enhanced task scheduling
+
+You can specify a different image tag when manually triggering the workflow:
+- `develop` (default) - Latest development build
+- `latest` - Latest stable release
+- `v0.x.x` - Specific version tag
+
+**Note**: Community Edition (`crawlabteam/crawlab:develop`) lacks these features and many tests will fail.
 
 ## Understanding Test Results
 

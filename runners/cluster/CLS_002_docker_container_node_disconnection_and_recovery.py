@@ -53,9 +53,8 @@ class DockerContainerDisconnectionTest:
                 )
             else:
                 error_msg += (
-                    "Please start Crawlab using:\\n"
-                    "  docker compose -f docker-compose.test.yml up -d\\n"
-                    "Or use the main docker-compose.yml for local development."
+                    "Please start Crawlab using:\n"
+                    "  docker compose -f docker-compose.test.yml up -d\n"
                 )
             raise RuntimeError(error_msg)
         

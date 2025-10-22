@@ -28,7 +28,7 @@ services:
       - mongo_data:/data/db
 
   master:
-    image: "${CRAWLAB_IMAGE}"
+    image: "${CRAWLAB_IMAGE:-crawlabteam/crawlab-pro:develop}"
     container_name: "${CRAWLAB_COMPOSE_NAMESPACE:-crawlab_test}_master"
     networks:
       crawlab_test:
@@ -64,7 +64,7 @@ services:
     restart: unless-stopped
 
   worker:
-    image: "${CRAWLAB_IMAGE}"
+    image: "${CRAWLAB_IMAGE:-crawlabteam/crawlab-pro:develop}"
     container_name: "${CRAWLAB_COMPOSE_NAMESPACE:-crawlab_test}_worker"
     networks:
       crawlab_test:

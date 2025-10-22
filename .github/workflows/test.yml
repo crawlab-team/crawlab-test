@@ -43,11 +43,17 @@ on:
         required: false
         type: number
         default: 30
+      image_tag:
+        description: 'Crawlab Pro image tag to test'
+        required: false
+        type: string
+        default: 'develop'
 
 env:
   PYTHON_VERSION: '3.9'
   UV_VERSION: '0.5.20'
   CRAWLAB_API_URL: 'http://localhost:8080'
+  CRAWLAB_IMAGE_TAG: ${{ inputs.image_tag || 'develop' }}
 
 jobs:
   detect-changes:
@@ -148,12 +154,14 @@ jobs:
             echo "**Trigger**: Manual workflow dispatch" >> $GITHUB_STEP_SUMMARY
             echo "**Category**: \`${{ inputs.category }}\`" >> $GITHUB_STEP_SUMMARY
             echo "**Backend**: \`${{ inputs.backend }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "**Image Tag**: \`${{ env.CRAWLAB_IMAGE_TAG }}\`" >> $GITHUB_STEP_SUMMARY
             if [ -n "${{ inputs.spec_id }}" ]; then
               echo "**Spec ID**: \`${{ inputs.spec_id }}\`" >> $GITHUB_STEP_SUMMARY
             fi
           else
             echo "**Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
             echo "**Branch**: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "**Image Tag**: \`${{ env.CRAWLAB_IMAGE_TAG }}\`" >> $GITHUB_STEP_SUMMARY
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -213,7 +221,7 @@ jobs:
       
       - name: Start Crawlab services
         env:
-          CRAWLAB_IMAGE: crawlabteam/crawlab:develop
+          CRAWLAB_IMAGE: crawlabteam/crawlab-pro:${{ env.CRAWLAB_IMAGE_TAG }}
           CRAWLAB_COMPOSE_NAMESPACE: crawlab_ci_${{ github.run_id }}
           CRAWLAB_LICENSE: ${{ secrets.CRAWLAB_LICENSE }}
         run: |
@@ -259,7 +267,7 @@ jobs:
         env:
           CRAWLAB_API_URL: ${{ env.CRAWLAB_API_URL }}
           CRAWLAB_LICENSE: ${{ secrets.CRAWLAB_LICENSE }}
-          CRAWLAB_IMAGE: crawlabteam/crawlab:develop
+          CRAWLAB_IMAGE: crawlabteam/crawlab-pro:${{ env.CRAWLAB_IMAGE_TAG }}
           CRAWLAB_COMPOSE_NAMESPACE: crawlab_ci_${{ github.run_id }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CI: true

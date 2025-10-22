@@ -4,6 +4,8 @@ Comprehensive automated testing framework for [Crawlab](https://github.com/crawl
 
 > **Note**: This is a standalone testing repository that can be used independently or alongside the main Crawlab repositories. It was extracted from `crawlab-pro/tests` for better management and maintainability.
 
+> **Important**: Most tests require **Crawlab Pro** features (gRPC, advanced clustering, etc.). The default configuration uses `crawlabteam/crawlab-pro:develop`. If you need to test with Community Edition, set `CRAWLAB_IMAGE=crawlabteam/crawlab:develop`.
+
 ## Overview
 
 Spec-driven testing framework for Crawlab with multiple execution backends:
@@ -93,7 +95,27 @@ cli.py (Main Entry Point)
 
 ## Docker Support
 
-Auto-detects Docker containers and API endpoints. Use `helpers/tools/docker_manager.py` for container operations:
+Auto-detects Docker containers and API endpoints. The test framework uses **Crawlab Pro** by default.
+
+### Starting Test Environment
+
+```bash
+# Start Crawlab Pro services (default: develop tag)
+docker compose -f docker-compose.test.yml up -d
+
+# Or specify a different tag
+CRAWLAB_IMAGE=crawlabteam/crawlab-pro:latest docker compose -f docker-compose.test.yml up -d
+
+# Or use Community Edition (limited features, some tests will fail)
+CRAWLAB_IMAGE=crawlabteam/crawlab:develop docker compose -f docker-compose.test.yml up -d
+
+# Check service status
+docker compose -f docker-compose.test.yml ps
+```
+
+### Container Management
+
+Use `helpers/tools/docker_manager.py` for container operations:
 
 ```bash
 ./helpers/tools/docker_manager.py --action health

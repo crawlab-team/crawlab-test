@@ -122,8 +122,6 @@ class DiagnosticsCollector:
         print("\n🐳 Collecting Docker Compose status...")
         
         compose_file = self.base_dir / "docker-compose.test.yml"
-        if not compose_file.exists():
-            compose_file = self.base_dir / "docker-compose.yml"
         
         if compose_file.exists():
             status = self._run_command(['docker', 'compose', '-f', str(compose_file), 'ps'])
