@@ -175,8 +175,8 @@ browser_wrapper = PlaywrightWrapper(headless=False)
 ## Related Documentation
 
 - [Playwright Python Documentation](https://playwright.dev/python/)
-- [Test Runner Architecture](TEST_RUNNER_ARCHITECTURE.md)
-- [UI Testing Guide](UI_TESTING_README.md)
+- [Test Runner Architecture](architecture.md)
+- [UI Testing Guide](ui-testing.md)
 - [Testing SOP](../TESTING_SOP.md)
 
 ## Support

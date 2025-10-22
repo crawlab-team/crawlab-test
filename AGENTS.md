@@ -17,9 +17,9 @@
 - Session notes, implementation logs, or work journals
 
 **Only documentation allowed:**
+- Updates to existing critical docs (README, TESTING_SOP, etc.) when materially outdated
 - Test specifications in `specs/` following [SPEC_TEMPLATE.md](SPEC_TEMPLATE.md)
-- Updates to critical docs (README, TESTING_SOP) when materially outdated
-- Code comments explaining complex test logic
+- Code comments explaining complex logic (not obvious operations)
 - Helper script documentation when adding new utilities
 
 **For multi-session tasks:**

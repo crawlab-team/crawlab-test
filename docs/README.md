@@ -1,55 +1,55 @@
-# Test Framework Documentation
+# Documentation Index
 
-This directory contains detailed documentation for the Crawlab Pro test framework.
+Reference documentation for the Crawlab test framework.
 
-## Architecture & Development
+## Quick Navigation
 
-### Core Documentation
-- **[TEST_RUNNER_ARCHITECTURE.md](TEST_RUNNER_ARCHITECTURE.md)** - Technical architecture and design patterns
-- **[REFACTOR_QUICKSTART.md](REFACTOR_QUICKSTART.md)** - Quick start guide for the refactored architecture
-- **[UI_TESTING_README.md](UI_TESTING_README.md)** - UI testing with Playwright
+### Getting Started
+- **[Main README](../README.md)** - Overview, quick start, and basic usage
+- **[Testing SOP](../TESTING_SOP.md)** - Standard operating procedures for creating tests
+- **[Spec Template](../SPEC_TEMPLATE.md)** - Template for writing test specifications
 
-## Main Documentation
+### Technical Reference
+- **[Architecture](architecture.md)** - Framework architecture, data flow, and execution details
+- **[UI Testing](ui-testing.md)** - Deterministic UI testing framework guide
+- **[Playwright Setup](playwright-setup.md)** - Browser setup for UI tests
 
-For general usage and getting started, see:
-- **[../README.md](../README.md)** - Main testing framework documentation
-- **[../TESTING_SOP.md](../TESTING_SOP.md)** - Testing procedures and standards
-- **[../CI_INTEGRATION.md](../CI_INTEGRATION.md)** - GitHub Actions CI integration
-- **[../SPEC_TEMPLATE.md](../SPEC_TEMPLATE.md)** - Template for creating test specs
+### Integration & CI/CD
+- **[CI Integration](../CI_INTEGRATION.md)** - GitHub Actions workflows and CI setup
+- **[MCP Setup](../MCP_SETUP.md)** - Model Context Protocol configuration
+- **[CI Permissions](ci-permissions.md)** - GitHub Copilot CI permissions guide
 
-## Quick Links
+## Documentation by Use Case
 
-### For Users
-- **Getting Started**: [../README.md](../README.md)
-- **CLI Usage**: `./cli.py --help`
-- **Creating Tests**: [../SPEC_TEMPLATE.md](../SPEC_TEMPLATE.md)
+### I want to...
 
-### For Developers
-- **Architecture**: [TEST_RUNNER_ARCHITECTURE.md](TEST_RUNNER_ARCHITECTURE.md)
-- **Contributing**: [../TESTING_SOP.md](../TESTING_SOP.md)
-- **UI Testing**: [UI_TESTING_README.md](UI_TESTING_README.md)
+**Run tests**
+→ Start with [Main README](../README.md) Quick Start section
 
-### For CI/CD
-- **GitHub Actions**: [../CI_INTEGRATION.md](../CI_INTEGRATION.md)
-- **Workflow Updates**: [GITHUB_ACTIONS_UPDATE_SUMMARY.md](GITHUB_ACTIONS_UPDATE_SUMMARY.md)
+**Create a new test**
+→ Read [Testing SOP](../TESTING_SOP.md), use [Spec Template](../SPEC_TEMPLATE.md)
+
+**Understand the architecture**
+→ Review [Architecture](architecture.md)
+
+**Set up UI testing**
+→ Follow [UI Testing](ui-testing.md) and [Playwright Setup](playwright-setup.md)
+
+**Configure CI/CD**
+→ See [CI Integration](../CI_INTEGRATION.md)
+
+**Understand execution details**
+→ Check [Architecture](architecture.md) - Execution Details section
+
+## Contributing
+
+When adding new documentation:
+1. Keep root-level docs for quick reference (README, SOP, templates)
+2. Place technical deep-dives in `docs/` directory
+3. Use kebab-case for filenames (e.g., `new-feature.md`)
+4. Update this index with clear descriptions
+5. Cross-reference related docs
 
 ## Document Status
 
-| Document | Status | Purpose |
-|----------|--------|---------|
-| TEST_RUNNER_ARCHITECTURE.md | ✅ Current | Technical reference |
-| UI_TESTING_README.md | ✅ Current | UI testing guide |
-| REFACTOR_QUICKSTART.md | 📚 Historical | Understanding the refactoring |
-| MIGRATION_GUIDE.md | 📚 Historical | Migration reference |
-| LEGACY_CLEANUP.md | 📚 Historical | Cleanup summary |
-| GITHUB_ACTIONS_UPDATE_SUMMARY.md | 📚 Historical | Workflow changes |
-| REFACTOR_VISUAL.md | 📚 Historical | Visual reference |
-| REFACTOR_INDEX.md | 📚 Historical | Document index |
-
-**Legend:**
-- ✅ Current - Actively maintained, reference as needed
-- 📚 Historical - Completed work, kept for reference
-
----
-
-**Last Updated**: October 9, 2025
+All documentation is actively maintained and current as of October 2025.

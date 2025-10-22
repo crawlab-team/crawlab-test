@@ -523,10 +523,11 @@ playwright install
 
 ## Resources
 
-- **Design Document**: `/tests/docs/UI_TESTING_FRAMEWORK.md`
-- **Testing SOP**: `/tests/TESTING_SOP.md`
+- **Testing SOP**: [../TESTING_SOP.md](../TESTING_SOP.md)
+- **Architecture Guide**: [architecture.md](architecture.md)
+- **Playwright Setup**: [playwright-setup.md](playwright-setup.md)
 - **Playwright Docs**: https://playwright.dev/python/
-- **Example Runner**: `/tests/runners/ui/UI_001_spider_management.py`
+- **Example Runner**: `runners/ui/UI_001_spider_management.py`
 
 ## Support
 
