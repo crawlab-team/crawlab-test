@@ -206,11 +206,49 @@ jobs:
         run: |
           uv run playwright install chromium --with-deps
       
-      - name: Set up Docker (for cluster/scheduler tests)
-        if: matrix.category == 'cluster' || matrix.category == 'scheduler'
+      - name: Set up Docker
         run: |
           docker --version
           docker compose version
+      
+      - name: Start Crawlab services
+        env:
+          CRAWLAB_IMAGE: crawlabteam/crawlab:develop
+          CRAWLAB_COMPOSE_NAMESPACE: crawlab_ci_${{ github.run_id }}
+          CRAWLAB_LICENSE: ${{ secrets.CRAWLAB_LICENSE }}
+        run: |
+          echo "Starting Crawlab services for testing..."
+          
+          # Start services using test compose file
+          docker compose -f docker-compose.test.yml up -d master worker mongo
+          
+          # Wait for services to be healthy
+          echo "Waiting for services to be healthy..."
+          timeout=180
+          elapsed=0
+          
+          while [ $elapsed -lt $timeout ]; do
+            # Check master health
+            if docker compose -f docker-compose.test.yml exec -T master curl -f http://localhost:8080/api/health 2>/dev/null; then
+              echo "✅ Master is healthy"
+              
+              # Check worker is running
+              if docker compose -f docker-compose.test.yml ps worker | grep -q "Up"; then
+                echo "✅ Worker is running"
+                echo "All services are ready!"
+                docker compose -f docker-compose.test.yml ps
+                exit 0
+              fi
+            fi
+            
+            sleep 5
+            elapsed=$((elapsed + 5))
+            echo "Waiting... ($elapsed/$timeout seconds)"
+          done
+          
+          echo "❌ Services failed to become healthy within timeout"
+          docker compose -f docker-compose.test.yml logs
+          exit 1
       
       - name: List available specs
         run: |
@@ -221,6 +259,8 @@ jobs:
         env:
           CRAWLAB_API_URL: ${{ env.CRAWLAB_API_URL }}
           CRAWLAB_LICENSE: ${{ secrets.CRAWLAB_LICENSE }}
+          CRAWLAB_IMAGE: crawlabteam/crawlab:develop
+          CRAWLAB_COMPOSE_NAMESPACE: crawlab_ci_${{ github.run_id }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CI: true
         run: |
@@ -270,6 +310,15 @@ jobs:
             
             exit $EXIT_CODE
           fi
+      
+      - name: Cleanup Crawlab services
+        if: always()
+        env:
+          CRAWLAB_COMPOSE_NAMESPACE: crawlab_ci_${{ github.run_id }}
+        run: |
+          echo "Stopping Crawlab services..."
+          docker compose -f docker-compose.test.yml down -v --remove-orphans || true
+          echo "Cleanup complete"
       
       - name: Upload test results
         uses: actions/upload-artifact@v4

@@ -30,12 +30,32 @@ class TaskReconciliationTest:
         self.api_client = None
         
         if not self.docker.is_available():
-            raise RuntimeError("Docker is not available")
+            raise RuntimeError("Docker is not available. Please ensure Docker is installed and running.")
         
         # Find Crawlab containers
         containers = self.docker.find_crawlab_containers()
         if not containers:
-            raise RuntimeError("No Crawlab containers found")
+            import os
+            is_ci = os.getenv('CI', '').lower() == 'true'
+            error_msg = (
+                "No Crawlab containers found. "
+                "This test requires a running Crawlab cluster.\\n"
+            )
+            if is_ci:
+                error_msg += (
+                    "In CI environment, ensure that:\\n"
+                    "  1. Docker Compose services are started before running this test\\n"
+                    "  2. The workflow includes steps to start master and worker containers\\n"
+                    "  3. Services have time to become healthy before tests run\\n"
+                    "\\nExpected containers: crawlab_test_master, crawlab_test_worker"
+                )
+            else:
+                error_msg += (
+                    "Please start Crawlab using:\\n"
+                    "  docker compose -f docker-compose.test.yml up -d\\n"
+                    "Or use the main docker-compose.yml for local development."
+                )
+            raise RuntimeError(error_msg)
         
         self.logger.info(f"Found {len(containers)} Crawlab containers")
     
