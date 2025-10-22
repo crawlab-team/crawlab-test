@@ -178,7 +178,7 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.run_tests == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ inputs.timeout || 30 }}
+    timeout-minutes: ${{ fromJSON(inputs.timeout || '30') }}
     strategy:
       fail-fast: false
       matrix:
