@@ -159,7 +159,75 @@ uv run ./cli.py --spec UI-001 --dry-run
 ./helpers/tools/docker_manager.py --action disconnect --container worker-1
 ```
 
-## 📖 Decision Framework
+## 🔍 Troubleshooting Test Failures
+
+### Using GitHub MCP Tools
+
+When tests fail in CI/CD, use GitHub MCP tools to investigate:
+
+**1. List Recent Workflow Runs**
+```bash
+# Search for failed test runs (use mcp_github_search_issues for workflow-related issues)
+# Or check GitHub Actions directly through the repository
+```
+
+**2. Access Workflow Logs**
+- GitHub Actions logs contain detailed test execution information
+- Look for patterns: timeout errors, assertion failures, connection issues
+- Check job steps: setup, test execution, cleanup
+
+**3. Download Test Artifacts**
+- Test results (JSON reports)
+- Screenshots (for UI tests)
+- System information (Docker containers, network state)
+- Log files (application logs, test runner logs)
+
+**4. Analyze Common Failure Patterns**
+
+| Failure Type | Investigation Steps | Tools to Use |
+|--------------|---------------------|--------------|
+| **Timeout** | Check workflow duration, container health, network delays | Workflow logs, artifact analysis |
+| **Flaky test** | Compare multiple runs, identify non-deterministic steps | Issue search, workflow comparison |
+| **Environment** | Verify Docker state, dependencies, configuration | Artifact system-info, workflow logs |
+| **Assertion** | Review test output, expected vs actual values | Test result artifacts, logs |
+
+**5. Create Issues for Persistent Failures**
+- Use `mcp_github_create_issue` to track test failures
+- Include: Test ID, failure pattern, reproduction steps, logs
+- Tag with appropriate labels: `bug`, `test-failure`, `flaky-test`
+- Link to failed workflow run for context
+
+**6. Comment on Existing Issues**
+- Use `mcp_github_add_issue_comment` to add findings
+- Update with new failure occurrences or patterns
+- Share analysis and potential root causes
+
+### Troubleshooting Workflow
+
+1. **Identify the failure**: Check CI/CD status, note which test failed
+2. **Gather context**: Use GitHub MCP tools to access logs and artifacts
+3. **Reproduce locally**: Run the test with same configuration
+4. **Analyze differences**: Compare local vs CI environment
+5. **Fix and verify**: Make changes, run test multiple times for determinism
+6. **Document findings**: Update test spec if needed, close related issues
+
+### Common CI/CD Issues
+
+- **Docker state**: Containers not cleaned up between runs
+- **Timing issues**: Race conditions, insufficient wait times
+- **Resource constraints**: Memory limits, CPU throttling in CI
+- **Network flakiness**: API timeouts, connection resets
+- **Test dependencies**: Tests assuming specific initial state
+
+### Best Practices
+
+- **Always check artifacts first**: Most failures have clues in screenshots or logs
+- **Look for patterns**: Single failure vs consistent failure vs flaky behavior
+- **Test in CI conditions**: Use `--ci` flag to simulate CI environment locally
+- **Update test specs**: Document known issues and workarounds
+- **Close the loop**: Comment on issues when fixed, verify in multiple runs
+
+## 📋 Decision Framework
 
 1. **Does a similar test exist?** → Use it as a template
 2. **Which backend fits best?** → Script for API/system, Playwright for UI, Copilot for complex scenarios

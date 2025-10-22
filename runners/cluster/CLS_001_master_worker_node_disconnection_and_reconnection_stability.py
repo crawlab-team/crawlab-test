@@ -200,7 +200,20 @@ class NodeDisconnectionTest:
     def wait_for_worker_ready(self, timeout: int = 120) -> bool:
         """
         Wait for worker to be fully ready to accept tasks after reconnection.
-        This checks that the worker can successfully communicate with master.
+        
+        This method uses an intelligent polling approach to wait for:
+        1. Node to appear in API and be marked as active=true, status=online
+        2. Node to remain stable for at least 20 seconds (> master monitor interval of 15s)
+        
+        The stability period ensures that the master's monitoring loop has run
+        at least once and confirmed the node's health, preventing race conditions
+        where the node reconnects but hasn't been verified by the monitor yet.
+        
+        Args:
+            timeout: Maximum time to wait (seconds)
+            
+        Returns:
+            bool: True if worker is ready and stable, False otherwise
         """
         try:
             if not self.api_client:
@@ -219,7 +232,11 @@ class NodeDisconnectionTest:
                             return False
             
             start_time = time.time()
-            check_interval = 5  # Check every 5 seconds to reduce API pressure in CI
+            check_interval = 2  # Check every 2 seconds
+            first_active_time = None  # Track when node first becomes active
+            stability_period = 20  # Must stay active for > master monitor interval (15s)
+            
+            self.logger.info(f"Polling for worker readiness (stability_period={stability_period}s, timeout={timeout}s)")
             
             while time.time() - start_time < timeout:
                 try:
@@ -252,31 +269,78 @@ class NodeDisconnectionTest:
                         is_enabled = reconnected_node.get('enabled', True)
                         status = reconnected_node.get('status', '')
                         
-                        # Node is ready if it's active, enabled, and online
-                        if is_active and is_enabled and status == 'online':
-                            elapsed = time.time() - start_time
-                            self.logger.info(f"Worker is ready after {elapsed:.1f}s - active={is_active}, enabled={is_enabled}, status={status}")
-                            # Give it more time to ensure gRPC clients are fully registered and ready
-                            # This is critical in CI environments where processes may be slower
-                            # Increased from 15s to 30s due to CI timing issues where gRPC
-                            # TaskHandlerService streams take longer to establish after network reconnection
-                            stabilization_time = 30
-                            self.logger.info(f"Waiting {stabilization_time}s for gRPC connections to fully stabilize")
-                            time.sleep(stabilization_time)
-                            return True
+                        # Check if node meets all readiness criteria
+                        is_ready = is_active and is_enabled and status == 'online'
+                        
+                        if is_ready:
+                            current_time = time.time()
+                            
+                            # First time we see it as active
+                            if first_active_time is None:
+                                first_active_time = current_time
+                                elapsed = current_time - start_time
+                                self.logger.info(
+                                    f"Worker became active after {elapsed:.1f}s - "
+                                    f"waiting {stability_period}s for stability confirmation..."
+                                )
+                            
+                            # Check if it's been stable long enough
+                            stable_duration = current_time - first_active_time
+                            if stable_duration >= stability_period:
+                                total_elapsed = current_time - start_time
+                                self.logger.info(
+                                    f"✓ Worker is ready and stable after {total_elapsed:.1f}s "
+                                    f"(stable for {stable_duration:.1f}s > {stability_period}s)"
+                                )
+                                return True
+                            else:
+                                remaining = stability_period - stable_duration
+                                self.logger.debug(
+                                    f"Worker stable for {stable_duration:.1f}s, "
+                                    f"waiting {remaining:.1f}s more..."
+                                )
                         else:
-                            self.logger.debug(f"Worker not ready yet: active={is_active}, enabled={is_enabled}, status={status}")
+                            # Node not ready, reset stability timer
+                            if first_active_time is not None:
+                                elapsed = time.time() - start_time
+                                self.logger.warning(
+                                    f"Worker went inactive after {elapsed:.1f}s - "
+                                    f"resetting stability timer (active={is_active}, status={status})"
+                                )
+                                first_active_time = None
+                            else:
+                                self.logger.debug(
+                                    f"Worker not ready: active={is_active}, "
+                                    f"enabled={is_enabled}, status={status}"
+                                )
                     else:
-                        self.logger.debug("Worker node not found in API yet")
+                        if first_active_time is not None:
+                            self.logger.warning("Worker node disappeared from API - resetting stability timer")
+                            first_active_time = None
+                        else:
+                            self.logger.debug("Worker node not found in API yet")
                 
                 except Exception as e:
                     self.logger.debug(f"Error checking worker readiness: {e}")
+                    # Reset stability timer on errors
+                    if first_active_time is not None:
+                        first_active_time = None
                 
                 time.sleep(check_interval)
             
             # Timeout reached
             elapsed = time.time() - start_time
-            self.logger.error(f"Worker did not become ready within {timeout}s (elapsed: {elapsed:.1f}s)")
+            if first_active_time is not None:
+                stable_duration = time.time() - first_active_time
+                self.logger.error(
+                    f"Timeout: Worker became active but not stable enough "
+                    f"(stable for {stable_duration:.1f}s < {stability_period}s required)"
+                )
+            else:
+                self.logger.error(
+                    f"Timeout: Worker never became active and ready within {timeout}s "
+                    f"(elapsed: {elapsed:.1f}s)"
+                )
             return False
             
         except Exception as e:
