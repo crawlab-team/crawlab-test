@@ -422,7 +422,7 @@ jobs:
             # List results
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### Details:" >> $GITHUB_STEP_SUMMARY
-            for RESULT in results/result_*.json 2>/dev/null; do
+            for RESULT in results/result_*.json; do
               if [ -f "$RESULT" ]; then
                 SPEC_NAME=$(basename "$RESULT" .json)
                 STATUS=$(jq -r '.status // "unknown"' "$RESULT" 2>/dev/null || echo "unknown")
