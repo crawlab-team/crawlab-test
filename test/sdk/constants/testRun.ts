@@ -1,2 +1,0 @@
-export const TEST_RUN_EXECUTE_TYPE_MANUAL = 1;
-export const TEST_RUN_EXECUTE_TYPE_AUTO = 2;
