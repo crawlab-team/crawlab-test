@@ -214,6 +214,13 @@ jobs:
         run: |
           uv run playwright install chromium --with-deps
       
+      - name: Install GitHub Copilot CLI (for copilot backend)
+        if: matrix.category == 'ui' || inputs.backend == 'copilot'
+        run: |
+          npm install -g @github/copilot
+          echo "✓ GitHub Copilot CLI installed"
+          copilot --version || echo "⚠ Copilot CLI may require authentication"
+      
       - name: Set up Docker
         run: |
           docker --version
