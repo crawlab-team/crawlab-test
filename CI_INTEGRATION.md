@@ -78,7 +78,11 @@ When manually triggering the **Test Specs** workflow:
 Set in GitHub repository settings under **Settings** → **Secrets and variables** → **Actions**:
 
 - `CRAWLAB_LICENSE` - **Required**: Crawlab Pro license key for running tests
-- `GITHUB_TOKEN` - Automatically provided by GitHub Actions
+- `COPILOT_CLI_PAT` - **Required for Copilot backend**: GitHub Personal Access Token with Copilot access
+  - Used for AI-powered test execution with GitHub Copilot CLI
+  - Create a [Fine-Grained Personal Access Token](https://github.com/settings/tokens?type=beta) or OAuth token with Copilot permissions
+  - Leave empty if not using Copilot backend tests
+- `GITHUB_TOKEN` - Automatically provided by GitHub Actions (for repository access)
 
 ### Docker Image Configuration
 

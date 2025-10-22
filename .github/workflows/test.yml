@@ -277,6 +277,7 @@ jobs:
           CRAWLAB_IMAGE: crawlabteam/crawlab-pro:${{ env.CRAWLAB_IMAGE_TAG }}
           CRAWLAB_COMPOSE_NAMESPACE: crawlab_ci_${{ github.run_id }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.COPILOT_CLI_PAT }}
           CI: true
         run: |
           # Create results directory
