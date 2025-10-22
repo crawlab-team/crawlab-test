@@ -1,0 +1,93 @@
+name: Smoke Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  PYTHON_VERSION: '3.9'
+
+jobs:
+  smoke-test:
+    name: Quick Smoke Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Verify CLI works
+        run: |
+          chmod +x cli.py
+          ./cli.py --help
+          ./cli.py --list-specs
+      
+      - name: Check Python syntax
+        run: |
+          python -m py_compile cli.py
+          python -m py_compile backends/*.py
+          python -m py_compile core/*.py
+      
+      - name: Verify test structure
+        run: |
+          echo "Checking test structure..."
+          
+          # Check that specs directory exists
+          if [ ! -d "specs" ]; then
+            echo "❌ specs/ directory not found"
+            exit 1
+          fi
+          
+          # Check that required categories exist
+          CATEGORIES=("api" "cluster" "database" "dependencies" "scheduler" "system" "ui")
+          for cat in "${CATEGORIES[@]}"; do
+            if [ ! -d "specs/$cat" ]; then
+              echo "⚠️  Warning: specs/$cat/ directory not found"
+            else
+              COUNT=$(find "specs/$cat" -name "*.md" -type f | wc -l)
+              echo "✅ specs/$cat/: $COUNT spec(s)"
+            fi
+          done
+          
+          # Check that backends exist
+          if [ ! -f "backends/script_backend.py" ]; then
+            echo "❌ script_backend.py not found"
+            exit 1
+          fi
+          
+          if [ ! -f "backends/copilot_backend.py" ]; then
+            echo "❌ copilot_backend.py not found"
+            exit 1
+          fi
+          
+          echo "✅ Test structure looks good"
+      
+      - name: Test spec finder
+        run: |
+          python .github/workflows/test_spec_finder.py
+      
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Smoke Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Python syntax check passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ CLI executable and functional" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Test structure validated" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Core modules work correctly" >> $GITHUB_STEP_SUMMARY

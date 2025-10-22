@@ -1,0 +1,309 @@
+name: Test Specs
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      category:
+        description: 'Test category to run'
+        required: false
+        type: choice
+        options:
+          - 'all'
+          - 'api'
+          - 'cluster'
+          - 'database'
+          - 'dependencies'
+          - 'scheduler'
+          - 'system'
+          - 'ui'
+        default: 'all'
+      backend:
+        description: 'Backend to use'
+        required: false
+        type: choice
+        options:
+          - 'auto'
+          - 'script'
+          - 'copilot'
+        default: 'auto'
+      spec_id:
+        description: 'Specific spec ID to run (e.g., UI-001)'
+        required: false
+        type: string
+      timeout:
+        description: 'Timeout in minutes'
+        required: false
+        type: number
+        default: 30
+
+env:
+  PYTHON_VERSION: '3.9'
+  CRAWLAB_API_URL: 'http://localhost:8080'
+
+jobs:
+  detect-changes:
+    name: Detect Changed Categories
+    runs-on: ubuntu-latest
+    outputs:
+      categories: ${{ steps.detect.outputs.categories }}
+      run_tests: ${{ steps.detect.outputs.run_tests }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Detect changed test categories
+        id: detect
+        run: |
+          # For manual dispatch, use specified category
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            CATEGORY="${{ inputs.category }}"
+            if [ "$CATEGORY" = "all" ]; then
+              echo "categories=[\"api\",\"cluster\",\"database\",\"dependencies\",\"scheduler\",\"system\",\"ui\"]" >> $GITHUB_OUTPUT
+            else
+              echo "categories=[\"$CATEGORY\"]" >> $GITHUB_OUTPUT
+            fi
+            echo "run_tests=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # For push/PR, detect changes
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+            # Handle first commit on branch
+            if [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+              BASE_SHA="HEAD^"
+            fi
+          fi
+          
+          # Get changed files
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" HEAD || echo "")
+          
+          # Determine which categories to test
+          CATEGORIES=()
+          
+          if echo "$CHANGED_FILES" | grep -qE "^specs/api/|^runners/api/|^helpers/api/"; then
+            CATEGORIES+=("api")
+          fi
+          
+          if echo "$CHANGED_FILES" | grep -qE "^specs/cluster/|^runners/cluster/|^helpers/cluster/"; then
+            CATEGORIES+=("cluster")
+          fi
+          
+          if echo "$CHANGED_FILES" | grep -qE "^specs/database/|^runners/database/|^helpers/database/"; then
+            CATEGORIES+=("database")
+          fi
+          
+          if echo "$CHANGED_FILES" | grep -qE "^specs/dependencies/|^runners/dependencies/|^helpers/dependencies/"; then
+            CATEGORIES+=("dependencies")
+          fi
+          
+          if echo "$CHANGED_FILES" | grep -qE "^specs/scheduler/|^runners/scheduler/|^helpers/scheduler/"; then
+            CATEGORIES+=("scheduler")
+          fi
+          
+          if echo "$CHANGED_FILES" | grep -qE "^specs/system/|^runners/system/|^helpers/system/"; then
+            CATEGORIES+=("system")
+          fi
+          
+          if echo "$CHANGED_FILES" | grep -qE "^specs/ui/|^runners/ui/|^helpers/ui/"; then
+            CATEGORIES+=("ui")
+          fi
+          
+          # If core framework changed, test everything
+          if echo "$CHANGED_FILES" | grep -qE "^cli.py|^backends/|^core/|^requirements.txt"; then
+            CATEGORIES=("api" "cluster" "database" "dependencies" "scheduler" "system" "ui")
+          fi
+          
+          # Convert to JSON array
+          if [ ${#CATEGORIES[@]} -eq 0 ]; then
+            echo "No test-related changes detected"
+            echo "categories=[]" >> $GITHUB_OUTPUT
+            echo "run_tests=false" >> $GITHUB_OUTPUT
+          else
+            CATEGORIES_JSON=$(printf '%s\n' "${CATEGORIES[@]}" | jq -R . | jq -s -c .)
+            echo "categories=$CATEGORIES_JSON" >> $GITHUB_OUTPUT
+            echo "run_tests=true" >> $GITHUB_OUTPUT
+            echo "Will run tests for: ${CATEGORIES[@]}"
+          fi
+
+  test:
+    name: Test ${{ matrix.category }}
+    needs: detect-changes
+    if: needs.detect-changes.outputs.run_tests == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout || 30 }}
+    strategy:
+      fail-fast: false
+      matrix:
+        category: ${{ fromJson(needs.detect-changes.outputs.categories) }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Install Playwright (UI tests only)
+        if: matrix.category == 'ui'
+        run: |
+          pip install playwright
+          playwright install chromium --with-deps
+      
+      - name: Set up Docker (for cluster/scheduler tests)
+        if: matrix.category == 'cluster' || matrix.category == 'scheduler'
+        run: |
+          docker --version
+          docker-compose --version
+      
+      - name: List available specs
+        run: |
+          echo "Available specs for category: ${{ matrix.category }}"
+          ./cli.py --list-specs --category ${{ matrix.category }}
+      
+      - name: Run tests
+        env:
+          CRAWLAB_API_URL: ${{ env.CRAWLAB_API_URL }}
+          CRAWLAB_LICENSE: ${{ secrets.CRAWLAB_LICENSE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI: true
+        run: |
+          # Create results directory
+          mkdir -p results
+          
+          # Determine which spec to run
+          if [ -n "${{ inputs.spec_id }}" ]; then
+            # Run specific spec from manual trigger
+            SPEC_ID="${{ inputs.spec_id }}"
+            echo "Running specific spec: $SPEC_ID"
+            
+            BACKEND="${{ inputs.backend || 'auto' }}"
+            if [ "$BACKEND" != "auto" ]; then
+              ./cli.py --spec "$SPEC_ID" --backend "$BACKEND" --ci
+            else
+              ./cli.py --spec "$SPEC_ID" --ci
+            fi
+          else
+            # Run all specs in category
+            echo "Running all specs in category: ${{ matrix.category }}"
+            
+            # Get all spec files for this category
+            SPEC_FILES=$(find specs/${{ matrix.category }}/ -name "*.md" -type f | sort)
+            
+            if [ -z "$SPEC_FILES" ]; then
+              echo "No specs found for category: ${{ matrix.category }}"
+              exit 0
+            fi
+            
+            EXIT_CODE=0
+            for SPEC_FILE in $SPEC_FILES; do
+              # Extract spec ID from filename
+              SPEC_ID=$(basename "$SPEC_FILE" .md | cut -d'-' -f1-2)
+              echo ""
+              echo "================================"
+              echo "Running spec: $SPEC_ID"
+              echo "================================"
+              
+              if ! ./cli.py --spec "$SPEC_ID" --ci; then
+                echo "❌ Spec $SPEC_ID failed"
+                EXIT_CODE=1
+              else
+                echo "✅ Spec $SPEC_ID passed"
+              fi
+            done
+            
+            exit $EXIT_CODE
+          fi
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.category }}-${{ github.run_number }}
+          path: results/
+          retention-days: 30
+      
+      - name: Generate test summary
+        if: always()
+        run: |
+          echo "## Test Results - ${{ matrix.category }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check if results exist
+          if [ -d "results" ] && [ "$(ls -A results)" ]; then
+            echo "### Results:" >> $GITHUB_STEP_SUMMARY
+            
+            # Count passed/failed tests
+            TOTAL=$(find results -name "*.json" 2>/dev/null | wc -l)
+            PASSED=$(find results -name "*.json" -exec grep -l '"status".*"passed"' {} \; 2>/dev/null | wc -l)
+            FAILED=$((TOTAL - PASSED))
+            
+            echo "- **Total tests**: $TOTAL" >> $GITHUB_STEP_SUMMARY
+            echo "- **Passed**: ✅ $PASSED" >> $GITHUB_STEP_SUMMARY
+            echo "- **Failed**: ❌ $FAILED" >> $GITHUB_STEP_SUMMARY
+            
+            # List results
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Details:" >> $GITHUB_STEP_SUMMARY
+            for RESULT in results/*.json; do
+              if [ -f "$RESULT" ]; then
+                SPEC_NAME=$(basename "$RESULT" .json)
+                STATUS=$(jq -r '.status // "unknown"' "$RESULT")
+                if [ "$STATUS" = "passed" ]; then
+                  echo "- ✅ $SPEC_NAME" >> $GITHUB_STEP_SUMMARY
+                else
+                  echo "- ❌ $SPEC_NAME" >> $GITHUB_STEP_SUMMARY
+                fi
+              fi
+            done
+          else
+            echo "No test results found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  summary:
+    name: Test Summary
+    needs: [detect-changes, test]
+    if: always() && needs.detect-changes.outputs.run_tests == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate overall summary
+        run: |
+          echo "## Overall Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.test.result }}" = "success" ]; then
+            echo "✅ **All tests passed**" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.test.result }}" = "failure" ]; then
+            echo "❌ **Some tests failed**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Tests were skipped or cancelled**" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Categories tested: ${{ needs.detect-changes.outputs.categories }}" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Check test results
+        run: |
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            echo "Tests failed or were skipped"
+            exit 1
+          fi
