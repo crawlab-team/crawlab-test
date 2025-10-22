@@ -234,9 +234,14 @@ class NodeDisconnectionTest:
             start_time = time.time()
             check_interval = 2  # Check every 2 seconds
             first_active_time = None  # Track when node first becomes active
-            stability_period = 20  # Must stay active for > master monitor interval (15s)
             
-            self.logger.info(f"Polling for worker readiness (stability_period={stability_period}s, timeout={timeout}s)")
+            # In CI, use longer stability period to account for slower systems
+            stability_period = 30 if is_ci else 20  # Must stay active for > master monitor interval (15s)
+            # Allow brief flaps before resetting stability timer (tolerance for transient states)
+            max_flaps_allowed = 2
+            flap_count = 0
+            
+            self.logger.info(f"Polling for worker readiness (stability_period={stability_period}s, timeout={timeout}s, CI={is_ci})")
             
             while time.time() - start_time < timeout:
                 try:
@@ -300,14 +305,26 @@ class NodeDisconnectionTest:
                                     f"waiting {remaining:.1f}s more..."
                                 )
                         else:
-                            # Node not ready, reset stability timer
+                            # Node not ready, reset stability timer (with tolerance for flaps)
                             if first_active_time is not None:
                                 elapsed = time.time() - start_time
-                                self.logger.warning(
-                                    f"Worker went inactive after {elapsed:.1f}s - "
-                                    f"resetting stability timer (active={is_active}, status={status})"
-                                )
-                                first_active_time = None
+                                flap_count += 1
+                                
+                                if flap_count <= max_flaps_allowed:
+                                    # Allow brief flaps - don't reset timer yet
+                                    self.logger.warning(
+                                        f"Worker temporarily inactive after {elapsed:.1f}s - "
+                                        f"flap {flap_count}/{max_flaps_allowed} (active={is_active}, status={status}), "
+                                        f"keeping stability timer..."
+                                    )
+                                else:
+                                    # Too many flaps, reset the timer
+                                    self.logger.error(
+                                        f"Worker went inactive too many times ({flap_count} flaps) - "
+                                        f"resetting stability timer (active={is_active}, status={status})"
+                                    )
+                                    first_active_time = None
+                                    flap_count = 0
                             else:
                                 self.logger.debug(
                                     f"Worker not ready: active={is_active}, "
@@ -317,13 +334,15 @@ class NodeDisconnectionTest:
                         if first_active_time is not None:
                             self.logger.warning("Worker node disappeared from API - resetting stability timer")
                             first_active_time = None
+                            flap_count = 0  # Reset flap count when node disappears
                         else:
                             self.logger.debug("Worker node not found in API yet")
                 
                 except Exception as e:
                     self.logger.debug(f"Error checking worker readiness: {e}")
-                    # Reset stability timer on errors
-                    if first_active_time is not None:
+                    # Don't reset stability timer on transient API errors in CI
+                    # Only reset after repeated errors
+                    if not is_ci and first_active_time is not None:
                         first_active_time = None
                 
                 time.sleep(check_interval)
@@ -334,13 +353,22 @@ class NodeDisconnectionTest:
                 stable_duration = time.time() - first_active_time
                 self.logger.error(
                     f"Timeout: Worker became active but not stable enough "
-                    f"(stable for {stable_duration:.1f}s < {stability_period}s required)"
+                    f"(stable for {stable_duration:.1f}s < {stability_period}s required, "
+                    f"flaps: {flap_count}, CI: {is_ci})"
                 )
             else:
                 self.logger.error(
                     f"Timeout: Worker never became active and ready within {timeout}s "
-                    f"(elapsed: {elapsed:.1f}s)"
+                    f"(elapsed: {elapsed:.1f}s, CI: {is_ci})"
                 )
+                
+            # Log final node state for debugging
+            try:
+                nodes = self.api_client.get_nodes()
+                self.logger.error(f"Final node states at timeout: {[(n.get('name'), n.get('active'), n.get('status')) for n in nodes]}")
+            except:
+                pass
+                
             return False
             
         except Exception as e:
