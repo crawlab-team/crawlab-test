@@ -11,8 +11,7 @@ This document explains how to use the GitHub Actions integration for Crawlab's s
 
 **New in 2025**: The CI system now uses the unified `cli.py` test runner with modular backends for improved test execution:
 - **Script Backend**: Direct Python/shell script execution via runners
-- **Copilot Backend**: AI-powered test execution via GitHub Copilot CLI
-- **Playwright Backend**: TypeScript-based UI automation tests
+- **Copilot Backend**: AI-powered test execution via GitHub Copilot CLI (with MCP Playwright tools for UI tests)
 - **Auto-detection**: Automatically selects the best backend for each test
 
 ## Key Features
@@ -263,7 +262,7 @@ Before major releases:
 
 ### Playwright MCP Server
 
-The `tests/mcp-config.json` file is automatically installed to `~/.copilot/mcp-config.json` during CI setup:
+The `mcp-config.json` file is automatically installed to `~/.copilot/mcp-config.json` during CI setup:
 
 ```json
 {
@@ -291,14 +290,14 @@ When you create additional test workflows that use the Copilot backend:
 - name: Setup MCP configuration
   run: |
     mkdir -p ~/.copilot
-    cp tests/mcp-config.json ~/.copilot/mcp-config.json
+    cp mcp-config.json ~/.copilot/mcp-config.json
     npm install -g @playwright/mcp
 
 - name: Run tests with Copilot
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   run: |
-    ./tests/cli.py --spec UI-001 --backend copilot --ci
+    ./cli.py --spec UI-001 --backend copilot --ci
 ```
 
 For more details, see [MCP_SETUP.md](MCP_SETUP.md).
@@ -307,8 +306,8 @@ For more details, see [MCP_SETUP.md](MCP_SETUP.md).
 
 ### Adding New Test Categories
 
-1. Create test specs in `tests/specs/[new-category]/`
-2. Add runners in `tests/runners/[new-category]/` (for script backend)
+1. Create test specs in `specs/[new-category]/`
+2. Add runners in `runners/[new-category]/` (for script backend)
 3. Optionally add helpers in `tests/helpers/[new-category]/`
 4. Create a `_matrix.json` configuration file in `tests/specs/[new-category]/`:
    ```json
