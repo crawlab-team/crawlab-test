@@ -1,0 +1,74 @@
+# Crawlab Testing Configuration Template
+# Copy this file to config.json and customize as needed
+# Supports both local and Docker-based deployments
+
+{
+  "environment": {
+    "type": "auto",
+    "auto_detect_docker": true,
+    "prefer_docker": false
+  },
+  "api": {
+    "base_url": null,
+    "token": null,
+    "timeout": 30,
+    "auto_login": true,
+    "credentials": {
+      "username": "admin",
+      "password": "admin"
+    }
+  },
+  "mongodb": {
+    "uri": "mongodb://localhost:27017",
+    "database": "crawlab_test",
+    "docker": {
+      "container_name": "crawlab_test_mongo",
+      "port": "27018"
+    }
+  },
+  "docker": {
+    "enabled": true,
+    "container_filters": [
+      "name=crawlab",
+      "ancestor=crawlabteam/crawlab-pro"
+    ],
+    "master_keywords": ["master", "_master_", "test_master"],
+    "network_operations": {
+      "disconnect_method": "network",
+      "reconnect_timeout": 60
+    },
+    "monitoring": {
+      "log_lines": 100,
+      "stats_interval": 5
+    }
+  },
+  "test": {
+    "timeout": 300,
+    "poll_interval": 2.0,
+    "cleanup_on_exit": true,
+    "parallel_execution": false,
+    "retry_attempts": 1
+  },
+  "reconciliation": {
+    "cycle_interval": 30,
+    "max_wait_time": 90,
+    "monitor_timeout": 120
+  },
+  "test_scenarios": {
+    "baseline_task_count": 10,
+    "zombie_process_count": 3,
+    "continuous_monitoring_duration": 300,
+    "stress_test_task_count": 100,
+    "container_operations": {
+      "disconnect_timeout": 30,
+      "reconnect_timeout": 60,
+      "health_check_interval": 10
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "file": null,
+    "console": true
+  }
+}

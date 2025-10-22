@@ -1,0 +1,25 @@
+{
+  "timeout": 30,
+  "default_method": "copilot",
+  "paths": [
+    "crawlab/frontend/**",
+    "core/controllers/**",
+    "core/models/**",
+    "core/apps/api.go",
+    "core/apps/license.go",
+    "crawlab/core/controllers/**",
+    "crawlab/core/models/**",
+    "crawlab/backend/routes/**",
+    "crawlab/grpc/**",
+    ".github/actions/testing/**",
+    ".github/workflows/copilot-setup-steps.yml",
+    "tests/docker-compose.test.yml",
+    "tests/ui-playwright/**",
+    "tests/config.json",
+    "tests/setup-playwright.sh",
+    "docker/test/**"
+  ],
+  "extra_triggers": [
+    "CHANGES_CORE_CODE"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "fallback_category": "system",
+  "mandatory_branches": ["main", "test"],
+  "change_rules": {
+    "frontend_only": [
+      "crawlab/frontend/**"
+    ],
+    "tests_only": [
+      "tests/docs/**",
+      "tests/specs/**/*.md",
+      "tests/README.md",
+      "tests/TESTING_SOP.md",
+      "tests/CI_INTEGRATION.md"
+    ],
+    "testing_infrastructure": [
+      ".github/actions/testing/**",
+      ".github/workflows/copilot-setup-steps.yml",
+      "tests/docker-compose.test.yml",
+      "tests/config.json",
+      "tests/ci.env",
+      "tests/requirements.txt",
+      "tests/setup-playwright.sh",
+      "tests/core/**",
+      "tests/backends/**",
+      "docker/test/**"
+    ],
+    "core_code": [
+      "core/**",
+      "crawlab/core/**",
+      "crawlab/backend/**",
+      "crawlab/grpc/**",
+      "crawlab/trace/**",
+      "crawlab/vcs/**",
+      "crawlab/mcp/**",
+      "docker/**",
+      "k8s/**",
+      "**/go.mod",
+      "**/go.sum",
+      "**/package.json",
+      "**/package-lock.json",
+      "Dockerfile",
+      ".github/actions/build/**",
+      ".github/workflows/docker-*.yml"
+    ]
+  }
+}
