@@ -258,7 +258,9 @@ class NodeDisconnectionTest:
                             self.logger.info(f"Worker is ready after {elapsed:.1f}s - active={is_active}, enabled={is_enabled}, status={status}")
                             # Give it more time to ensure gRPC clients are fully registered and ready
                             # This is critical in CI environments where processes may be slower
-                            stabilization_time = 15
+                            # Increased from 15s to 30s due to CI timing issues where gRPC
+                            # TaskHandlerService streams take longer to establish after network reconnection
+                            stabilization_time = 30
                             self.logger.info(f"Waiting {stabilization_time}s for gRPC connections to fully stabilize")
                             time.sleep(stabilization_time)
                             return True
