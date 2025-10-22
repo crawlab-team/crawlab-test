@@ -48,7 +48,7 @@ The test runner will automatically execute the following steps:
 **Action**: Run tasks in HTTP sync mode and measure performance
 **Steps**:
 - Configure sync mode to HTTP (`useGrpc: false`)
-- Create 5 concurrent tasks for the test spider
+- Create 1000 concurrent tasks for the test spider
 - Measure: success rate, duration, JSON errors in logs
 **Expected**:
 - Some tasks may fail (known issue with HTTP mode)
@@ -60,7 +60,7 @@ The test runner will automatically execute the following steps:
 **Action**: Run tasks in gRPC sync mode and measure performance
 **Steps**:
 - Configure sync mode to gRPC (`useGrpc: true`)
-- Create 5 concurrent tasks for the same test spider
+- Create 1000 concurrent tasks for the same test spider
 - Measure: success rate, duration, deduplication behavior
 **Expected**:
 - All tasks succeed (100% success rate)
@@ -72,8 +72,8 @@ The test runner will automatically execute the following steps:
 **Action**: Confirm only one directory scan occurs for concurrent requests
 **Expected**:
 - Master logs show "performing directory scan" appears once
-- Master logs show "notified 4 subscribers" (other 4 tasks wait)
-- All 5 tasks receive the same scan results
+- Master logs show "notified 999 subscribers" (other 999 tasks wait)
+- All 1000 tasks receive the same scan results
 
 ### Step 5: Check for JSON Errors
 **Action**: Scan master logs for JSON parsing errors
@@ -151,23 +151,23 @@ No cleanup needed - automated test only verifies deployment.
 ```json
 {
   "http_mode": {
-    "concurrent_tasks": 5,
-    "success_count": 4,
-    "success_rate": 80,
-    "avg_duration_sec": 8.5,
-    "json_errors": 3
+    "concurrent_tasks": 1000,
+    "success_count": 850,
+    "success_rate": 85,
+    "avg_duration_sec": 12.5,
+    "json_errors": 150
   },
   "grpc_mode": {
-    "concurrent_tasks": 5,
-    "success_count": 5,
+    "concurrent_tasks": 1000,
+    "success_count": 1000,
     "success_rate": 100,
-    "avg_duration_sec": 3.2,
+    "avg_duration_sec": 2.8,
     "json_errors": 0,
     "deduplication_verified": true,
     "directory_scans": 1
   },
   "improvements": {
-    "success_rate_increase": "+20%",
+    "success_rate_increase": "+15%",
     "json_errors_eliminated": true,
     "deduplication_working": true,
     "test_result": "PASS"

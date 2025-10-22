@@ -172,11 +172,11 @@ def run() -> bool:
         _verify_grpc_server(master, logger)
         
         # Step 2: Test HTTP Mode (Baseline)
-        logger.info("\n📊 Step 2: Testing HTTP Mode (Baseline with 50 concurrent requests)")
+        logger.info("\n📊 Step 2: Testing HTTP Mode (Baseline with 1000 concurrent requests)")
         logger.info("Simulating file sync via direct directory scans...")
         
-        # Trigger 50 concurrent directory scans (simulating HTTP mode)
-        http_result = _test_concurrent_sync(master, workspace_base, spider_id, "http", 50, logger)
+        # Trigger 1000 concurrent directory scans (simulating HTTP mode)
+        http_result = _test_concurrent_sync(master, workspace_base, spider_id, "http", 1000, logger)
         
         logger.info(f"HTTP Results ({http_result['total']} concurrent):")
         logger.info(f"  - Completed: {http_result['completed']}/{http_result['total']}")
@@ -186,11 +186,11 @@ def run() -> bool:
         logger.info(f"  - Avg per request: {http_result['avg_duration']:.2f}s")
         
         # Step 3: Test gRPC Mode
-        logger.info("\n🚀 Step 3: Testing gRPC Mode (50 concurrent requests)")
+        logger.info("\n🚀 Step 3: Testing gRPC Mode (1000 concurrent requests)")
         logger.info("Testing deduplication via gRPC streaming...")
         time.sleep(2)  # Brief pause between tests
         
-        grpc_result = _test_concurrent_sync(master, workspace_base, spider_id, "grpc", 50, logger)
+        grpc_result = _test_concurrent_sync(master, workspace_base, spider_id, "grpc", 1000, logger)
         
         logger.info(f"gRPC Results ({grpc_result['total']} concurrent):")
         logger.info(f"  - Completed: {grpc_result['completed']}/{grpc_result['total']}")
