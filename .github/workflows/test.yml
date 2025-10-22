@@ -311,6 +311,68 @@ jobs:
             exit $EXIT_CODE
           fi
       
+      - name: Collect Docker logs and diagnostics
+        if: always()
+        env:
+          CRAWLAB_COMPOSE_NAMESPACE: crawlab_ci_${{ github.run_id }}
+        run: |
+          echo "Collecting Docker logs and diagnostics..."
+          mkdir -p results/docker-logs results/system-info
+          
+          # Collect container logs
+          echo "Collecting container logs..."
+          for container in master worker mongo mysql postgres mssql elasticsearch; do
+            FULL_NAME="${CRAWLAB_COMPOSE_NAMESPACE:-crawlab_test}_${container}"
+            if docker ps -a --format '{{.Names}}' | grep -q "^${FULL_NAME}$"; then
+              echo "Collecting logs from ${FULL_NAME}..."
+              docker logs "${FULL_NAME}" > "results/docker-logs/${container}.log" 2>&1 || true
+            fi
+          done
+          
+          # Collect container inspect information
+          echo "Collecting container inspect data..."
+          for container in master worker mongo; do
+            FULL_NAME="${CRAWLAB_COMPOSE_NAMESPACE:-crawlab_test}_${container}"
+            if docker ps -a --format '{{.Names}}' | grep -q "^${FULL_NAME}$"; then
+              docker inspect "${FULL_NAME}" > "results/docker-logs/${container}-inspect.json" 2>&1 || true
+            fi
+          done
+          
+          # Collect Docker Compose service status
+          echo "Collecting Docker Compose status..."
+          docker compose -f docker-compose.test.yml ps > results/docker-logs/compose-status.txt 2>&1 || true
+          
+          # Collect network information
+          echo "Collecting network information..."
+          docker network inspect crawlab-test_crawlab_test > results/docker-logs/network-inspect.json 2>&1 || true
+          
+          # Collect system information
+          echo "Collecting system information..."
+          {
+            echo "=== System Info ==="
+            uname -a
+            echo ""
+            echo "=== Docker Version ==="
+            docker --version
+            docker compose version
+            echo ""
+            echo "=== Disk Usage ==="
+            df -h
+            echo ""
+            echo "=== Memory Usage ==="
+            free -h
+            echo ""
+            echo "=== Docker System Info ==="
+            docker system df
+            echo ""
+            echo "=== Running Containers ==="
+            docker ps -a
+          } > results/system-info/system.txt 2>&1 || true
+          
+          echo "Diagnostics collection complete"
+          ls -lah results/docker-logs/ || true
+          ls -lah results/system-info/ || true
+      
       - name: Cleanup Crawlab services
         if: always()
         env:
@@ -325,7 +387,9 @@ jobs:
         if: always()
         with:
           name: test-results-${{ matrix.category }}-${{ github.run_number }}
-          path: results/
+          path: |
+            results/
+            !results/**/*.bak
           retention-days: 30
       
       - name: Generate test summary
@@ -339,8 +403,8 @@ jobs:
             echo "### Results:" >> $GITHUB_STEP_SUMMARY
             
             # Count passed/failed tests
-            TOTAL=$(find results -name "*.json" 2>/dev/null | wc -l)
-            PASSED=$(find results -name "*.json" -exec grep -l '"status".*"passed"' {} \; 2>/dev/null | wc -l)
+            TOTAL=$(find results -name "*.json" -path "*/result_*.json" 2>/dev/null | wc -l)
+            PASSED=$(find results -name "*.json" -path "*/result_*.json" -exec grep -l '"status".*"passed"' {} \; 2>/dev/null | wc -l)
             FAILED=$((TOTAL - PASSED))
             
             echo "- **Total tests**: $TOTAL" >> $GITHUB_STEP_SUMMARY
@@ -350,10 +414,10 @@ jobs:
             # List results
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### Details:" >> $GITHUB_STEP_SUMMARY
-            for RESULT in results/*.json; do
+            for RESULT in results/result_*.json 2>/dev/null; do
               if [ -f "$RESULT" ]; then
                 SPEC_NAME=$(basename "$RESULT" .json)
-                STATUS=$(jq -r '.status // "unknown"' "$RESULT")
+                STATUS=$(jq -r '.status // "unknown"' "$RESULT" 2>/dev/null || echo "unknown")
                 if [ "$STATUS" = "passed" ]; then
                   echo "- ✅ $SPEC_NAME" >> $GITHUB_STEP_SUMMARY
                 else
@@ -361,6 +425,17 @@ jobs:
                 fi
               fi
             done
+            
+            # Add information about artifacts
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 📦 Artifacts Available:" >> $GITHUB_STEP_SUMMARY
+            echo "- Test result JSON files" >> $GITHUB_STEP_SUMMARY
+            echo "- Docker container logs (master, worker, mongo, etc.)" >> $GITHUB_STEP_SUMMARY
+            echo "- Container inspect data" >> $GITHUB_STEP_SUMMARY
+            echo "- Network configuration" >> $GITHUB_STEP_SUMMARY
+            echo "- System diagnostics" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Download artifacts from the workflow run to view detailed logs." >> $GITHUB_STEP_SUMMARY
           else
             echo "No test results found" >> $GITHUB_STEP_SUMMARY
           fi

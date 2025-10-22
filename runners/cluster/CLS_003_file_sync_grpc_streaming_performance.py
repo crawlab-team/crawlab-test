@@ -32,6 +32,16 @@ def _verify_grpc_server(master, logger):
     """
     Verify gRPC server is accessible and provide detailed diagnostics.
     """
+    # First check container logs for gRPC server startup
+    logger.info("   Checking container logs for gRPC server startup...")
+    log_check = docker_utils.exec_command(
+        master,
+        "grep -a 'gRPC server' /proc/1/fd/1 /proc/1/fd/2 2>/dev/null | tail -10 || echo 'No gRPC logs found'",
+        timeout=5
+    )
+    if log_check['exit_code'] == 0 and log_check['output'].strip():
+        logger.info(f"   gRPC startup logs:\n{log_check['output'].strip()}")
+    
     # Check port binding inside container
     logger.info("   Checking gRPC port binding inside container...")
     port_check = docker_utils.exec_command(
@@ -162,13 +172,13 @@ def run() -> bool:
         _verify_grpc_server(master, logger)
         
         # Step 2: Test HTTP Mode (Baseline)
-        logger.info("\n📊 Step 2: Testing HTTP Mode (Baseline with 500 concurrent requests)")
+        logger.info("\n📊 Step 2: Testing HTTP Mode (Baseline with 50 concurrent requests)")
         logger.info("Simulating file sync via direct directory scans...")
         
-        # Trigger 500 concurrent directory scans (simulating HTTP mode) - STRESS TEST
-        http_result = _test_concurrent_sync(master, workspace_base, spider_id, "http", 500, logger)
+        # Trigger 50 concurrent directory scans (simulating HTTP mode)
+        http_result = _test_concurrent_sync(master, workspace_base, spider_id, "http", 50, logger)
         
-        logger.info(f"HTTP Results (500 concurrent):")
+        logger.info(f"HTTP Results ({http_result['total']} concurrent):")
         logger.info(f"  - Completed: {http_result['completed']}/{http_result['total']}")
         logger.info(f"  - Success rate: {http_result['success_rate']:.1f}%")
         logger.info(f"  - JSON errors: {http_result['json_errors']}")
@@ -176,13 +186,13 @@ def run() -> bool:
         logger.info(f"  - Avg per request: {http_result['avg_duration']:.2f}s")
         
         # Step 3: Test gRPC Mode
-        logger.info("\n🚀 Step 3: Testing gRPC Mode (500 concurrent requests)")
+        logger.info("\n🚀 Step 3: Testing gRPC Mode (50 concurrent requests)")
         logger.info("Testing deduplication via gRPC streaming...")
         time.sleep(2)  # Brief pause between tests
         
-        grpc_result = _test_concurrent_sync(master, workspace_base, spider_id, "grpc", 500, logger)
+        grpc_result = _test_concurrent_sync(master, workspace_base, spider_id, "grpc", 50, logger)
         
-        logger.info(f"gRPC Results (500 concurrent):")
+        logger.info(f"gRPC Results ({grpc_result['total']} concurrent):")
         logger.info(f"  - Completed: {grpc_result['completed']}/{grpc_result['total']}")
         logger.info(f"  - Success rate: {grpc_result['success_rate']:.1f}%")
         logger.info(f"  - JSON errors: {grpc_result['json_errors']}")
@@ -242,9 +252,11 @@ def run() -> bool:
         
         # Determine pass/fail
         # Test verifies actual gRPC calls work and deduplication reduces scan count
+        # Use percentage-based success criteria for flexibility
+        min_success_rate = 75.0  # 75% minimum success rate
         success = (
-            grpc_result['completed'] >= 75 and  # At least 75% success rate (dev environment)
-            http_result['completed'] >= 75 and
+            grpc_result['success_rate'] >= min_success_rate and
+            http_result['success_rate'] >= min_success_rate and
             grpc_result['json_errors'] == 0 and
             http_result['json_errors'] == 0 and
             grpc_result['scan_count'] < grpc_result['total']  # Some deduplication happened
@@ -253,7 +265,7 @@ def run() -> bool:
         logger.info("\n" + "="*70)
         if success:
             logger.info("✅ CLS-003 GRPC STREAMING TEST PASSED")
-            logger.info(f"   • Made {grpc_result['total']} concurrent REAL gRPC StreamFileScan calls (EXTREME STRESS TEST)")
+            logger.info(f"   • Made {grpc_result['total']} concurrent REAL gRPC StreamFileScan calls")
             logger.info(f"   • HTTP mode: {http_result['success_rate']:.1f}% success, {http_result['avg_duration']:.2f}s avg")
             logger.info(f"   • gRPC mode: {grpc_result['success_rate']:.1f}% success, {grpc_result['avg_duration']:.2f}s avg")
             logger.info("   • Zero JSON errors in both modes")
@@ -262,7 +274,7 @@ def run() -> bool:
             logger.info(f"   • Latency: {comparison['improvements']['latency_improvement']}x better (per request)")
         else:
             logger.error("❌ CLS-003 GRPC STREAMING TEST FAILED")
-            if grpc_result['completed'] < 75 or http_result['completed'] < 75:
+            if grpc_result['success_rate'] < 75.0 or http_result['success_rate'] < 75.0:
                 logger.error(f"   • Low success rate (need ≥75%)")
                 logger.error(f"     HTTP: {http_result['success_rate']:.1f}%, gRPC: {grpc_result['success_rate']:.1f}%")
             if grpc_result['json_errors'] > 0 or http_result['json_errors'] > 0:

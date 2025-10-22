@@ -45,6 +45,10 @@ services:
       CRAWLAB_LOG_LEVEL: "info"
       CRAWLAB_SERVER_HOST: "0.0.0.0"
       CRAWLAB_SERVER_PORT: "8000"
+      # gRPC server configuration
+      CRAWLAB_GRPC_SERVER_HOST: "0.0.0.0"
+      CRAWLAB_GRPC_SERVER_PORT: "9666"
+      CRAWLAB_AUTH_KEY: "Crawlab2024!"
     ports:
       - "8080:8080"
       - "9666:9666"  # gRPC sync service

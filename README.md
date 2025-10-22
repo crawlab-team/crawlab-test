@@ -101,6 +101,33 @@ Auto-detects Docker containers and API endpoints. Use `helpers/tools/docker_mana
 ./helpers/tools/docker_manager.py --action disconnect --container worker-1
 ```
 
+### Diagnostics Collection
+
+Collect Docker logs and system diagnostics for troubleshooting:
+
+```bash
+# Collect all diagnostics (logs, system info, network config)
+./helpers/tools/collect_diagnostics.py
+
+# Specify output directory
+./helpers/tools/collect_diagnostics.py --output-dir /tmp/diagnostics
+
+# Collect logs from specific containers only
+./helpers/tools/collect_diagnostics.py --containers master worker
+
+# Use custom namespace (for CI environments)
+./helpers/tools/collect_diagnostics.py --namespace crawlab_ci_12345
+```
+
+**Collected artifacts include**:
+- Container logs (master, worker, mongo, etc.)
+- Container inspect data (JSON)
+- Docker Compose service status
+- Network configuration
+- System information (disk, memory, Docker stats)
+
+**Note**: In GitHub Actions, diagnostics are automatically collected on test failure and uploaded as artifacts.
+
 ## Copilot Backend
 
 AI-powered test execution with GitHub Copilot CLI. Automatically configures MCP (Model Context Protocol) for Playwright tools.
