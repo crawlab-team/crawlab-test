@@ -136,6 +136,42 @@ jobs:
             echo "run_tests=true" >> $GITHUB_OUTPUT
             echo "Will run tests for: ${CATEGORIES[@]}"
           fi
+      
+      - name: Generate detection summary
+        if: always()
+        run: |
+          echo "## Change Detection Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "**Trigger**: Manual workflow dispatch" >> $GITHUB_STEP_SUMMARY
+            echo "**Category**: \`${{ inputs.category }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "**Backend**: \`${{ inputs.backend }}\`" >> $GITHUB_STEP_SUMMARY
+            if [ -n "${{ inputs.spec_id }}" ]; then
+              echo "**Spec ID**: \`${{ inputs.spec_id }}\`" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "**Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Branch**: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.detect.outputs.run_tests }}" = "true" ]; then
+            echo "**Status**: ✅ Tests will run" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Categories to test**:" >> $GITHUB_STEP_SUMMARY
+            
+            # Parse and display categories
+            CATEGORIES='${{ steps.detect.outputs.categories }}'
+            echo "$CATEGORIES" | jq -r '.[]' | while read cat; do
+              echo "- \`$cat\`" >> $GITHUB_STEP_SUMMARY
+            done
+          else
+            echo "**Status**: ⏭️ No tests to run" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "No test-related changes detected in this commit." >> $GITHUB_STEP_SUMMARY
+          fi
 
   test:
     name: Test ${{ matrix.category }}
