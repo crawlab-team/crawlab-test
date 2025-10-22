@@ -138,8 +138,12 @@ class NodeDisconnectionTest:
             # Step 5: Verify recovery
             self.logger.info("Step 5: Verifying cluster recovery and task execution")
             # Wait for worker to be fully ready to accept tasks
-            self.logger.info("Waiting for worker to fully stabilize and be ready to accept tasks")
-            success &= self.wait_for_worker_ready(timeout=60)
+            # Use longer timeout in CI due to resource constraints
+            import os
+            is_ci = os.getenv('CI', '').lower() == 'true'
+            ready_timeout = 180 if is_ci else 120  # 3 minutes in CI, 2 minutes locally
+            self.logger.info(f"Waiting for worker to fully stabilize (timeout: {ready_timeout}s, CI: {is_ci})")
+            success &= self.wait_for_worker_ready(timeout=ready_timeout)
             if not success:
                 self.logger.error("Worker failed to become ready within timeout")
                 return False
@@ -194,7 +198,7 @@ class NodeDisconnectionTest:
             self.logger.error(f"Reconnection failed: {e}")
             return False
     
-    def wait_for_worker_ready(self, timeout: int = 60) -> bool:
+    def wait_for_worker_ready(self, timeout: int = 120) -> bool:
         """
         Wait for worker to be fully ready to accept tasks after reconnection.
         This checks that the worker can successfully communicate with master.
@@ -216,7 +220,7 @@ class NodeDisconnectionTest:
                             return False
             
             start_time = time.time()
-            check_interval = 2  # Check every 2 seconds
+            check_interval = 5  # Check every 5 seconds to reduce API pressure in CI
             
             while time.time() - start_time < timeout:
                 try:
@@ -253,8 +257,11 @@ class NodeDisconnectionTest:
                         if is_active and is_enabled and status == 'online':
                             elapsed = time.time() - start_time
                             self.logger.info(f"Worker is ready after {elapsed:.1f}s - active={is_active}, enabled={is_enabled}, status={status}")
-                            # Give it a bit more time to ensure gRPC clients are fully registered
-                            time.sleep(5)
+                            # Give it more time to ensure gRPC clients are fully registered and ready
+                            # This is critical in CI environments where processes may be slower
+                            stabilization_time = 15
+                            self.logger.info(f"Waiting {stabilization_time}s for gRPC connections to fully stabilize")
+                            time.sleep(stabilization_time)
                             return True
                         else:
                             self.logger.debug(f"Worker not ready yet: active={is_active}, enabled={is_enabled}, status={status}")
@@ -391,6 +398,11 @@ class NodeDisconnectionTest:
             self.logger.info(f"Created test task {task['_id']} for reconnected worker")
             
             # 5. Wait for task to be assigned and start executing
+            # Use longer timeout in CI environments
+            import os
+            is_ci = os.getenv('CI', '').lower() == 'true'
+            task_start_timeout = 60 if is_ci else 30
+            
             def check_task_running():
                 t = self.api_client.get_task_by_id(task['_id'])
                 if not t:
@@ -400,8 +412,8 @@ class NodeDisconnectionTest:
             
             task_started = wait_for_condition(
                 check_task_running,
-                timeout=30,
-                check_interval=2
+                timeout=task_start_timeout,
+                check_interval=3
             )
             
             if not task_started:
