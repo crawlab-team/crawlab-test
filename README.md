@@ -22,11 +22,16 @@ This testing framework follows a flexible, scenario-based approach where each te
 
 ### Initial Setup
 
-Before running UI tests, you need to install Playwright browsers:
+Before running tests, install dependencies using `uv` (recommended) or `pip`:
+
+#### Using uv (Recommended - Fast & Reproducible)
 
 ```bash
-# Install Python dependencies
-pip install -r requirements.txt
+# Install uv if not already installed
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install all dependencies (including Python if needed)
+uv sync
 
 # Install Playwright browsers (required for UI tests)
 ./setup-playwright.sh
@@ -38,38 +43,51 @@ pip install -r requirements.txt
 ./setup-playwright.sh --all
 ```
 
+#### Using pip (Fallback)
+
+```bash
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Install Playwright browsers
+./setup-playwright.sh
+```
+
 ### Using the New Unified CLI (Recommended)
 
 The unified CLI (`cli.py`) is the primary entry point for all test execution. It automatically detects the best backend for your test and provides a consistent interface.
 
 ```bash
 # List available test specifications
-./cli.py --list-specs
+uv run ./cli.py --list-specs
 
 # Search for tests
-./cli.py --search docker
+uv run ./cli.py --search docker
 
 # Run a test by ID (auto-detects best backend)
-./cli.py --spec UI-001
+uv run ./cli.py --spec UI-001
 
 # Run a test by name (fuzzy search)
-./cli.py --spec "spider management"
+uv run ./cli.py --spec "spider management"
 
 # Run with specific backend
-./cli.py --spec UI-001 --backend playwright
-./cli.py --spec CLS-001 --backend script
-./cli.py --spec DB-001 --backend copilot
+uv run ./cli.py --spec UI-001 --backend playwright
+uv run ./cli.py --spec CLS-001 --backend script
+uv run ./cli.py --spec DB-001 --backend copilot
 
 # Run with specific AI model (Copilot backend only)
-./cli.py --spec DB-001 --backend copilot --model gpt-4o
-./cli.py --spec DB-001 --backend copilot --model claude-3.5-sonnet
-./cli.py --spec DB-001 --backend copilot --model o1-preview
+uv run ./cli.py --spec DB-001 --backend copilot --model gpt-4o
+uv run ./cli.py --spec DB-001 --backend copilot --model claude-3.5-sonnet
+uv run ./cli.py --spec DB-001 --backend copilot --model o1-preview
 
 # Dry run to see what would execute
-./cli.py --spec UI-001 --dry-run
+uv run ./cli.py --spec UI-001 --dry-run
 
 # Run in CI mode
-./cli.py --spec UI-001 --ci --timeout 15
+uv run ./cli.py --spec UI-001 --ci --timeout 15
+
+# Using pip (if not using uv)
+./cli.py --spec UI-001  # Works without 'uv run' prefix
 ```
 
 **Backend Auto-Detection:**
@@ -215,16 +233,16 @@ export TEST_TIMEOUT_MINUTES=60
 
 ```bash
 # Copilot-powered UI test
-./run-with-copilot.py specs/ui/UI-001-spider-management-workflow-validation.md
+uv run ./run-with-copilot.py specs/ui/UI-001-spider-management-workflow-validation.md
 
 # Copilot-powered cluster test
-./run-with-copilot.py specs/scheduler/SCH-001-task-status-reconciliation-and-process-verification.md
+uv run ./run-with-copilot.py specs/scheduler/SCH-001-task-status-reconciliation-and-process-verification.md
 
 # Script-based dependency test
-./test-runner.py --spec specs/dependencies/DEP-001-dependencies-installation-robustness.md --method script
+uv run ./test-runner.py --spec specs/dependencies/DEP-001-dependencies-installation-robustness.md --method script
 
 # Use specific model
-COPILOT_MODEL=gpt-5 ./run-with-copilot.py specs/ui/UI-001-spider-management-workflow-validation.md
+COPILOT_MODEL=gpt-5 uv run ./run-with-copilot.py specs/ui/UI-001-spider-management-workflow-validation.md
 ```
 
 ### Security Considerations
@@ -383,28 +401,30 @@ We've created several example test cases to demonstrate the framework:
 ### Automated Execution
 ```bash
 # Use the test runner for automatic method selection
-./test-runner.py --spec specs/infrastructure/node-disconnection.md
+uv run ./test-runner.py --spec specs/infrastructure/node-disconnection.md
 
-# Execute helper scripts directly
+# Execute helper scripts directly (works with or without uv)
 ./helpers/infrastructure/node-manager.py --disconnect worker-1
 ```
 
 ### Copilot CLI Execution
 ```bash
 # For UI tests and complex interactions
-./test-runner.py --spec specs/ui/spider-management.md --method copilot
+uv run ./test-runner.py --spec specs/ui/spider-management.md --method copilot
 
 # Or use the Copilot wrapper directly
-./run-with-copilot.py specs/ui/spider-management.md
+uv run ./run-with-copilot.py specs/ui/spider-management.md
 
 # Specify a model for Copilot execution
-./cli.py --spec UI-001 --backend copilot --model gpt-4o
-./cli.py --spec UI-001 --backend copilot --model claude-3.5-sonnet
-./cli.py --spec UI-001 --backend copilot --model o1-preview
+uv run ./cli.py --spec UI-001 --backend copilot --model gpt-4o
+uv run ./cli.py --spec UI-001 --backend copilot --model claude-3.5-sonnet
+uv run ./cli.py --spec UI-001 --backend copilot --model o1-preview
 
 # Automated mode for CI/CD
 # Run in CI
-CI=true ./test-runner.py --spec <spec-file> --method copilot
+CI=true uv run ./test-runner.py --spec <spec-file> --method copilot
+
+# Note: Scripts also work without 'uv run' prefix if dependencies are installed
 ```
 
 **Supported Models:**
@@ -462,7 +482,7 @@ export DOCKER_HOST="tcp://remote-docker:2376"
 ### Docker Test Examples
 ```bash
 # Run comprehensive Docker container test
-./test-runner.py --spec specs/infrastructure/docker-container-disconnection.md
+uv run ./test-runner.py --spec specs/infrastructure/docker-container-disconnection.md
 
 # Health check
 ./helpers/infrastructure/docker-manager.py --action health

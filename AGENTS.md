@@ -76,7 +76,7 @@
 1. **Write specification**: Copy [SPEC_TEMPLATE.md](SPEC_TEMPLATE.md) to `specs/[category]/[TEST-ID]-[name].md`
 2. **Implement runner** (if using script backend): Create `runners/[category]/[TEST-ID]_[name].py`
 3. **Add helpers** (if needed): Create reusable utilities in `helpers/[category]/`
-4. **Test locally**: Run `./cli.py --spec [TEST-ID]`
+4. **Test locally**: Run `uv run ./cli.py --spec [TEST-ID]`
 5. **Verify determinism**: Run test multiple times to ensure consistent results
 
 ### Testing Best Practices
@@ -92,11 +92,11 @@
 ## 🔧 Development Standards
 
 ### Python Code Standards
-- **Python version**: 3.8+ required
+- **Python version**: 3.9+ required (for grpcio-tools + protobuf 6.x compatibility)
 - **Type hints**: Use type annotations for function signatures
 - **Error handling**: Always handle exceptions explicitly
 - **Logging**: Use Python logging module for observability
-- **Dependencies**: Keep `requirements.txt` up to date
+- **Dependencies**: Use `uv` for dependency management (pip fallback available)
 
 ### TypeScript Code Standards (UI tests)
 - **TypeScript**: Strict mode enabled
@@ -116,29 +116,35 @@
 
 ### Quick Start
 ```bash
-# Install dependencies
+# Install dependencies (recommended: uv)
+curl -LsSf https://astral.sh/uv/install.sh | sh  # Install uv if needed
+uv sync                              # Fast, reproducible install
+./setup-playwright.sh                # For UI tests
+
+# Or use pip (fallback)
 pip install -r requirements.txt
-./setup-playwright.sh  # For UI tests
 
 # List available tests
-./cli.py --list-specs
+uv run ./cli.py --list-specs
 
 # Run a specific test
-./cli.py --spec UI-001
-./cli.py --spec CLS-001 --backend script
-./cli.py --spec DB-001 --backend copilot --model gpt-4o
+uv run ./cli.py --spec UI-001
+uv run ./cli.py --spec CLS-001 --backend script
+uv run ./cli.py --spec DB-001 --backend copilot --model gpt-4o
 
 # Search for tests
-./cli.py --search docker
+uv run ./cli.py --search docker
+
+# Note: Scripts work without 'uv run' if dependencies installed
 ```
 
 ### CI/CD Integration
 ```bash
 # Run in CI mode with timeout
-./cli.py --spec UI-001 --ci --timeout 15
+uv run ./cli.py --spec UI-001 --ci --timeout 15
 
 # Dry run to preview execution
-./cli.py --spec UI-001 --dry-run
+uv run ./cli.py --spec UI-001 --dry-run
 ```
 
 ### Docker Testing

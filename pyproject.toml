@@ -1,0 +1,81 @@
+[project]
+name = "crawlab-test"
+version = "1.0.0"
+description = "Comprehensive automated testing framework for Crawlab and Crawlab Pro"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+    { name = "Crawlab Team", email = "team@crawlab.cn" }
+]
+keywords = ["crawlab", "testing", "automation", "web-scraping"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    # Database connectivity
+    "pymongo>=4.0.0",
+    
+    # HTTP client for API calls
+    "requests>=2.28.0",
+    
+    # System and process management
+    "psutil>=5.9.0",
+    
+    # Configuration and logging
+    "pyyaml>=6.0",
+    
+    # UI Testing - Browser automation
+    "playwright>=1.40.0",
+    
+    # gRPC for cluster testing
+    # Note: grpcio-tools>=1.71.0 supports protobuf 6.x and requires Python>=3.9
+    "grpcio>=1.71.0",
+    "grpcio-tools>=1.71.0",
+    "protobuf>=6.27.0",
+    
+    # Testing framework
+    "pytest>=7.0.0",
+    "pytest-timeout>=2.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/crawlab-team/crawlab-test"
+Repository = "https://github.com/crawlab-team/crawlab-test"
+Documentation = "https://github.com/crawlab-team/crawlab-test/blob/main/README.md"
+"Bug Tracker" = "https://github.com/crawlab-team/crawlab-test/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = []  # Script-based project, no packages to install
+
+[tool.uv]
+dev-dependencies = []
+package = false  # Disable package build (script-based project)
+
+[tool.pytest.ini_options]
+testpaths = ["runners"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --strict-markers"
+
+[tool.ruff]
+line-length = 120
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP"]
+ignore = ["E501"]  # Line length handled by formatter

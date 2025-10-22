@@ -45,11 +45,17 @@ log_info "Python version: $(python3 --version)"
 # Check if playwright is installed
 if ! python3 -c "import playwright" 2>/dev/null; then
     log_warn "Playwright Python package is not installed."
-    log_info "Installing playwright from requirements.txt..."
+    log_info "Installing dependencies with uv..."
     
-    if [ -f "requirements.txt" ]; then
+    # Check if uv is installed
+    if command -v uv &> /dev/null; then
+        log_info "Using uv for dependency installation"
+        uv sync
+    elif [ -f "requirements.txt" ]; then
+        log_warn "uv not found, falling back to pip"
         pip install -r requirements.txt
     else
+        log_warn "uv not found, installing playwright directly with pip"
         pip install playwright>=1.40.0
     fi
 else
@@ -101,12 +107,22 @@ if [ -n "$WITH_DEPS" ]; then
 fi
 
 # Run playwright install
-if python3 -m playwright install $WITH_DEPS $BROWSER_ARGS; then
-    log_info "✓ Playwright browsers installed successfully"
+if command -v uv &> /dev/null; then
+    if uv run playwright install $WITH_DEPS $BROWSER_ARGS; then
+        log_info "✓ Playwright browsers installed successfully"
+    else
+        log_error "Failed to install Playwright browsers"
+        log_error "Try running with --with-deps if you're missing system dependencies"
+        exit 1
+    fi
 else
-    log_error "Failed to install Playwright browsers"
-    log_error "Try running with --with-deps if you're missing system dependencies"
-    exit 1
+    if python3 -m playwright install $WITH_DEPS $BROWSER_ARGS; then
+        log_info "✓ Playwright browsers installed successfully"
+    else
+        log_error "Failed to install Playwright browsers"
+        log_error "Try running with --with-deps if you're missing system dependencies"
+        exit 1
+    fi
 fi
 
 # Verify installation

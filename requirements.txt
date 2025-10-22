@@ -1,5 +1,13 @@
 # Python requirements for Crawlab test suite
-# Install with: pip install -r requirements.txt
+# 
+# RECOMMENDED: Use uv for faster, more reproducible installs
+#   uv sync
+#
+# FALLBACK: Traditional pip installation
+#   pip install -r requirements.txt
+#
+# Note: This project now uses pyproject.toml and uv.lock for dependency management.
+# This requirements.txt is maintained for backward compatibility.
 
 # Database connectivity
 pymongo>=4.0.0
@@ -17,9 +25,9 @@ pyyaml>=6.0
 playwright>=1.40.0
 
 # gRPC for cluster testing
-grpcio>=1.60.0
-grpcio-tools>=1.60.0
-# Protobuf must match generated code version (6.x)
+# Note: grpcio-tools>=1.71.0 supports protobuf 6.x and requires Python>=3.9
+grpcio>=1.71.0
+grpcio-tools>=1.71.0
 protobuf>=6.27.0
 
 # For development and testing
