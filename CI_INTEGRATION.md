@@ -2,391 +2,382 @@
 
 ## Overview
 
-This document explains how to use the GitHub Actions integration for Crawlab's spec-based testing framework. The CI system is designed to run comprehensive tests automatically when code is pushed to the `test` branch, providing fast feedback on system stability and functionality.
+This document explains the GitHub Actions CI/CD workflows for the Crawlab test framework. There are two main workflows:
 
-**Branch-Specific Test Behavior:**
-- **`develop` branch**: UI tests are automatically skipped to enable faster development iteration
-- **`test` and `main` branches**: All test categories including UI tests are executed
-- To test UI changes on `develop`, manually trigger the workflow or merge to `test` branch
+1. **Smoke Tests** (`smoke-test.yml`) - Fast validation of test framework integrity
+2. **Test Specs** (`test.yml`) - Full spec-based testing with intelligent category detection
 
-**New in 2025**: The CI system now uses the unified `cli.py` test runner with modular backends for improved test execution:
-- **Script Backend**: Direct Python/shell script execution via runners
-- **Copilot Backend**: AI-powered test execution via GitHub Copilot CLI (with MCP Playwright tools for UI tests)
-- **Auto-detection**: Automatically selects the best backend for each test
+## Workflows
 
-## Key Features
+### 1. Smoke Tests
 
-- **Branch-Specific**: Only triggers on the `test` branch to avoid interfering with development workflows
-- **Smart Test Selection**: Automatically determines which test categories to run based on file changes
-- **Matrix Strategy**: Runs different test categories in parallel with appropriate environments
-- **Docker Integration**: Sets up full Crawlab environments for infrastructure testing
-- **Artifact Collection**: Saves test results, logs, and system information for analysis
-- **Retry Logic**: Automatically retries flaky tests to reduce false negatives
+**Purpose**: Fast validation that the test framework itself is working correctly.
 
-## Workflow Triggers
+**Triggers**:
+- Push to `main` branch
+- Pull requests to `main` branch
 
-### Automatic Triggers
+**What it tests**:
+- Python syntax validation for all core modules
+- CLI functionality (`cli.py --help`, `--list-specs`)
+- Test structure integrity (specs directories, backends)
+- Spec finder module functionality
 
-The workflow automatically runs when:
-- Code is pushed to the `test` branch
-- A pull request is opened against the `test` branch
-- Code is pushed to the `develop` branch **with `[test]` in the commit message**
+**Duration**: ~2-3 minutes
 
-### Manual Triggers
+**Artifacts**: None (fast feedback only)
 
-You can manually trigger tests with custom parameters:
+### 2. Test Specs
 
-1. Go to **Actions** tab in GitHub
-2. Select **"Spec-Based Testing"** workflow
-3. Click **"Run workflow"**
-4. Choose your options:
-   - **Test category**: `all`, `infrastructure`, `dependencies`, or `ui`
-   - **Test method**: `auto`, `script`, or `copilot`
-   - **Timeout**: Custom timeout in minutes (default: 30)
+**Purpose**: Execute actual test specifications to validate Crawlab functionality.
 
-### Triggering Tests from Develop Branch
+**Triggers**:
+- Push to `main` or `develop` branches
+- Pull requests to `main` or `develop` branches  
+- Manual workflow dispatch with custom parameters
 
-To run tests when pushing to the `develop` branch, include `[test]` in your commit message:
+**Test Categories**:
+- `api` - API endpoint tests
+- `cluster` - Cluster and distributed system tests
+- `database` - Database integration tests
+- `dependencies` - Package installation and dependency tests
+- `scheduler` - Task scheduling and execution tests
+- `system` - System configuration and locale tests
+- `ui` - User interface and browser automation tests
 
-```bash
-git commit -m "feat: add new spider feature [test]"
-git commit -m "fix: resolve dependency issue [test]"
-git commit -m "refactor: improve task reconciliation logic [test]"
-```
+**Smart Category Detection**: Automatically runs only the test categories affected by your changes:
+- Changed `specs/api/**` → Runs API tests only
+- Changed `core/**` or `cli.py` → Runs all tests (framework change)
+- Changed `specs/ui/**` → Runs UI tests only
 
-**Examples:**
-- ✅ `"feat: add authentication [test]"` - Will trigger tests
-- ✅ `"fix: memory leak issue [test] - updated caching"` - Will trigger tests  
-- ❌ `"feat: add authentication"` - Will NOT trigger tests
-- ❌ `"docs: update README [tests]"` - Will NOT trigger tests (wrong format)
+**Duration**: Varies by category (5-30 minutes per category)
 
-## Test Categories and Triggers
-
-All test specifications follow the naming convention `[CODE]-[descriptive-name].md` where:
-- **DEP**: Dependency-related test cases
-- **INF**: Infrastructure-related test cases  
-- **UI**: User interface-related test cases
-
-### Infrastructure Tests
-**Triggers when changes are detected in:**
-- `core/**` - Core application code
-- `specs/infrastructure/**` - Infrastructure test specs
-- `helpers/infrastructure/**` - Infrastructure test helpers
-- `docker/**` - Docker configuration
-- `k8s/**` - Kubernetes configuration
-
-**Test Specs:**
-- `INF-003-docker-container-node-disconnection-and-recovery.md` - Tests container resilience
-- `INF-001-master-worker-node-disconnection-and-reconnection-stability.md` - Tests cluster stability
-- `INF-002-task-status-reconciliation-and-process-verification.md` - Tests task status reconciliation
-
-**Environment:** Full Docker environment with Crawlab services
-
-### Dependency Tests
-**Triggers when changes are detected in:**
-- `**/go.mod`, `**/go.sum` - Go dependencies
-- `**/requirements.txt` - Python dependencies
-- `specs/dependencies/**` - Dependency test specs
-- `helpers/dependencies/**` - Dependency test helpers
-
-**Test Specs:**
-- `DEP-002-dependency-handler-network-reconnection-resilience.md` - Tests dependency reconnection
-- `DEP-001-dependencies-installation-robustness.md` - Tests package installation edge cases
-
-**Environment:** Lightweight environment without Docker
-
-### UI Tests
-**Triggers when changes are detected in:**
-- `crawlab/frontend/**` - Frontend code
-- `tests/specs/ui/**` - UI test specs
-- `tests/helpers/ui/**` - UI test helpers
-
-**⚠️ Branch Behavior:**
-- **Skipped on `develop` branch** to enable faster development iteration
-- **Run on `test` and `main` branches** for comprehensive validation
-- To test UI changes from `develop`, merge to `test` branch or manually trigger workflow
-
-**Test Specs:**
-- `UI-001-spider-management-workflow-validation.md` - Tests spider management workflows
-
-**Environment:** Full Docker environment with browser automation
-
-## Understanding Test Results
-
-### Status Indicators
-
-- ✅ **Passed**: Test completed successfully
-- ❌ **Failed**: Test failed validation criteria
-- ⏰ **Timeout**: Test exceeded time limit
-- ⏭️ **Skipped**: Test was skipped (manual tests in CI, excluded tests)
-- 💥 **Error**: Test encountered an execution error
-
-### Test Summary
-
-Each workflow run includes a summary with:
-- Overall test status
-- Category breakdown
-- Links to test artifacts
-- Execution time and environment details
-
-### Artifacts
-
-Test artifacts are automatically collected and stored for 30 days:
-- **Test Results**: JSON files with detailed execution results
-- **Docker Logs**: Container logs for infrastructure tests
-- **System Information**: Environment details and versions
-- **Screenshots**: UI test screenshots (when applicable)
+**Artifacts**: Test results stored for 30 days
 
 ## Configuration
 
+### Workflow Parameters (Manual Dispatch)
+
+When manually triggering the **Test Specs** workflow:
+
+- **category**: Choose which tests to run
+  - `all` (default) - Run all test categories
+  - `api`, `cluster`, `database`, `dependencies`, `scheduler`, `system`, `ui` - Run specific category
+  
+- **backend**: Choose execution method
+  - `auto` (default) - Auto-detect best backend
+  - `script` - Use Python script runners
+  - `copilot` - Use AI-powered execution
+  
+- **spec_id**: Run a specific test by ID (e.g., `UI-001`, `CLS-001`)
+
+- **timeout**: Test timeout in minutes (default: 30)
+
 ### Environment Variables
 
-The following environment variables can be set in GitHub repository settings:
+Set in GitHub repository settings under **Settings** → **Secrets and variables** → **Actions**:
 
-- `CRAWLAB_API_TOKEN`: API token for Crawlab authentication (optional)
-- `TEST_TIMEOUT_MINUTES`: Global timeout override (default: 30)
-- `TEST_RETRY_COUNT`: Number of retries for flaky tests (default: 2)
+- `CRAWLAB_LICENSE` - Crawlab Pro license key (required for some tests)
+- `GITHUB_TOKEN` - Automatically provided by GitHub Actions
 
-### CI Configuration File
+## Understanding Test Results
 
-The `ci.env` file contains CI-specific settings:
+### Smoke Test Results
 
-```bash
-# Test Execution Settings
-TEST_TIMEOUT_MINUTES=30
-TEST_RETRY_COUNT=2
+The smoke test provides a simple pass/fail summary:
 
-# Docker Settings
-CRAWLAB_STARTUP_TIMEOUT=120
+```
+✅ Spec finder tests passed
+✅ Python syntax checks completed
+✅ CLI is executable and functional  
+✅ Test structure validated
 
-# Test Exclusions
-EXCLUDED_TESTS=manual-interaction,browser-specific
+Status: ✅ All smoke tests passed
 ```
 
-## Troubleshooting
+### Test Spec Results
 
-### Common Issues
+Each test category produces:
 
-#### Tests Timing Out
-- Check if timeout values are appropriate for your tests
-- Verify Docker services are starting correctly
-- Look at system resource usage in artifacts
+1. **Test Summary** - Pass/fail counts for the category
+2. **Detailed Results** - Individual spec outcomes with status
+3. **Artifacts** - JSON result files with execution details
 
-#### Docker Service Failures
-- Check Docker logs in test artifacts
-- Verify docker-compose.yml is correct
-- Ensure all required ports are available
+Example summary:
+```
+## Test Results - api
 
-#### Flaky Tests
-- Tests automatically retry up to 2 times
-- Check test artifacts for intermittent issues
-- Consider adjusting timeout values in `ci.env`
+### Results:
+- Total tests: 3
+- Passed: ✅ 2
+- Failed: ❌ 1
 
-### Debugging Steps
+### Details:
+- ✅ API-001-endpoint-validation
+- ✅ API-002-authentication
+- ❌ API-003-rate-limiting
+```
 
-1. **Review the workflow log**: Check GitHub Actions logs for detailed execution
-2. **Download artifacts**: Get test results and logs for local analysis
-3. **Run locally**: Execute the same test spec locally using the test runner
-4. **Check CI config**: Verify settings in `ci.env` are appropriate
+### Status Indicators
 
-### Example Debugging Commands
+- ✅ **Passed** - Test completed successfully
+- ❌ **Failed** - Test failed validation  
+- ⏭️ **Skipped** - Test was not run (no changes detected)
+
+## Typical Workflow
+
+### Development on Feature Branch
 
 ```bash
-# Run the same test locally using the new unified CLI
-./cli.py --spec specs/infrastructure/INF-003-docker-container-node-disconnection-and-recovery.md --ci
+# Make changes
+git checkout -b feature/my-feature
+git commit -m "Add new feature"
 
-# Or use spec ID directly
-./cli.py --spec INF-003 --ci
+# Push to remote - triggers smoke tests on PR
+git push origin feature/my-feature
+```
 
-# Check test runner configuration
+### Creating Pull Request
+
+1. Open PR against `main` or `develop`
+2. **Smoke tests** run automatically (2-3 min)
+3. **Test specs** run automatically for affected categories
+4. Review results and fix any failures
+5. Merge when all checks pass
+
+### Manual Testing
+
+```bash
+# Navigate to Actions tab in GitHub
+# Select "Test Specs" workflow
+# Click "Run workflow"
+# Choose:
+#   - category: api
+#   - backend: auto
+#   - spec_id: (leave blank for all)
+#   - timeout: 30
+```
+
+## Local Testing Before Push
+
+Always test locally before pushing:
+
+```bash
+# List available tests
 ./cli.py --list-specs
 
-# Search for tests
-./cli.py --search docker
+# Run specific test
+./cli.py --spec API-001
 
-# Run with specific backend
-./cli.py --spec INF-001 --backend script
-./cli.py --spec UI-001 --backend copilot
+# Run all tests in a category
+./cli.py --list-specs --category api
+# Then run each one manually or use shell loop
 
-# Dry run to see what would execute
-./cli.py --spec INF-001 --dry-run
+# Dry run to preview
+./cli.py --spec UI-001 --dry-run
+
+# CI mode (same as GitHub Actions runs)
+./cli.py --spec CLS-001 --ci
 ```
 
-## Best Practices
+## Troubleshooting CI Failures
 
-### For Developers
+### Smoke Test Failures
 
-1. **Test locally first**: Run tests locally before pushing to test branch using `./cli.py --spec <test-id>`
-2. **Use the unified CLI**: Prefer `cli.py` over legacy scripts for better auto-detection and error messages
-3. **Use meaningful commit messages**: Help identify what changes might affect tests
-4. **Monitor test results**: Check GitHub Actions after pushing changes
-5. **Update test specs**: Keep test specifications current with code changes
-6. **Leverage backend flexibility**: Use `--backend` flag to test with specific execution methods
+**Symptom**: Python syntax errors or CLI failures
 
-### For Test Maintenance
+**Solutions**:
+1. Run `python -m py_compile <file>` locally to check syntax
+2. Test CLI: `./cli.py --help` and `./cli.py --list-specs`
+3. Check Python version (must be 3.8+)
 
-1. **Regular spec updates**: Review and update test specifications quarterly
-2. **Timeout tuning**: Adjust timeouts based on actual execution times
-3. **Helper script maintenance**: Keep helper scripts current with API changes
-4. **Artifact cleanup**: Regularly review and clean up old test artifacts
+**Common causes**:
+- Missing dependencies in `requirements.txt`
+- Import errors in core modules
+- Invalid spec file format
 
-## Integration with Development Workflow
+### Test Spec Failures
 
-### Recommended Branch Strategy
+**Symptom**: Individual test specs failing
 
+**Solutions**:
+1. Download artifacts from failed workflow run
+2. Review JSON results for error details
+3. Run locally: `./cli.py --spec <SPEC-ID> --ci`
+4. Check logs for specific error messages
+
+**Common causes**:
+- API endpoint changes not reflected in tests
+- Timing issues (increase timeout)
+- Environment differences (Docker vs local)
+- Test data conflicts
+
+### Category Detection Issues
+
+**Symptom**: Wrong tests running or no tests running
+
+**Solutions**:
+1. Check which files you changed
+2. Verify path patterns in `test.yml` detect-changes job
+3. For core changes, all tests should run
+4. Manual dispatch lets you override detection
+
+## Advanced Topics
+
+### Backends Explained
+
+**Script Backend** (`--backend script`):
+- Executes Python test runners directly
+- Fast and deterministic
+- Best for API, system, database tests
+- Requires runner file in `runners/<category>/`
+
+**Copilot Backend** (`--backend copilot`):
+- AI-powered test execution
+- Can handle complex scenarios
+- Best for exploratory testing
+- Slower but more flexible
+
+**Auto Backend** (default):
+- Detects best backend per test
+- Checks for runner file → uses script
+- Falls back to copilot if no runner
+- Recommended for most cases
+
+### Environment Requirements
+
+**Smoke Tests**:
+- Python 3.9
+- Dependencies from `requirements.txt`
+- No Docker required
+
+**API/System/Database Tests**:
+- Python 3.9
+- Crawlab API accessible at `localhost:8080`
+- No Docker required (tests remote API)
+
+**Cluster/Scheduler Tests**:
+- Python 3.9
+- Docker and docker-compose
+- Crawlab containers running
+
+**UI Tests**:
+- Python 3.9
+- Playwright with Chromium
+- Crawlab UI accessible
+- Docker for full environment
+
+### Artifacts Deep Dive
+
+Each test category produces artifacts with:
+
+**Structure**:
 ```
-main ← develop ← feature-branch
-  ↑
-test (CI testing)
+test-results-<category>-<run-number>/
+  ├── <SPEC-ID>.json      # Detailed test results
+  ├── screenshots/        # UI test screenshots
+  ├── logs/              # Container/application logs
+  └── system-info.txt    # Environment details
 ```
 
-1. **Development**: Work on feature branches, merge to `develop`
-2. **Testing**: Merge `develop` to `test` branch for CI validation
-3. **Release**: Merge tested changes from `test` to `main`
-
-### Pre-Release Testing
-
-Before major releases:
-
-1. Merge latest `develop` to `test` branch
-2. Run comprehensive tests via manual workflow dispatch
-3. Review all test artifacts and results
-4. Fix any issues and re-test
-5. Merge to `main` when all tests pass
-
-## MCP (Model Context Protocol) Configuration
-
-**✅ Configured in GitHub Actions**: The MCP configuration is automatically set up in our workflow.
-
-### Playwright MCP Server
-
-The `mcp-config.json` file is automatically installed to `~/.copilot/mcp-config.json` during CI setup:
-
+**Result JSON format**:
 ```json
 {
-  "mcpServers": {
-    "playwright": {
-      "command": "npx",
-      "args": ["@playwright/mcp@latest"],
-      "env": {}
-    }
-  }
+  "spec_id": "API-001",
+  "status": "passed",
+  "duration": 12.5,
+  "backend": "script",
+  "timestamp": "2025-10-22T14:30:00Z",
+  "errors": [],
+  "steps": [...]
 }
 ```
 
-### GitHub Actions Integration
+### Extending Workflows
 
-The setup is handled in `.github/workflows/copilot-setup-steps.yml`:
+To add a new test category:
 
-- **Step 11**: Sets up MCP configuration and installs Playwright MCP server
-- **Location**: `~/.copilot/mcp-config.json` 
-- **Automatic**: Copilot CLI automatically loads configs from this standard location
+1. **Create specs**: `specs/mynewcat/CAT-001-test-name.md`
 
-When you create additional test workflows that use the Copilot backend:
-
+2. **Update detection** in `.github/workflows/test.yml`:
 ```yaml
-- name: Setup MCP configuration
-  run: |
-    mkdir -p ~/.copilot
-    cp mcp-config.json ~/.copilot/mcp-config.json
-    npm install -g @playwright/mcp
-
-- name: Run tests with Copilot
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  run: |
-    ./cli.py --spec UI-001 --backend copilot --ci
+if echo "$CHANGED_FILES" | grep -qE "^specs/mynewcat/|^runners/mynewcat/"; then
+  CATEGORIES+=("mynewcat")
+fi
 ```
 
-For more details, see [MCP_SETUP.md](MCP_SETUP.md).
+3. **Add to matrix**:
+```yaml
+# Add "mynewcat" to categories array
+categories: ${{ fromJson(needs.detect-changes.outputs.categories) }}
+```
 
-## Extending the CI System
+4. **Test manually**:
+```bash
+./cli.py --spec CAT-001 --ci
+```
 
-### Adding New Test Categories
+5. **Commit and push** - workflow will pick up new category
 
-1. Create test specs in `specs/[new-category]/`
-2. Add runners in `runners/[new-category]/` (for script backend)
-3. Optionally add helpers in `helpers/[new-category]/`
-4. Create a `_matrix.json` configuration file in `specs/[new-category]/`:
-   ```json
-   {
-     "timeout": 30,
-     "default_method": "script",
-     "paths": [
-       "path/to/trigger/files/**",
-       "specs/[new-category]/**"
-     ]
-   }
-   ```
-4. Update `.github/workflows/spec-tests.yml` matrix configuration
-5. Update path filters in `detect-changes` job
-6. Test the new category manually
+## Best Practices Summary
 
-**Matrix Configuration Options:**
-- `timeout`: Test timeout in minutes (default: 30)
-- `default_method`: Execution method - `"script"` or `"copilot"` (default: auto-detected)
-- `paths`: File patterns that trigger tests for this category
-- `fallback`: If true, runs when no specific category matches (default: false)
-- `extra_triggers`: Additional trigger conditions (e.g., `["CHANGES_CORE_CODE"]`)
+✅ **DO**:
+- Test locally before pushing
+- Use descriptive spec IDs and names
+- Keep tests deterministic and fast
+- Document prerequisites in specs
+- Clean up test data after execution
+- Use `--ci` flag to match CI behavior
 
-### Adding New Test Specs
+❌ **DON'T**:
+- Rely on external state or data
+- Create tests that modify production
+- Use hardcoded timeouts (use config)
+- Skip cleanup steps
+- Commit results/ directory
 
-1. Use `SPEC_TEMPLATE.md` as starting point
-2. Place in appropriate category directory
-3. Create helper scripts if needed
-4. Test locally before committing
-5. Document any special requirements
+## Quick Reference
 
-### Customizing Test Execution
+### Common Commands
 
-Modify `ci.env` to adjust:
-- Timeout values per category
-- Retry counts for flaky tests
-- Test exclusions for CI environment
-- Resource limits and constraints
+```bash
+# List all tests
+./cli.py --list-specs
 
-## Monitoring and Alerts
+# Run specific test
+./cli.py --spec <SPEC-ID>
 
-### GitHub Integration
+# CI mode
+./cli.py --spec <SPEC-ID> --ci
 
-- Test results appear as status checks on pull requests
-- Failed tests block merge if branch protection is enabled
-- Test summaries are posted as workflow comments
+# Search tests
+./cli.py --search <keyword>
 
-### Notification Options
+# Dry run
+./cli.py --spec <SPEC-ID> --dry-run
 
-Configure GitHub repository settings for:
-- Email notifications on test failures
-- Slack/Teams integration for team alerts
-- Custom webhooks for advanced monitoring
+# Specific backend
+./cli.py --spec <SPEC-ID> --backend script
+```
 
-## Security Considerations
+### Workflow Files
 
-- API tokens are stored as encrypted GitHub secrets
-- Test environments are isolated and ephemeral
-- No sensitive data is stored in test artifacts
-- Docker containers run with minimal privileges
+- `.github/workflows/smoke-test.yml` - Fast framework validation
+- `.github/workflows/test.yml` - Full spec-based testing
+- `config.json` - Test framework configuration
+- `ci.env` - CI-specific environment (if exists)
 
-## Performance Optimization
+### Key Directories
 
-### Parallel Execution
-- Different test categories run in parallel
-- Matrix strategy maximizes resource utilization
-- Conditional triggers avoid unnecessary test runs
-
-### Caching
-- Python dependencies are cached between runs
-- Docker layers are cached when possible
-- Test artifacts are compressed for faster uploads
-
-### Resource Management
-- Tests have strict timeout limits
-- Docker containers are cleaned up after each run
-- System resources are monitored and limited
+- `specs/` - Test specifications
+- `runners/` - Python test runners (script backend)
+- `helpers/` - Reusable test utilities
+- `backends/` - Backend implementations
+- `results/` - Test results (gitignored)
 
 ---
 
-For more information about the underlying test framework, see:
-- [README.md](README.md) - Framework overview
-- [TESTING_SOP.md](TESTING_SOP.md) - Detailed testing procedures
-- [SPEC_TEMPLATE.md](SPEC_TEMPLATE.md) - Template for creating new tests
+**For more details**:
+- Framework: [README.md](README.md)
+- Testing procedures: [TESTING_SOP.md](TESTING_SOP.md)
+- Creating tests: [SPEC_TEMPLATE.md](SPEC_TEMPLATE.md)

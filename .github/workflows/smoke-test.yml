@@ -79,6 +79,7 @@ jobs:
           echo "✅ Test structure looks good"
       
       - name: Test spec finder
+        id: spec_finder
         run: |
           python .github/workflows/test_spec_finder.py
       
@@ -87,7 +88,23 @@ jobs:
         run: |
           echo "## Smoke Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Python syntax check passed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ CLI executable and functional" >> $GITHUB_STEP_SUMMARY
+          
+          # Check step outcomes
+          if [ "${{ steps.spec_finder.outcome }}" = "success" ]; then
+            echo "✅ Spec finder tests passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Spec finder tests failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "✅ Python syntax checks completed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ CLI is executable and functional" >> $GITHUB_STEP_SUMMARY
           echo "✅ Test structure validated" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Core modules work correctly" >> $GITHUB_STEP_SUMMARY
+          
+          # Overall status
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.spec_finder.outcome }}" = "success" ]; then
+            echo "**Status**: ✅ All smoke tests passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Status**: ❌ Some smoke tests failed" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
