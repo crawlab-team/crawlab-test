@@ -143,8 +143,10 @@ class DockerContainerDisconnectionTest:
                 self.logger.error("Failed to disconnect")
                 return False
             
-            # Wait
-            time.sleep(5)
+            # Wait for disconnection to be detected
+            # Master monitors every 20s and requires 2 consecutive failures (40s) before marking offline
+            self.logger.info("Waiting 45s for disconnection detection...")
+            time.sleep(45)
             
             # Reconnect
             self.logger.info(f"Reconnecting {self.worker_container} to network")
@@ -152,8 +154,13 @@ class DockerContainerDisconnectionTest:
                 self.logger.error("Failed to reconnect")
                 return False
             
-            # Verify
-            time.sleep(5)
+            # Wait for node to stabilize after reconnection
+            # Worker needs time to re-establish gRPC connection and master needs to confirm health
+            # Master checks every 20s, so we need to wait at least 50s for stability confirmation
+            self.logger.info("Waiting 50s for node stabilization after reconnection...")
+            time.sleep(50)
+            
+            # Verify cluster health
             return self.verify_cluster_health()
             
         except Exception as e:
@@ -174,8 +181,9 @@ class DockerContainerDisconnectionTest:
                 self.logger.error("Failed to pause container")
                 return False
             
-            # Wait
-            time.sleep(5)
+            # Wait for pause to be detected (similar to disconnection timing)
+            self.logger.info("Waiting 45s for pause detection...")
+            time.sleep(45)
             
             # Unpause
             self.logger.info(f"Unpausing {self.worker_container}")
@@ -183,8 +191,11 @@ class DockerContainerDisconnectionTest:
                 self.logger.error("Failed to unpause container")
                 return False
             
-            # Verify
-            time.sleep(5)
+            # Wait for node to stabilize after unpause
+            self.logger.info("Waiting 50s for node stabilization after unpause...")
+            time.sleep(50)
+            
+            # Verify cluster health
             return self.verify_cluster_health()
             
         except Exception as e:
