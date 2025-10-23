@@ -91,15 +91,19 @@ The test automatically detects whether Crawlab is running in Docker containers a
 
 ## Success Criteria
 - [ ] Docker environment auto-detection works correctly
-- [ ] Container network disconnection detected within 30 seconds
+- [ ] Container network disconnection detected within 40-60 seconds (master checks every 20s, requires 2 consecutive failures)
 - [ ] Running tasks on disconnected container handled gracefully
 - [ ] No new tasks assigned to disconnected containers
 - [ ] Task reconciliation completes within 60 seconds
-- [ ] Container reconnection successful within 60 seconds
+- [ ] Container reconnection successful within 60 seconds of network restoration
+- [ ] Reconnected container achieves stable online status within 50 seconds
 - [ ] Paused containers can be resumed successfully
 - [ ] No data inconsistencies after container operations
 - [ ] No zombie processes or orphaned tasks
 - [ ] System performance returns to baseline after reconnection
+
+## Monitoring Behavior
+Same as CLS-001: Master monitors every 20s, requires 2 consecutive failures (~40s) before marking offline.
 
 ## Docker-Specific Validations
 - [ ] Container health checks respond correctly

@@ -203,11 +203,15 @@ class NodeDisconnectionTest:
         
         This method uses an intelligent polling approach to wait for:
         1. Node to appear in API and be marked as active=true, status=online
-        2. Node to remain stable for at least 20 seconds (> master monitor interval of 15s)
+        2. Node to remain stable for at least the required period
         
-        The stability period ensures that the master's monitoring loop has run
-        at least once and confirmed the node's health, preventing race conditions
-        where the node reconnects but hasn't been verified by the monitor yet.
+        The stability period must account for the master's monitoring behavior:
+        - Master monitors every 20 seconds (increased from 15s for stability)
+        - Master requires 2 consecutive failures before marking offline (40s grace period)
+        - Therefore, we need to wait at least 45s for stability confirmation
+        
+        This ensures that the master's monitoring loop has run at least twice
+        and confirmed the node's health, preventing race conditions.
         
         Args:
             timeout: Maximum time to wait (seconds)
@@ -239,10 +243,14 @@ class NodeDisconnectionTest:
             check_interval = 2  # Check every 2 seconds
             first_active_time = None  # Track when node first becomes active
             
-            # In CI, use longer stability period to account for slower systems
-            stability_period = 30 if is_ci else 20  # Must stay active for > master monitor interval (15s)
-            # Allow brief flaps before resetting stability timer (tolerance for transient states)
-            max_flaps_allowed = 2
+            # Stability period must be > 2 * monitor_interval to ensure master has confirmed health
+            # Master now has: monitor_interval=20s, requires 2 failures before offline
+            # So we need: 45s stability (> 2 * 20s = 40s grace period)
+            stability_period = 50 if is_ci else 45  # Extra buffer in CI for slower systems
+            
+            # Allow more flaps since master itself tolerates 2 failures before marking offline
+            # We should be at least as tolerant as the master
+            max_flaps_allowed = 3  # Increased from 2 to match master's tolerance
             flap_count = 0
             
             self.logger.info(f"Polling for worker readiness (stability_period={stability_period}s, timeout={timeout}s, CI={is_ci})")
