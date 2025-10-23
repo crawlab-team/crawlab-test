@@ -216,6 +216,10 @@ class NodeDisconnectionTest:
             bool: True if worker is ready and stable, False otherwise
         """
         try:
+            # Check if running in CI environment
+            import os
+            is_ci = os.getenv('CI', '').lower() == 'true'
+            
             if not self.api_client:
                 self.api_client = CrawlabAPIClient()
                 max_retries = 3
