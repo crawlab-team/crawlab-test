@@ -296,7 +296,7 @@ class SpiderHelper:
             response = requests.post(
                 f"{self.base_url}/spiders/{spider_id}/files/copy",
                 headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-                json={"src_path": src_path, "dest_path": dest_path},
+                json={"path": src_path, "new_path": dest_path},
                 timeout=10
             )
             
@@ -322,7 +322,7 @@ class SpiderHelper:
             response = requests.post(
                 f"{self.base_url}/spiders/{spider_id}/files/rename",
                 headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-                json={"old_path": old_path, "new_path": new_path},
+                json={"path": old_path, "newPath": new_path},
                 timeout=10
             )
             
