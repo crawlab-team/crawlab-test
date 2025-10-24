@@ -176,11 +176,44 @@ class CrawlabAPIClient:
         data = self._get_json_response(response)
         return data.get('data')
     
-    def create_task(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a new task"""
-        response = self._request('POST', '/tasks', json=task_data)
+    def run_task(self, task_data: Dict[str, Any]) -> List[str]:
+        """
+        Run a task (creates and schedules it).
+        
+        This calls POST /tasks/run which:
+        1. Validates the spider_id
+        2. Schedules the task via spider admin service
+        3. Returns a list of created task IDs
+        
+        Args:
+            task_data: Must include 'spider_id' and optionally:
+                - mode: 'random' | 'all-nodes' | 'selected-nodes'
+                - node_ids: List of node IDs (for 'selected-nodes' mode)
+                - cmd: Command to run
+                - param: Parameters
+                - priority: Task priority
+        
+        Returns:
+            List of task IDs (usually one, but can be multiple for 'all-nodes' mode)
+        """
+        response = self._request('POST', '/tasks/run', json=task_data)
         data = self._get_json_response(response)
-        return data.get('data')
+        task_ids = data.get('data', [])
+        # Handle both list and single ID responses
+        if isinstance(task_ids, list):
+            return task_ids
+        return [task_ids] if task_ids else []
+    
+    def create_task(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Legacy method - deprecated. Use run_task() instead.
+        Creates and runs a task, returning the first task created.
+        """
+        task_ids = self.run_task(task_data)
+        if not task_ids:
+            raise Exception("No task IDs returned from run_task")
+        # Get the first task
+        return self.get_task_by_id(task_ids[0])
     
     def update_task(self, task_id: Union[str, ObjectId], task_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update an existing task"""
