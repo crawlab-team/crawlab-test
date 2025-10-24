@@ -310,3 +310,161 @@ class TaskHelper:
             
         except Exception as e:
             return False, {"error": str(e)}
+    
+    def update_task(self, token: str, task_id: str, updates: Dict) -> Tuple[Optional[Dict], Optional[Dict]]:
+        """
+        Update task (partial update).
+        
+        Args:
+            token: JWT authentication token
+            task_id: Task ID
+            updates: Dictionary of fields to update
+            
+        Returns:
+            Tuple of (updated_task, response_data)
+        """
+        try:
+            response = requests.patch(
+                f"{self.base_url}/tasks/{task_id}",
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                json={"data": updates},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return data.get('data'), data
+            else:
+                return None, {"error": f"Update task failed with status {response.status_code}", "response": response.text}
+                
+        except Exception as e:
+            return None, {"error": str(e)}
+    
+    def replace_task(self, token: str, task_id: str, task_data: Dict) -> Tuple[Optional[Dict], Optional[Dict]]:
+        """
+        Replace task (full update).
+        
+        Args:
+            token: JWT authentication token
+            task_id: Task ID
+            task_data: Full task data object
+            
+        Returns:
+            Tuple of (replaced_task, response_data)
+        """
+        try:
+            response = requests.put(
+                f"{self.base_url}/tasks/{task_id}",
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                json={"data": task_data},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return data.get('data'), data
+            else:
+                return None, {"error": f"Replace task failed with status {response.status_code}", "response": response.text}
+                
+        except Exception as e:
+            return None, {"error": str(e)}
+    
+    def batch_update_tasks(self, token: str, task_ids: List[str], updates: Dict) -> Tuple[bool, Optional[Dict]]:
+        """
+        Batch update multiple tasks.
+        
+        Args:
+            token: JWT authentication token
+            task_ids: List of task IDs
+            updates: Dictionary of fields to update
+            
+        Returns:
+            Tuple of (success, response_data)
+        """
+        try:
+            payload = {
+                "ids": task_ids,
+                "data": updates
+            }
+            
+            response = requests.patch(
+                f"{self.base_url}/tasks",
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                json=payload,
+                timeout=10
+            )
+            
+            return response.status_code == 200, response.json() if response.text else {}
+            
+        except Exception as e:
+            return False, {"error": str(e)}
+    
+    def delete_tasks(self, token: str, task_ids: List[str]) -> Tuple[bool, Optional[Dict]]:
+        """
+        Delete multiple tasks.
+        
+        Args:
+            token: JWT authentication token
+            task_ids: List of task IDs
+            
+        Returns:
+            Tuple of (success, response_data)
+        """
+        try:
+            # Try query parameter approach first
+            params = {"ids": ",".join(task_ids)}
+            
+            response = requests.delete(
+                f"{self.base_url}/tasks",
+                headers={"Authorization": f"Bearer {token}"},
+                params=params,
+                timeout=10
+            )
+            
+            return response.status_code == 200, response.json() if response.text else {}
+            
+        except Exception as e:
+            return False, {"error": str(e)}
+    
+    def list_tasks_paginated(self, token: str, page: int = 1, size: int = 10, 
+                            filter_dict: Optional[Dict] = None, 
+                            sort: str = "-_id") -> Tuple[Optional[List], Optional[Dict]]:
+        """
+        List tasks with pagination, filtering, and sorting.
+        
+        Args:
+            token: JWT authentication token
+            page: Page number (default: 1)
+            size: Page size (default: 10)
+            filter_dict: Filter criteria as dictionary
+            sort: Sort field (use - prefix for descending)
+            
+        Returns:
+            Tuple of (tasks_list, response_data with total count)
+        """
+        try:
+            params = {
+                "page": page,
+                "size": size,
+                "sort": sort
+            }
+            
+            if filter_dict:
+                import json
+                params["filter"] = json.dumps(filter_dict)
+            
+            response = requests.get(
+                f"{self.base_url}/tasks",
+                headers={"Authorization": f"Bearer {token}"},
+                params=params,
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return data.get('data', []), data
+            else:
+                return None, {"error": f"List tasks failed with status {response.status_code}"}
+                
+        except Exception as e:
+            return None, {"error": str(e)}
