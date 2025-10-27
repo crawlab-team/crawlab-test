@@ -56,7 +56,7 @@ class DatabaseAPIHelper:
                 f"{self.base_url}/databases",
                 json={"data": data},
                 headers=self._get_headers(),
-                timeout=30
+                timeout=10
             )
             response.raise_for_status()
             result = response.json()
@@ -79,7 +79,7 @@ class DatabaseAPIHelper:
             response = requests.get(
                 f"{self.base_url}/databases/{database_id}",
                 headers=self._get_headers(),
-                timeout=30
+                timeout=10
             )
             response.raise_for_status()
             result = response.json()
@@ -104,7 +104,7 @@ class DatabaseAPIHelper:
                 f"{self.base_url}/databases",
                 params={"page": page, "size": size},
                 headers=self._get_headers(),
-                timeout=30
+                timeout=10
             )
             response.raise_for_status()
             return response.json()
@@ -129,7 +129,7 @@ class DatabaseAPIHelper:
                 f"{self.base_url}/databases/{database_id}",
                 json={"data": data},
                 headers=self._get_headers(),
-                timeout=30
+                timeout=10
             )
             response.raise_for_status()
             result = response.json()
@@ -152,7 +152,7 @@ class DatabaseAPIHelper:
             response = requests.delete(
                 f"{self.base_url}/databases/{database_id}",
                 headers=self._get_headers(),
-                timeout=30
+                timeout=10
             )
             response.raise_for_status()
             return True
@@ -176,7 +176,7 @@ class DatabaseAPIHelper:
                 f"{self.base_url}/databases",
                 json={"ids": database_ids, "update": update_data},
                 headers=self._get_headers(),
-                timeout=30
+                timeout=10
             )
             response.raise_for_status()
             return True
@@ -199,7 +199,7 @@ class DatabaseAPIHelper:
                 f"{self.base_url}/databases",
                 json={"ids": database_ids},
                 headers=self._get_headers(),
-                timeout=30
+                timeout=10
             )
             response.raise_for_status()
             return True
@@ -221,7 +221,7 @@ class DatabaseAPIHelper:
             response = requests.post(
                 f"{self.base_url}/databases/{database_id}/connection/test",
                 headers=self._get_headers(),
-                timeout=30
+                timeout=10
             )
             response.raise_for_status()
             result = response.json()
@@ -244,7 +244,7 @@ class DatabaseAPIHelper:
             response = requests.get(
                 f"{self.base_url}/databases/{database_id}/metadata",
                 headers=self._get_headers(),
-                timeout=60
+                timeout=10  # Reduced timeout - may hang on connection issues
             )
             response.raise_for_status()
             result = response.json()
@@ -270,7 +270,7 @@ class DatabaseAPIHelper:
                 f"{self.base_url}/databases/{database_id}/tables/metadata/get",
                 json={"database": database_name, "table": table_name},
                 headers=self._get_headers(),
-                timeout=30
+                timeout=10
             )
             response.raise_for_status()
             result = response.json()
@@ -307,7 +307,7 @@ class DatabaseAPIHelper:
                 f"{self.base_url}/databases/{database_id}/tables/create",
                 json=data,
                 headers=self._get_headers(),
-                timeout=30
+                timeout=10
             )
             response.raise_for_status()
             return True
@@ -332,7 +332,7 @@ class DatabaseAPIHelper:
                 f"{self.base_url}/databases/{database_id}/tables/drop",
                 json={"database": database_name, "table": table_name},
                 headers=self._get_headers(),
-                timeout=30
+                timeout=10
             )
             response.raise_for_status()
             return True
@@ -370,12 +370,46 @@ class DatabaseAPIHelper:
                 f"{self.base_url}/databases/{database_id}/tables/modify",
                 json=data,
                 headers=self._get_headers(),
-                timeout=30
+                timeout=10
             )
             response.raise_for_status()
             return True
         except Exception as e:
             self.logger.error(f"Failed to modify table: {e}")
+            return False
+    
+    def rename_table(self, database_id: str, database_name: str, table_name: str,
+                     new_table_name: str) -> bool:
+        """
+        Rename a table
+        
+        Args:
+            database_id: Database ID
+            database_name: Database name (optional for some DBs)
+            table_name: Current table name
+            new_table_name: New table name
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            data = {
+                "table_name": table_name,
+                "new_table_name": new_table_name
+            }
+            if database_name:
+                data["database_name"] = database_name
+                
+            response = requests.post(
+                f"{self.base_url}/databases/{database_id}/tables/rename",
+                json=data,
+                headers=self._get_headers(),
+                timeout=10
+            )
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to rename table: {e}")
             return False
     
     def get_table_data(self, database_id: str, database_name: str, table_name: str,
@@ -408,7 +442,7 @@ class DatabaseAPIHelper:
                 f"{self.base_url}/databases/{database_id}/tables/data/get",
                 json=data,
                 headers=self._get_headers(),
-                timeout=30
+                timeout=10
             )
             response.raise_for_status()
             result = response.json()
@@ -441,7 +475,7 @@ class DatabaseAPIHelper:
                     "data": row
                 },
                 headers=self._get_headers(),
-                timeout=30
+                timeout=10
             )
             response.raise_for_status()
             return True
@@ -475,7 +509,7 @@ class DatabaseAPIHelper:
                     "conditions": conditions
                 },
                 headers=self._get_headers(),
-                timeout=30
+                timeout=10
             )
             response.raise_for_status()
             return True
@@ -507,7 +541,7 @@ class DatabaseAPIHelper:
                     "conditions": conditions
                 },
                 headers=self._get_headers(),
-                timeout=30
+                timeout=10
             )
             response.raise_for_status()
             return True
@@ -535,7 +569,7 @@ class DatabaseAPIHelper:
                     "query": query
                 },
                 headers=self._get_headers(),
-                timeout=60
+                timeout=10
             )
             response.raise_for_status()
             result = response.json()
@@ -558,7 +592,7 @@ class DatabaseAPIHelper:
             response = requests.get(
                 f"{self.base_url}/databases/{database_id}/metrics/current",
                 headers=self._get_headers(),
-                timeout=30
+                timeout=10
             )
             response.raise_for_status()
             result = response.json()
@@ -581,7 +615,7 @@ class DatabaseAPIHelper:
             response = requests.get(
                 f"{self.base_url}/databases/{database_id}/columns/types",
                 headers=self._get_headers(),
-                timeout=30
+                timeout=10
             )
             response.raise_for_status()
             result = response.json()

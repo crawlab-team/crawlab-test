@@ -52,7 +52,9 @@ class NodeHelper:
             
             if response.status_code == 200:
                 data = response.json()
-                return data.get('data', []), data
+                # API returns null for empty results, convert to empty list
+                nodes = data.get('data')
+                return (nodes if nodes is not None else []), data
             else:
                 return None, {"error": f"List nodes failed with status {response.status_code}"}
                 
@@ -176,25 +178,37 @@ class NodeHelper:
     
     def get_node_time_range_metrics(self, token: str, node_id: str, 
                                     start_time: Optional[str] = None,
-                                    end_time: Optional[str] = None) -> Tuple[Optional[List], Optional[Dict]]:
+                                    end_time: Optional[str] = None,
+                                    metric_names: Optional[str] = None,
+                                    time_unit: Optional[str] = None) -> Tuple[Optional[List], Optional[Dict]]:
         """
         Get time-range metrics for a specific node.
         
         Args:
             token: JWT authentication token
             node_id: Node ID
-            start_time: Optional start time (ISO format)
-            end_time: Optional end time (ISO format)
+            start_time: Start time in RFC3339 format (required)
+            end_time: End time in RFC3339 format (optional)
+            metric_names: Comma-separated metric names (required, e.g., "cpu_usage_percent,used_memory")
+            time_unit: Time unit for aggregation (required, e.g., "minute", "hour", "day")
             
         Returns:
             Tuple of (metrics_list, response_data)
         """
         try:
             params = {}
+            
+            # Required parameters
             if start_time:
-                params['start_time'] = start_time
+                params['start'] = start_time
+            if metric_names:
+                params['metric_names'] = metric_names
+            if time_unit:
+                params['time_unit'] = time_unit
+                
+            # Optional parameters
             if end_time:
-                params['end_time'] = end_time
+                params['end'] = end_time
             
             response = requests.get(
                 f"{self.base_url}/nodes/{node_id}/metrics/time-range",
@@ -207,7 +221,7 @@ class NodeHelper:
                 data = response.json()
                 return data.get('data', []), data
             else:
-                return None, {"error": f"Get node time-range metrics failed with status {response.status_code}"}
+                return None, {"error": f"Get node time-range metrics failed with status {response.status_code}", "response": response.text}
                 
         except Exception as e:
             return None, {"error": str(e)}

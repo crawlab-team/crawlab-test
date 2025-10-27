@@ -255,21 +255,30 @@ class ScheduleHelper:
         except Exception as e:
             return False, {"error": str(e)}
     
-    def run_schedule(self, token: str, schedule_id: str) -> Tuple[Optional[List[str]], Optional[Dict]]:
+    def run_schedule(self, token: str, schedule_id: str, **kwargs) -> Tuple[Optional[List[str]], Optional[Dict]]:
         """
         Run a schedule immediately (creates task).
         
         Args:
             token: JWT authentication token
             schedule_id: Schedule ID
+            **kwargs: Optional parameters (cmd, mode, priority, node_ids, param)
             
         Returns:
             Tuple of (task_ids, response_data)
         """
         try:
+            # Build request body with optional parameters
+            payload = {}
+            if kwargs:
+                # Only include valid fields
+                valid_fields = ['cmd', 'mode', 'priority', 'node_ids', 'param']
+                payload = {k: v for k, v in kwargs.items() if k in valid_fields}
+            
             response = requests.post(
                 f"{self.base_url}/schedules/{schedule_id}/run",
-                headers={"Authorization": f"Bearer {token}"},
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                json=payload if payload else {},  # Send empty object if no params
                 timeout=10
             )
             
@@ -279,10 +288,12 @@ class ScheduleHelper:
                 # Handle both array and single object responses
                 if isinstance(task_ids, list):
                     return task_ids, data
+                elif isinstance(task_ids, str):
+                    return [task_ids], data
                 else:
                     return [task_ids] if task_ids else [], data
             else:
-                return None, {"error": f"Run schedule failed with status {response.status_code}"}
+                return None, {"error": f"Run schedule failed with status {response.status_code}", "response": response.text}
                 
         except Exception as e:
             return None, {"error": str(e)}
