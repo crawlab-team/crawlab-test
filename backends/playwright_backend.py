@@ -152,10 +152,10 @@ class PlaywrightBackend(TestBackend):
             
             # Parse results
             if process.returncode == 0:
-                result["status"] = "success"
+                result["status"] = "passed"
                 result["message"] = "Test passed"
             else:
-                result["status"] = "failure"
+                result["status"] = "failed"
                 result["message"] = "Test failed"
                 
                 # Try to parse JSON output for detailed results

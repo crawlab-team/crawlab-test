@@ -155,7 +155,17 @@ class ParallelTestExecutor:
                     
                     # Log progress
                     status = result.get('status', 'unknown')
-                    status_symbol = "✅" if status == "passed" else "❌" if status == "failed" else "⚠️"
+                    if status == "passed":
+                        status_symbol = "✅"
+                    elif status in ["failed", "timeout"]:
+                        status_symbol = "❌"
+                    elif status == "error":
+                        status_symbol = "⚠️"
+                    elif status == "skipped":
+                        status_symbol = "⏭️"
+                    else:
+                        status_symbol = "❔"
+                    
                     spec_name = Path(spec_path).stem
                     print(f"[{completed_count}/{total_count}] {status_symbol} {spec_name} - {status}")
                     
@@ -200,8 +210,10 @@ class ParallelTestExecutor:
                 "success_rate": 0.0,
             }
         
+        # All backends now use standardized status values:
+        # passed, failed, timeout, error, skipped
         passed = sum(1 for r in results if r.get("status") == "passed")
-        failed = sum(1 for r in results if r.get("status") == "failed")
+        failed = sum(1 for r in results if r.get("status") in ["failed", "timeout"])
         error = sum(1 for r in results if r.get("status") == "error")
         skipped = sum(1 for r in results if r.get("status") == "skipped")
         
@@ -238,8 +250,11 @@ class ParallelTestExecutor:
         if stats['failed'] > 0 or stats['error'] > 0:
             print("\nFailed/Error tests:")
             for result in results:
-                if result.get("status") in ["failed", "error"]:
+                status = result.get("status")
+                if status in ["failed", "timeout", "error"]:
                     spec_path = Path(result.get("spec_path", "unknown"))
                     error = result.get("error", "No error message")
-                    print(f"  ❌ {spec_path.stem}")
+                    status_display = "❌" if status in ["failed", "timeout"] else "⚠️"
+                    print(f"  {status_display} {spec_path.stem}")
+                    print(f"     Status: {status}")
                     print(f"     {error}")
