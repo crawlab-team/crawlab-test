@@ -299,8 +299,8 @@ jobs:
             # Run all specs in category
             echo "Running all specs in category: ${{ matrix.category }}"
             
-            # Get all spec files for this category
-            SPEC_FILES=$(find specs/${{ matrix.category }}/ -name "*.md" -type f | sort)
+            # Get all spec files for this category (exclude README and TEMPLATE)
+            SPEC_FILES=$(find specs/${{ matrix.category }}/ -name "*.md" -type f ! -name "README.md" ! -name "TEMPLATE.md" | sort)
             
             if [ -z "$SPEC_FILES" ]; then
               echo "No specs found for category: ${{ matrix.category }}"
