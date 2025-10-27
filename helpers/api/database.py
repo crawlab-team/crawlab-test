@@ -30,7 +30,7 @@ class DatabaseAPIHelper:
         """Get request headers with authentication"""
         headers = {"Content-Type": "application/json"}
         if self.token:
-            headers["Authorization"] = self.token
+            headers["Authorization"] = f"Bearer {self.token}"
         return headers
     
     def create_database(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -41,19 +41,20 @@ class DatabaseAPIHelper:
             data: Database configuration including:
                 - name: Database connection name
                 - data_source: Database type (mysql, postgres, mongodb, etc.)
-                - host: Database host
-                - port: Database port
-                - username: Database username
-                - password: Database password
+                - host: Database host (optional for some types)
+                - port: Database port (optional for some types)
+                - username: Database username (optional)
+                - password: Database password (optional)
                 - database: Database name
                 
         Returns:
             Created database object or None on failure
         """
         try:
+            # Wrap data in {"data": {...}} as per OpenAPI spec
             response = requests.post(
                 f"{self.base_url}/databases",
-                json=data,
+                json={"data": data},
                 headers=self._get_headers(),
                 timeout=30
             )
@@ -123,9 +124,10 @@ class DatabaseAPIHelper:
             Updated database object or None on failure
         """
         try:
+            # Wrap data in {"data": {...}} as per OpenAPI spec
             response = requests.put(
                 f"{self.base_url}/databases/{database_id}",
-                json=data,
+                json={"data": data},
                 headers=self._get_headers(),
                 timeout=30
             )
@@ -156,6 +158,53 @@ class DatabaseAPIHelper:
             return True
         except Exception as e:
             self.logger.error(f"Failed to delete database: {e}")
+            return False
+    
+    def batch_update_databases(self, database_ids: List[str], update_data: Dict[str, Any]) -> bool:
+        """
+        Batch update multiple databases
+        
+        Args:
+            database_ids: List of database IDs
+            update_data: Data to update
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            response = requests.patch(
+                f"{self.base_url}/databases",
+                json={"ids": database_ids, "update": update_data},
+                headers=self._get_headers(),
+                timeout=30
+            )
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to batch update databases: {e}")
+            return False
+    
+    def batch_delete_databases(self, database_ids: List[str]) -> bool:
+        """
+        Batch delete multiple databases
+        
+        Args:
+            database_ids: List of database IDs
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            response = requests.delete(
+                f"{self.base_url}/databases",
+                json={"ids": database_ids},
+                headers=self._get_headers(),
+                timeout=30
+            )
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to batch delete databases: {e}")
             return False
     
     def test_connection(self, database_id: str) -> Dict[str, Any]:
