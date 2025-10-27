@@ -16,7 +16,7 @@ import logging
 # Add parent directories to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from helpers.api.auth import login, logout
+from helpers.api.auth import AuthHelper
 from helpers.api.dependency import (
     get_dependency_repos,
     search_dependency_repos,
@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 def run_test():
     """Execute API-013 test scenarios"""
+    auth = AuthHelper()
     token = None
     test_steps = []
     node_ids = []
@@ -46,7 +47,7 @@ def run_test():
         
         # Step 1: Authenticate
         logger.info("[Step 1] Authenticating...")
-        token = login()
+        token, response = auth.login()
         if token:
             logger.info("✓ Authentication successful")
             test_steps.append(("Authenticate", True, "Login successful"))
@@ -325,7 +326,7 @@ def run_test():
         # ===== Cleanup =====
         logger.info("\n[Step 22] Cleanup...")
         if token:
-            logout(token)
+            auth.logout(token)
             logger.info("✓ Logged out")
         
         # Print summary
