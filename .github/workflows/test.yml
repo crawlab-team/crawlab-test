@@ -301,17 +301,34 @@ jobs:
           # Create results directory
           mkdir -p results
           
+          # Initialize test tracking
+          echo "0" > results/.total_tests
+          echo "0" > results/.passed_tests
+          echo "0" > results/.failed_tests
+          
           # Determine which spec to run
           if [ -n "${{ inputs.spec_id }}" ]; then
             # Run specific spec from manual trigger
             SPEC_ID="${{ inputs.spec_id }}"
             echo "Running specific spec: $SPEC_ID"
             
+            echo "1" > results/.total_tests
+            
             BACKEND="${{ inputs.backend || 'auto' }}"
             if [ "$BACKEND" != "auto" ]; then
-              uv run ./cli.py --spec "$SPEC_ID" --backend "$BACKEND" --ci
+              if uv run ./cli.py --spec "$SPEC_ID" --backend "$BACKEND" --ci; then
+                echo "1" > results/.passed_tests
+              else
+                echo "1" > results/.failed_tests
+                exit 1
+              fi
             else
-              uv run ./cli.py --spec "$SPEC_ID" --ci
+              if uv run ./cli.py --spec "$SPEC_ID" --ci; then
+                echo "1" > results/.passed_tests
+              else
+                echo "1" > results/.failed_tests
+                exit 1
+              fi
             fi
           else
             # Run all specs in category
@@ -325,7 +342,10 @@ jobs:
               exit 0
             fi
             
-            EXIT_CODE=0
+            TOTAL=0
+            PASSED=0
+            FAILED=0
+            
             for SPEC_FILE in $SPEC_FILES; do
               # Extract spec ID from filename
               SPEC_ID=$(basename "$SPEC_FILE" .md | cut -d'-' -f1-2)
@@ -334,15 +354,26 @@ jobs:
               echo "Running spec: $SPEC_ID"
               echo "================================"
               
+              TOTAL=$((TOTAL + 1))
+              
               if ! uv run ./cli.py --spec "$SPEC_ID" --ci; then
                 echo "❌ Spec $SPEC_ID failed"
-                EXIT_CODE=1
+                FAILED=$((FAILED + 1))
               else
                 echo "✅ Spec $SPEC_ID passed"
+                PASSED=$((PASSED + 1))
               fi
             done
             
-            exit $EXIT_CODE
+            # Save test counts for summary
+            echo "$TOTAL" > results/.total_tests
+            echo "$PASSED" > results/.passed_tests
+            echo "$FAILED" > results/.failed_tests
+            
+            # Exit with failure if any tests failed
+            if [ $FAILED -gt 0 ]; then
+              exit 1
+            fi
           fi
       
       - name: Collect Docker logs and diagnostics
@@ -434,13 +465,19 @@ jobs:
           
           # Check if results exist
           if [ -d "results" ] && [ "$(ls -A results)" ]; then
+            # Use tracked counts if available, otherwise fall back to JSON counting
+            if [ -f "results/.total_tests" ]; then
+              TOTAL=$(cat results/.total_tests)
+              PASSED=$(cat results/.passed_tests)
+              FAILED=$(cat results/.failed_tests)
+            else
+              # Fallback: Count JSON files
+              TOTAL=$(find results -name "*.json" -path "*/result_*.json" 2>/dev/null | wc -l)
+              PASSED=$(find results -name "*.json" -path "*/result_*.json" -exec grep -l '"status".*"passed"' {} \; 2>/dev/null | wc -l)
+              FAILED=$((TOTAL - PASSED))
+            fi
+            
             echo "### Results:" >> $GITHUB_STEP_SUMMARY
-            
-            # Count passed/failed tests
-            TOTAL=$(find results -name "*.json" -path "*/result_*.json" 2>/dev/null | wc -l)
-            PASSED=$(find results -name "*.json" -path "*/result_*.json" -exec grep -l '"status".*"passed"' {} \; 2>/dev/null | wc -l)
-            FAILED=$((TOTAL - PASSED))
-            
             echo "- **Total tests**: $TOTAL" >> $GITHUB_STEP_SUMMARY
             echo "- **Passed**: ✅ $PASSED" >> $GITHUB_STEP_SUMMARY
             echo "- **Failed**: ❌ $FAILED" >> $GITHUB_STEP_SUMMARY
