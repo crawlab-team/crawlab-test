@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from helpers.api import APIAuth, NodeHelper
+from helpers.api import AuthHelper, NodeHelper
 
 
 def print_step(step_num: int, description: str):
@@ -33,7 +33,7 @@ def main():
     """Run API-009 test suite."""
     
     # Initialize helpers
-    auth = APIAuth()
+    auth = AuthHelper()
     node_helper = NodeHelper()
     
     token = None

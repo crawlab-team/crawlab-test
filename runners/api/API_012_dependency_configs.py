@@ -15,7 +15,7 @@ import logging
 # Add parent directories to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from helpers.api.auth import APIAuth
+from helpers.api.auth import AuthHelper
 from helpers.api.dependency import (
     get_dependency_config,
     update_dependency_config,
@@ -27,7 +27,7 @@ from helpers.api.dependency import (
 from helpers.api.node import NodeHelper
 
 # Initialize auth helper
-auth = APIAuth()
+auth = AuthHelper()
 node_helper = NodeHelper()
 
 # Configure logging

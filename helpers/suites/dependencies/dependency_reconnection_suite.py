@@ -29,7 +29,7 @@ from helpers.libs.api_client import CrawlabAPIClient
 from helpers.libs.utils import wait_for_condition, setup_logging
 
 # Import NodeManager from helpers/tools
-node_manager_path = Path(__file__).parent.parent / 'tools' / 'node_manager.py'
+node_manager_path = Path(__file__).parent.parent.parent / 'tools' / 'node_manager.py'
 spec = importlib.util.spec_from_file_location("node_manager", node_manager_path)
 node_manager_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(node_manager_module)

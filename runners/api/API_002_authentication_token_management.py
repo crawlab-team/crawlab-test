@@ -13,7 +13,7 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from helpers.api import APIAuth, UserHelper, APIAssertions, CleanupHelper
+from helpers.api import AuthHelper, UserHelper, APIAssertions, CleanupHelper
 
 
 def print_step(step_num: int, description: str):
@@ -25,7 +25,7 @@ def print_step(step_num: int, description: str):
 
 def main():
     """Run authentication and token management tests."""
-    auth = APIAuth()
+    auth = AuthHelper()
     user_helper = UserHelper()
     assertions = APIAssertions()
     cleanup = CleanupHelper()

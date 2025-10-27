@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 # Import helpers
-from helpers.api import APIAuth
+from helpers.api import AuthHelper
 from helpers.api.database import DatabaseAPIHelper
 
 # Configure logging

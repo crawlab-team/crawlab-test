@@ -16,7 +16,7 @@ import json
 # Add project root to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 
-from helpers.api.auth import APIAuth
+from helpers.api.auth import AuthHelper
 from helpers.api.spider import SpiderHelper
 from helpers.api.task import TaskHelper
 from helpers.api.cleanup import CleanupHelper

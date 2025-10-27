@@ -11,7 +11,7 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from helpers.api import APIAuth, SpiderHelper, CleanupHelper, APIAssertions
+from helpers.api import AuthHelper, SpiderHelper, CleanupHelper, APIAssertions
 
 
 def print_step(step_num: int, description: str):
@@ -35,7 +35,7 @@ def main():
     """Execute API-004 test."""
     
     # Initialize helpers
-    auth = APIAuth()
+    auth = AuthHelper()
     spider_helper = SpiderHelper()
     cleanup = CleanupHelper()
     assertions = APIAssertions()
