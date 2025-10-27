@@ -52,7 +52,7 @@ on:
 env:
   PYTHON_VERSION: '3.9'
   UV_VERSION: '0.5.20'
-  CRAWLAB_API_URL: 'http://localhost:8080'
+  CRAWLAB_API_URL: 'http://localhost:8080/api'
   CRAWLAB_IMAGE_TAG: ${{ inputs.image_tag || 'develop' }}
 
 jobs:

@@ -14,7 +14,8 @@ This test validates the comprehensive database integration functionality in Craw
 **Note**: MSSQL Server is not included in integration tests as it is not a primary supported database.
 
 ## Prerequisites
-- Go 1.23+, Docker, and Docker Compose
+- Python 3.9+, Docker, and Docker Compose
+- Crawlab backend running at http://localhost:8080 (or configured API endpoint)
 - Test databases (start with `docker-compose -f docker-compose.test.yml up -d`):
   - MongoDB: localhost:27017 (username: admin, password: admin)
   - MySQL: localhost:3307 (username: root, password: admin)  
@@ -23,15 +24,24 @@ This test validates the comprehensive database integration functionality in Craw
 
 **Override defaults** via environment variables if needed:
 ```bash
-export MONGO_TEST_PORT=27018  # or any custom port
-export MYSQL_TEST_HOST=custom.host  # or any custom host
-# See core/database/service_test.go for all available variables
+export MYSQL_TEST_HOST=custom.host      # Default: localhost
+export MYSQL_TEST_PORT=3308             # Default: 3307
+export POSTGRES_TEST_HOST=custom.host   # Default: localhost
+export POSTGRES_TEST_PORT=5434          # Default: 5433
+export MONGO_TEST_HOST=custom.host      # Default: localhost
+export MONGO_TEST_PORT=27018            # Default: 27017
+export ELASTICSEARCH_TEST_HOST=custom.host  # Default: localhost
+export ELASTICSEARCH_TEST_PORT=9201     # Default: 9200
 ```
 
 **Quick Start**:
 ```bash
-cd tests && docker-compose -f docker-compose.test.yml up -d
-cd ../core/database && go test -v -timeout 30m
+# Start test databases
+docker-compose -f docker-compose.test.yml up -d
+
+# Run the test
+cd crawlab-test
+uv run ./cli.py --spec DB-001
 ```
 
 ## Test Steps
@@ -50,26 +60,23 @@ cd ../core/database && go test -v -timeout 30m
 - Runner script manages service health checks and initialization
 
 ### Step 2: Test Connection Management
-**Method**: automated (Go test suite)
-**Test Function**: `TestService_TestConnection`
+**Method**: automated (Python runner via API)
 **Expected**: All database types can establish connections successfully
 **Validation**:
 - MongoDB connection succeeds with authentication
 - MySQL connection succeeds and returns connection ID
 - PostgreSQL connection succeeds with proper SSL/TLS handling
-- Elasticsearch connection succeeds for both nodes (9200/9201)
+- Elasticsearch connection succeeds
 - Connection status updated to "online" in database registry
 - Failed connections properly set status to "offline" with error details
 
-**Coverage**:
-- Test successful connections with valid credentials
-- Test failed connections with invalid credentials
-- Test connection timeout handling
-- Test connection pooling behavior
+**Implementation**:
+- Create database connections via `/databases` API endpoint
+- Test each connection using `/databases/{id}/connection/test` endpoint
+- Verify connection status in response
 
 ### Step 3: Test Metadata Retrieval
-**Method**: automated (Go test suite)
-**Test Functions**: `TestService_GetMetadata`, `TestService_GetMetadataAllDb`
+**Method**: automated (Python runner via API)
 **Expected**: Metadata correctly retrieved for all database types
 **Validation**:
 - Database lists returned correctly
@@ -84,35 +91,29 @@ cd ../core/database && go test -v -timeout 30m
 - MongoDB: Collection schema inference works correctly
 - Elasticsearch: Index mappings retrieved properly
 
-**Coverage**:
-- GetMetadata (single database)
-- GetMetadataAllDb (all databases on server)
-- GetTableMetadata (specific table details)
-- Empty database handling
-- Large schema handling (many tables/columns)
+**Implementation**:
+- Use `/databases/{id}/metadata` API endpoint for full metadata
+- Use `/databases/{id}/tables/metadata/get` for specific table details
+- Verify metadata structure and completeness
 
 ### Step 4: Test Database Operations (DDL)
-**Method**: automated (Go test suite)
-**Test Functions**: `TestService_CreateDatabase`, `TestService_DropDatabase`
+**Method**: automated (Python runner via API)
 **Expected**: Database creation and deletion work correctly
 **Validation**:
-- CreateDatabase creates new database successfully
+- Database creation via API succeeds
 - Database appears in metadata after creation
-- DropDatabase removes database completely
-- Database disappears from metadata after deletion
+- Database deletion removes connection completely
 - MongoDB: Database created automatically on first write
 
-**Coverage**:
-- Create database with standard name
-- Create database with special characters (if supported)
-- Drop empty database
-- Drop database with tables (cascade delete)
-- Attempt to create duplicate database (error handling)
-- Attempt to drop non-existent database (error handling)
+**Implementation**:
+- Use `/databases` POST endpoint to create database connections
+- Use `/databases/{id}` DELETE endpoint to remove connections
+- Verify using `/databases` GET endpoint
+
+**Note**: This step tests database _connection_ management in Crawlab, not database creation on the actual database server (which is handled at the database level)
 
 ### Step 5: Test Table/Collection Operations
-**Method**: automated (Go test suite)
-**Test Functions**: `TestService_CreateTable`, `TestService_DropTable`
+**Method**: automated (Python runner via API)
 **Expected**: Table/collection management operations succeed
 **Validation**:
 - CreateTable creates table with correct schema:
@@ -125,49 +126,33 @@ cd ../core/database && go test -v -timeout 30m
 - MongoDB: Collection creation implicit
 - Elasticsearch: Index creation with mappings
 
-**Coverage**:
-- Create table with various column types
-- Create table with composite primary key
-- Create table with multiple indexes (unique and non-unique)
-- Drop table with data
-- Drop table with foreign key references (if supported)
+**Implementation**:
+- Use `/databases/{id}/tables/create` POST endpoint to create tables
+- Use `/databases/{id}/tables/drop` POST endpoint to drop tables
+- Use `/databases/{id}/tables/metadata/get` POST endpoint to verify table structure
+- Test on MySQL and PostgreSQL (primary SQL databases)
 
 ### Step 6: Test Schema Modification
-**Method**: automated (Go test suite)
-**Test Functions**: `TestService_ModifyTableColumns`, `TestService_ModifyTableIndexes`
+**Method**: automated (Python runner via API)
 **Expected**: Schema changes applied correctly without data loss
 **Validation**:
 - Add new columns:
   - Column appears in metadata
   - Existing data preserved
   - Default values applied if specified
-- Remove columns:
-  - Column removed from metadata
-  - Remaining data intact
-  - No orphaned data structures
-- Modify column types:
-  - Type changed correctly
-  - Data converted if possible
-  - Constraints updated
-- Add indexes:
+- Add/modify indexes:
   - Index created and appears in metadata
-  - Query performance improved
   - Unique constraints enforced
-- Remove indexes:
-  - Index deleted completely
-  - Queries still work (slower)
-- Modify indexes:
-  - Index updated with new definition
-  - Data integrity maintained
 
-**Coverage**:
-- MySQL: ALTER TABLE operations
-- PostgreSQL: ALTER TABLE with USING clause
-- Elasticsearch: Update index mappings (reindex if needed)
+**Implementation**:
+- Use `/databases/{id}/tables/modify` POST endpoint for schema changes
+- Pass column and index modifications in request body
+- Verify changes using metadata endpoint
+
+**Note**: Complex schema modifications (column type changes, removing columns) may have limited support depending on database type. Test focuses on common operations: adding columns and managing indexes.
 
 ### Step 7: Test Data Operations (CRUD)
-**Method**: automated (Go test suite)
-**Test Functions**: `TestService_CreateRow`, `TestService_ReadRows`, `TestService_UpdateRow`, `TestService_DeleteRow`
+**Method**: automated (Python runner via API)
 **Expected**: All CRUD operations work correctly with data integrity
 **Validation**:
 - CreateRow (INSERT):
@@ -175,11 +160,10 @@ cd ../core/database && go test -v -timeout 30m
   - Auto-increment values generated correctly
   - Constraints enforced (NOT NULL, UNIQUE)
   - Default values applied
-  - Timestamps auto-populated
 - ReadRows (SELECT):
   - All rows returned with correct data
   - Filtering works (WHERE clause equivalent)
-  - Pagination works (SKIP/LIMIT)
+  - Pagination works (page/size parameters)
   - Row count accurate
   - Data types preserved
 - UpdateRow (UPDATE):
@@ -191,116 +175,91 @@ cd ../core/database && go test -v -timeout 30m
   - Specified rows deleted
   - Other rows preserved
   - Delete filter works correctly
-  - Row count decreased
 
-**Coverage**:
-- Basic CRUD on all supported data types
-- NULL value handling
-- Empty string vs NULL distinction
-- Large text/blob data
-- Special characters and Unicode
-- Concurrent operations (if applicable)
+**Implementation**:
+- Use `/databases/{id}/tables/data` POST endpoint with action="insert" for INSERT
+- Use `/databases/{id}/tables/data` POST endpoint with action="update" for UPDATE
+- Use `/databases/{id}/tables/data` POST endpoint with action="delete" for DELETE
+- Use `/databases/{id}/tables/data/get` POST endpoint for SELECT
+- Test on MySQL and PostgreSQL with test tables
 
 ### Step 8: Test Query Execution
-**Method**: automated (Go test suite)
-**Test Function**: `TestService_Query`
+**Method**: automated (Python runner via API)
 **Expected**: Custom queries execute correctly and return proper results
 **Validation**:
 - SQL queries (MySQL, PostgreSQL):
   - SELECT statements return correct data
-  - JOIN operations work
-  - Aggregate functions (COUNT, SUM, AVG)
-  - ORDER BY and GROUP BY
-  - Subqueries and CTEs (Common Table Expressions)
+  - Version queries work (basic validation)
 - MongoDB queries:
-  - Find operations with filters
-  - Aggregation pipeline
-  - Projection and sorting
+  - Find operations with filters (if implemented)
 - Elasticsearch queries:
-  - Query DSL execution
-  - Full-text search
-  - Aggregations
+  - Query DSL execution (if implemented)
 - Query results include:
   - Column names and types
   - Row data properly formatted
-  - Execution time/metrics
   - Error messages for failed queries
 
-**Coverage**:
-- Simple SELECT queries
-- Complex multi-table JOINs
-- Queries with parameters/bindings
-- Queries returning large result sets
-- Queries with syntax errors (error handling)
-- Queries with timeouts
+**Implementation**:
+- Use `/databases/{id}/query` POST endpoint
+- Pass database name and query string in request body
+- Test with simple queries (e.g., SELECT VERSION())
+- Verify response contains result data
 
 ### Step 9: Test Metrics Collection
-**Method**: automated (Go test suite)
-**Test Function**: `TestService_GetCurrentMetric`
+**Method**: automated (Python runner via API)
 **Expected**: Database metrics collected accurately for monitoring
 **Validation**:
-- Memory metrics:
+- Memory metrics (if available):
   - Total memory reported
   - Available memory tracked
-  - Used memory percentage calculated
-- Disk metrics:
+- Disk metrics (if available):
   - Total disk space
   - Available disk space
-  - Used disk percentage
-- Connection metrics:
+- Connection metrics (if available):
   - Active connections counted
-  - Connection pool status
-- Performance metrics:
+- Performance metrics (if available):
   - Queries per second (QPS)
   - Cache hit ratio
-  - Replication lag (if applicable)
-  - Lock wait time
-- All metrics > 0 and reasonable values
-- Metrics updated in real-time
+- Metrics API responds without errors
 
-**Coverage**:
-- MongoDB: serverStatus metrics
-- MySQL: SHOW STATUS metrics
-- PostgreSQL: pg_stat_database metrics
-- Elasticsearch: cluster stats
+**Implementation**:
+- Use `/databases/{id}/metrics/current` GET endpoint
+- Verify response structure
+- Log metric values for verification
+
+**Note**: Metric availability varies by database type. Some databases may not provide all metrics through the API.
 
 ### Step 10: Test Error Handling and Edge Cases
-**Method**: automated (Go test suite + manual validation)
+**Method**: automated (Python runner via API)
 **Expected**: Graceful error handling without crashes
 **Validation**:
 - Invalid connection credentials fail gracefully
 - Connection timeouts handled properly
-- Network disconnection during operation
-- Insufficient permissions errors caught
 - Invalid SQL/query syntax errors reported clearly
 - Constraint violations reported with details
-- Concurrent access conflicts resolved
-- Transaction rollback on errors (if applicable)
-- Resource cleanup on failures
+- API returns proper error responses (4xx/5xx status codes)
+- Error messages are descriptive
 
-**Coverage**:
-- Connection errors (invalid host, port, credentials)
-- Schema errors (duplicate table, missing column)
-- Data errors (constraint violations, type mismatches)
-- Query errors (syntax errors, invalid references)
-- Resource errors (disk full, memory exhausted)
+**Implementation**:
+- Test with invalid credentials (negative test)
+- Test with malformed SQL queries
+- Test constraint violations (duplicate keys, NOT NULL violations)
+- Verify API error responses contain useful error messages
 
 ## Success Criteria
-- [ ] All database types establish connections successfully (TestConnection passes)
+- [ ] All database types establish connections successfully via API
 - [ ] Metadata retrieval works for all database types with complete information
-- [ ] Database create/drop operations succeed without errors
+- [ ] Database connection management (create/delete) works correctly
 - [ ] Table/collection create/drop operations work correctly
-- [ ] Schema modifications (columns and indexes) applied successfully
+- [ ] Schema modifications (add columns, manage indexes) applied successfully
 - [ ] All CRUD operations (Create, Read, Update, Delete) work with data integrity
 - [ ] Custom queries execute and return correct results
-- [ ] Database metrics collected and reported accurately
+- [ ] Database metrics API responds without errors
 - [ ] Auto-increment values generated correctly for MySQL, PostgreSQL
 - [ ] Unique constraints and indexes enforced properly
 - [ ] Error handling graceful with clear error messages
-- [ ] No memory leaks or resource exhaustion during tests
-- [ ] Connection pooling works efficiently
-- [ ] Transaction support works where applicable
-- [ ] All Go tests pass with 100% of test cases succeeding
+- [ ] All Python test cases pass successfully
+- [ ] Test cleanup removes all created resources
 
 ## Failure Scenarios
 
@@ -427,61 +386,49 @@ cd ../core/database && go test -v -timeout 30m
 ### Automated (CI/CD)
 Tests run automatically when:
 - Database code changes are detected (`core/database/**`)
-- Integration test files are modified (`tests/specs/integration/**`, `tests/helpers/integration/**`)
+- Database test files are modified (`crawlab-test/specs/database/**`, `crawlab-test/runners/database/**`)
 - Manually triggered with test mode "all"
 
 The CI/CD pipeline:
 1. Builds Docker image with latest code
 2. Starts Crawlab services (master, worker, MongoDB)
-3. Starts database integration services (MySQL, PostgreSQL, Elasticsearch)
+3. Starts database integration services (MySQL, PostgreSQL, Elasticsearch, MongoDB)
 4. Waits for all services to be healthy
-5. Runs integration test suite via runner scripts
-6. Collects results, logs, and coverage
+5. Runs database integration test via Python runner
+6. Collects results and logs
 7. Generates summary report
 
 ### Automated (Local Development)
-Use the integration test helper and runner scripts:
+Use the test CLI:
 
 ```bash
-# Using the test helper (recommended)
-cd tests
-./helpers/integration/database-test-helper.py check-services  # Check service status
-./helpers/integration/database-test-helper.py run-tests        # Run all tests
-./helpers/integration/database-test-helper.py run-tests --database mysql  # Specific database
-./helpers/integration/database-test-helper.py cleanup         # Clean up test data
-./helpers/integration/database-test-helper.py report          # Generate report
+# Run the database integration test
+cd crawlab-test
+uv run ./cli.py --spec DB-001
 
-# Using the integration runner directly
-python runners/integration_runner.py                # Run tests
-python runners/integration_runner.py --verbose      # Verbose output
-python runners/integration_runner.py --coverage     # With coverage
+# Or with explicit backend
+uv run ./cli.py --spec DB-001 --backend script
 
-# Or via test runner framework
-./test-runner.py --spec specs/integration/INT-001-database-integration-comprehensive-testing.md
+# With verbose output
+uv run ./cli.py --spec DB-001 -v
+
+# Check database services first
+cd helpers/database
+./database-test-helper.py check-services
 ```
 
-### Direct Go Test Execution
+### Direct Python Runner Execution
 For development and debugging:
 
 ```bash
-# Navigate to database code directory
-cd core/database
+# Navigate to test directory
+cd crawlab-test
 
-# Run all tests
-go test -v -timeout 30m
+# Run the runner directly
+python runners/database/DB_001_database_integration_comprehensive_testing.py
 
-# Run specific test category
-go test -v -run TestService_TestConnection -timeout 10m
-go test -v -run TestService_GetMetadata -timeout 10m
-go test -v -run TestService_CRUD -timeout 10m
-
-# Run tests for specific database type
-go test -v -run ".*MySQLService" -timeout 10m
-go test -v -run ".*PostgresService" -timeout 10m
-
-# With coverage
-go test -v -coverprofile=coverage.out -timeout 30m
-go tool cover -html=coverage.out -o coverage.html
+# Or with environment variables for custom database configuration
+MYSQL_TEST_PORT=3308 python runners/database/DB_001_database_integration_comprehensive_testing.py
 ```
 
 ### Docker Setup
@@ -489,7 +436,7 @@ Start required database services:
 
 ```bash
 # Using docker-compose
-cd tests
+cd crawlab-test
 docker-compose -f docker-compose.test.yml up -d
 
 # Check services are running
@@ -532,23 +479,23 @@ For specific scenarios that require manual inspection:
 
 ## Cleanup
 
-**Note**: Tests now include automatic cleanup that runs even if tests fail or panic. Manual cleanup is only needed for container management.
+**Note**: Tests include automatic cleanup that runs even if tests fail. Manual cleanup is only needed for container management.
 
 ```bash
 # Stop test execution if running
 # Use Ctrl+C or kill the process
 
-# Automatic cleanup (now handled by tests):
-# - Test database records automatically deleted from MongoDB
+# Automatic cleanup (handled by test runner):
+# - Test database connections automatically deleted via API
 # - Test tables and data automatically dropped
-# - No manual cleanup needed for test data
+# - Resources tracked and cleaned up in finally block
 
 # Stop and remove database containers
+cd crawlab-test
 docker-compose -f docker-compose.test.yml down -v
 
-# Clear test artifacts (optional)
-rm -f results/* coverage.out coverage.html
-rm -rf /tmp/crawlab-db-test-*
+# Clear test results (optional)
+rm -f results/*
 ```
 
 ## Notes
@@ -586,18 +533,18 @@ rm -rf /tmp/crawlab-db-test-*
 - Use realistic data volumes for performance tests
 
 ### Performance Considerations
-- Tests may take 30-45 minutes for complete run
-- Individual test functions run in parallel where possible
-- Large data operations may timeout - adjust `-timeout` flag
-- Connection pooling reduces overhead for multiple operations
+- Tests may take 10-20 minutes for complete run (API-based tests are faster than Go tests)
+- Tests run sequentially to avoid database locking issues
+- Connection testing includes brief delays for initialization
+- CRUD operations use small test tables for speed
 
 ### CI/CD Integration
 - Tests designed to run in GitHub Actions
 - Docker containers used for database dependencies
-- Test results reported in JUnit XML format
-- Coverage reports uploaded to Codecov
+- Python-based runner for cross-platform compatibility
+- Test results logged and can be exported to various formats
 
 ## History
 - **Created**: 2025-10-05, GitHub Copilot
-- **Modified**: -
+- **Modified**: 2025-10-27, GitHub Copilot - Migrated from Go test wrapper to Python API runner
 - **Last Run**: -

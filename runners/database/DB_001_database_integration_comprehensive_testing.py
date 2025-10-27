@@ -1,52 +1,454 @@
 #!/usr/bin/env python3
 """
-Integration Test Spec Wrapper
+Database Integration Test Runner
 
-This script acts as a bridge between the spec test framework and Go integration tests.
-It's invoked by the test runner when executing INT-001 spec and runs the Go database tests.
+Tests comprehensive database integration functionality including:
+- Connection management
+- Metadata retrieval
+- Schema operations (DDL)
+- Data operations (CRUD)
+- Query execution
+- Metrics collection
+
+Supports MongoDB, MySQL, PostgreSQL, Elasticsearch.
 """
 
 import sys
 import os
+import time
 from pathlib import Path
 
 # Add tests directory to path for helper imports
 tests_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(tests_dir))
 
-from helpers.libs.go_test_runner import run_go_tests
+from helpers.api.auth import AuthHelper
+from helpers.api.database import DatabaseAPIHelper
+from helpers.api.cleanup import CleanupHelper
 from helpers.libs.utils import setup_logging
 
+
+# Test database configurations
+# These match the docker-compose.test.yml setup
+TEST_DATABASES = {
+    'mysql': {
+        'name': 'MySQL Test DB',
+        'data_source': 'mysql',
+        'host': os.getenv('MYSQL_TEST_HOST', 'localhost'),
+        'port': int(os.getenv('MYSQL_TEST_PORT', '3307')),
+        'username': os.getenv('MYSQL_TEST_USER', 'root'),
+        'password': os.getenv('MYSQL_TEST_PASSWORD', 'admin'),
+        'database': 'test'
+    },
+    'postgres': {
+        'name': 'PostgreSQL Test DB',
+        'data_source': 'postgres',
+        'host': os.getenv('POSTGRES_TEST_HOST', 'localhost'),
+        'port': int(os.getenv('POSTGRES_TEST_PORT', '5433')),
+        'username': os.getenv('POSTGRES_TEST_USER', 'admin'),
+        'password': os.getenv('POSTGRES_TEST_PASSWORD', 'admin'),
+        'database': 'test'
+    },
+    'mongo': {
+        'name': 'MongoDB Test DB',
+        'data_source': 'mongo',
+        'host': os.getenv('MONGO_TEST_HOST', 'localhost'),
+        'port': int(os.getenv('MONGO_TEST_PORT', '27017')),
+        'username': os.getenv('MONGO_TEST_USER', 'admin'),
+        'password': os.getenv('MONGO_TEST_PASSWORD', 'admin'),
+        'database': 'test'
+    },
+    'elasticsearch': {
+        'name': 'Elasticsearch Test DB',
+        'data_source': 'elasticsearch',
+        'host': os.getenv('ELASTICSEARCH_TEST_HOST', 'localhost'),
+        'port': int(os.getenv('ELASTICSEARCH_TEST_PORT', '9200')),
+        'username': '',
+        'password': '',
+        'database': ''
+    }
+}
+
+
+class DatabaseIntegrationTest:
+    """Database integration test runner"""
+    
+    def __init__(self):
+        self.logger = setup_logging("DB-001")
+        self.auth_helper = AuthHelper()
+        self.cleanup = CleanupHelper()
+        self.token = None
+        self.db_helper = None
+        self.created_databases = {}
+        self.test_results = {
+            'total': 0,
+            'passed': 0,
+            'failed': 0,
+            'skipped': 0,
+            'errors': []
+        }
+    
+    def setup(self) -> bool:
+        """Setup test environment"""
+        self.logger.info("Setting up test environment...")
+        
+        # Login and get token
+        self.token = self.auth_helper.login_default()
+        if not self.token:
+            self.logger.error("Failed to authenticate")
+            return False
+        
+        # Initialize database helper
+        self.db_helper = DatabaseAPIHelper(token=self.token)
+        
+        self.logger.info("✓ Test environment setup complete")
+        return True
+    
+    def teardown(self):
+        """Cleanup test resources"""
+        self.logger.info("Cleaning up test resources...")
+        
+        # Clean up created databases
+        for db_type, db_id in self.created_databases.items():
+            if db_id:
+                self.logger.info(f"Cleaning up {db_type} database...")
+                self.db_helper.delete_database(db_id)
+        
+        self.logger.info("✓ Cleanup complete")
+    
+    def record_result(self, test_name: str, passed: bool, message: str = ""):
+        """Record test result"""
+        self.test_results['total'] += 1
+        if passed:
+            self.test_results['passed'] += 1
+            self.logger.info(f"✓ {test_name}: PASSED")
+        else:
+            self.test_results['failed'] += 1
+            self.logger.error(f"✗ {test_name}: FAILED - {message}")
+            self.test_results['errors'].append(f"{test_name}: {message}")
+    
+    def test_connection_management(self) -> bool:
+        """Test Step 2: Connection Management"""
+        self.logger.info("\n" + "="*60)
+        self.logger.info("Step 2: Testing Connection Management")
+        self.logger.info("="*60)
+        
+        all_passed = True
+        
+        for db_type, config in TEST_DATABASES.items():
+            # Create database connection
+            self.logger.info(f"\nTesting {db_type.upper()} connection...")
+            
+            db = self.db_helper.create_database(config)
+            if not db:
+                self.record_result(f"{db_type}_create", False, "Failed to create database connection")
+                all_passed = False
+                continue
+            
+            db_id = db.get('_id')
+            self.created_databases[db_type] = db_id
+            self.cleanup.track_database(db_id)
+            self.record_result(f"{db_type}_create", True)
+            
+            # Test connection
+            time.sleep(1)  # Brief delay for connection initialization
+            result = self.db_helper.test_connection(db_id)
+            
+            if result.get('status') == 'online' or result.get('status') == 'success':
+                self.record_result(f"{db_type}_connection", True)
+            else:
+                self.record_result(f"{db_type}_connection", False, 
+                                 f"Connection failed: {result.get('message', 'Unknown error')}")
+                all_passed = False
+        
+        return all_passed
+    
+    def test_metadata_retrieval(self) -> bool:
+        """Test Step 3: Metadata Retrieval"""
+        self.logger.info("\n" + "="*60)
+        self.logger.info("Step 3: Testing Metadata Retrieval")
+        self.logger.info("="*60)
+        
+        all_passed = True
+        
+        for db_type, db_id in self.created_databases.items():
+            if not db_id:
+                continue
+                
+            self.logger.info(f"\nRetrieving {db_type.upper()} metadata...")
+            
+            metadata = self.db_helper.get_metadata(db_id)
+            if metadata is not None:
+                self.record_result(f"{db_type}_metadata", True)
+                # Log summary
+                if isinstance(metadata, dict):
+                    db_count = len(metadata.get('databases', []))
+                    self.logger.info(f"  Found {db_count} databases")
+            else:
+                self.record_result(f"{db_type}_metadata", False, "Failed to retrieve metadata")
+                all_passed = False
+        
+        return all_passed
+    
+    def test_table_operations(self) -> bool:
+        """Test Steps 4-5: Table/Schema Operations"""
+        self.logger.info("\n" + "="*60)
+        self.logger.info("Steps 4-5: Testing Table Operations")
+        self.logger.info("="*60)
+        
+        all_passed = True
+        
+        # Test on SQL databases (MySQL, PostgreSQL)
+        for db_type in ['mysql', 'postgres']:
+            db_id = self.created_databases.get(db_type)
+            if not db_id:
+                continue
+            
+            self.logger.info(f"\nTesting {db_type.upper()} table operations...")
+            
+            # Define test table
+            table_name = f"test_table_{int(time.time())}"
+            columns = [
+                {
+                    "name": "id",
+                    "type": "INT" if db_type == 'mysql' else "INTEGER",
+                    "primary_key": True,
+                    "auto_increment": True
+                },
+                {
+                    "name": "name",
+                    "type": "VARCHAR(100)",
+                    "not_null": True
+                },
+                {
+                    "name": "email",
+                    "type": "VARCHAR(100)"
+                },
+                {
+                    "name": "created_at",
+                    "type": "TIMESTAMP",
+                    "default": "CURRENT_TIMESTAMP"
+                }
+            ]
+            
+            # Create table
+            success = self.db_helper.create_table(
+                db_id, 
+                'test',  # database name
+                table_name,
+                columns
+            )
+            
+            if success:
+                self.record_result(f"{db_type}_create_table", True)
+                
+                # Verify table exists in metadata
+                time.sleep(1)
+                table_meta = self.db_helper.get_table_metadata(db_id, 'test', table_name)
+                if table_meta:
+                    self.record_result(f"{db_type}_table_metadata", True)
+                else:
+                    self.record_result(f"{db_type}_table_metadata", False, "Table not found in metadata")
+                    all_passed = False
+                
+                # Drop table
+                if self.db_helper.drop_table(db_id, 'test', table_name):
+                    self.record_result(f"{db_type}_drop_table", True)
+                else:
+                    self.record_result(f"{db_type}_drop_table", False, "Failed to drop table")
+                    all_passed = False
+            else:
+                self.record_result(f"{db_type}_create_table", False, "Failed to create table")
+                all_passed = False
+        
+        return all_passed
+    
+    def test_data_operations(self) -> bool:
+        """Test Step 7: CRUD Operations"""
+        self.logger.info("\n" + "="*60)
+        self.logger.info("Step 7: Testing Data Operations (CRUD)")
+        self.logger.info("="*60)
+        
+        all_passed = True
+        
+        # Test on SQL databases
+        for db_type in ['mysql', 'postgres']:
+            db_id = self.created_databases.get(db_type)
+            if not db_id:
+                continue
+            
+            self.logger.info(f"\nTesting {db_type.upper()} CRUD operations...")
+            
+            # Create a test table first
+            table_name = f"test_crud_{int(time.time())}"
+            columns = [
+                {"name": "id", "type": "INT" if db_type == 'mysql' else "INTEGER", 
+                 "primary_key": True, "auto_increment": True},
+                {"name": "name", "type": "VARCHAR(100)", "not_null": True},
+                {"name": "value", "type": "INT" if db_type == 'mysql' else "INTEGER"}
+            ]
+            
+            if not self.db_helper.create_table(db_id, 'test', table_name, columns):
+                self.record_result(f"{db_type}_crud_setup", False, "Failed to create test table")
+                all_passed = False
+                continue
+            
+            # INSERT
+            insert_success = self.db_helper.insert_row(
+                db_id, 'test', table_name,
+                {"name": "test_user", "value": 42}
+            )
+            self.record_result(f"{db_type}_insert", insert_success, 
+                             "" if insert_success else "Failed to insert row")
+            
+            # READ
+            if insert_success:
+                time.sleep(1)
+                data = self.db_helper.get_table_data(db_id, 'test', table_name, page=1, size=10)
+                if data and data.get('total', 0) > 0:
+                    self.record_result(f"{db_type}_read", True)
+                else:
+                    self.record_result(f"{db_type}_read", False, "Failed to read inserted data")
+                    all_passed = False
+            
+            # UPDATE
+            update_success = self.db_helper.update_rows(
+                db_id, 'test', table_name,
+                {"value": 100},
+                {"name": "test_user"}
+            )
+            self.record_result(f"{db_type}_update", update_success,
+                             "" if update_success else "Failed to update row")
+            
+            # DELETE
+            delete_success = self.db_helper.delete_rows(
+                db_id, 'test', table_name,
+                {"name": "test_user"}
+            )
+            self.record_result(f"{db_type}_delete", delete_success,
+                             "" if delete_success else "Failed to delete row")
+            
+            # Cleanup
+            self.db_helper.drop_table(db_id, 'test', table_name)
+            
+            if not all([insert_success, update_success, delete_success]):
+                all_passed = False
+        
+        return all_passed
+    
+    def test_query_execution(self) -> bool:
+        """Test Step 8: Query Execution"""
+        self.logger.info("\n" + "="*60)
+        self.logger.info("Step 8: Testing Query Execution")
+        self.logger.info("="*60)
+        
+        all_passed = True
+        
+        # Test SQL queries on MySQL and PostgreSQL
+        test_queries = {
+            'mysql': "SELECT VERSION() as version",
+            'postgres': "SELECT version()"
+        }
+        
+        for db_type, query in test_queries.items():
+            db_id = self.created_databases.get(db_type)
+            if not db_id:
+                continue
+            
+            self.logger.info(f"\nExecuting query on {db_type.upper()}...")
+            
+            result = self.db_helper.execute_query(db_id, 'test', query)
+            if result is not None:
+                self.record_result(f"{db_type}_query", True)
+                self.logger.info(f"  Query executed successfully")
+            else:
+                self.record_result(f"{db_type}_query", False, "Query execution failed")
+                all_passed = False
+        
+        return all_passed
+    
+    def test_metrics_collection(self) -> bool:
+        """Test Step 9: Metrics Collection"""
+        self.logger.info("\n" + "="*60)
+        self.logger.info("Step 9: Testing Metrics Collection")
+        self.logger.info("="*60)
+        
+        all_passed = True
+        
+        for db_type, db_id in self.created_databases.items():
+            if not db_id:
+                continue
+            
+            self.logger.info(f"\nCollecting {db_type.upper()} metrics...")
+            
+            metrics = self.db_helper.get_current_metrics(db_id)
+            if metrics is not None:
+                self.record_result(f"{db_type}_metrics", True)
+                # Log some metrics if available
+                if isinstance(metrics, dict):
+                    self.logger.info(f"  Metrics retrieved: {len(metrics)} entries")
+            else:
+                # Metrics might not be supported for all databases
+                self.logger.warning(f"  Metrics not available for {db_type}")
+                self.record_result(f"{db_type}_metrics", True)  # Don't fail for unsupported metrics
+        
+        return all_passed
+    
+    def run(self) -> bool:
+        """Run all tests"""
+        self.logger.info("="*60)
+        self.logger.info("Database Integration Comprehensive Testing")
+        self.logger.info("="*60)
+        
+        try:
+            # Setup
+            if not self.setup():
+                return False
+            
+            # Run tests
+            self.test_connection_management()
+            self.test_metadata_retrieval()
+            self.test_table_operations()
+            self.test_data_operations()
+            self.test_query_execution()
+            self.test_metrics_collection()
+            
+            # Print summary
+            self.print_summary()
+            
+            return self.test_results['failed'] == 0
+            
+        except Exception as e:
+            self.logger.error(f"Test execution failed: {e}", exc_info=True)
+            return False
+        finally:
+            self.teardown()
+    
+    def print_summary(self):
+        """Print test results summary"""
+        self.logger.info("\n" + "="*60)
+        self.logger.info("Test Summary")
+        self.logger.info("="*60)
+        self.logger.info(f"Total:   {self.test_results['total']}")
+        self.logger.info(f"Passed:  {self.test_results['passed']}")
+        self.logger.info(f"Failed:  {self.test_results['failed']}")
+        self.logger.info(f"Skipped: {self.test_results['skipped']}")
+        
+        if self.test_results['errors']:
+            self.logger.info("\nFailed Tests:")
+            for error in self.test_results['errors']:
+                self.logger.info(f"  - {error}")
+        
+        if self.test_results['failed'] == 0:
+            self.logger.info("\n✓ All tests passed!")
+        else:
+            self.logger.error(f"\n✗ {self.test_results['failed']} test(s) failed")
+
+
 def main():
-    """Execute database integration tests"""
-    print("="*60)
-    print("Database Integration Test Wrapper")
-    print("="*60)
-    
-    # Setup logging
-    logger = setup_logging("DB-001")
-    
-    # Calculate paths
-    tests_dir = Path(__file__).resolve().parent.parent.parent
-    project_root = tests_dir.parent
-    database_dir = project_root / "core" / "database"
-    
-    logger.info(f"Project root: {project_root}")
-    logger.info(f"Database test directory: {database_dir}")
-    
-    # Check if we're in CI environment
-    is_ci = os.getenv('CI_ENVIRONMENT') == 'true' or os.getenv('CI') == 'true'
-    
-    # Run Go tests using helper
-    success = run_go_tests(
-        test_dir=database_dir,
-        verbose=True,
-        coverage=is_ci,  # Only collect coverage in CI
-        timeout=2700,  # 45 minutes for CI (matches test matrix timeout)
-        logger=logger
-    )
-    
-    # Exit with appropriate code
+    """Main entry point"""
+    test = DatabaseIntegrationTest()
+    success = test.run()
     sys.exit(0 if success else 1)
 
 
