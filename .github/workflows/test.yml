@@ -331,84 +331,55 @@ jobs:
           # Create results directory
           mkdir -p results
           
-          # Initialize test tracking
-          echo "0" > results/.total_tests
-          echo "0" > results/.passed_tests
-          echo "0" > results/.failed_tests
+          # Determine parallel worker count based on category
+          case "${{ matrix.category }}" in
+            api)
+              PARALLEL_WORKERS=5  # 15 tests, I/O bound
+              ;;
+            ui)
+              PARALLEL_WORKERS=4  # 19 tests, browser tests
+              ;;
+            cluster)
+              PARALLEL_WORKERS=3  # 4 tests, Docker tests
+              ;;
+            scheduler)
+              PARALLEL_WORKERS=3  # Task execution
+              ;;
+            database)
+              PARALLEL_WORKERS=2
+              ;;
+            dependencies)
+              PARALLEL_WORKERS=2
+              ;;
+            *)
+              PARALLEL_WORKERS=2
+              ;;
+          esac
           
-          # Initialize test results tracking file (for summary table)
-          echo "[]" > results/.test_results.json
-          
-          # Helper function to record test result
-          record_test_result() {
-            local spec_id="$1"
-            local status="$2"
-            local duration="${3:-unknown}"
-            
-            # Read current results
-            local current=$(cat results/.test_results.json)
-            
-            # Append new result
-            local new_result=$(jq -n \
-              --arg spec "$spec_id" \
-              --arg status "$status" \
-              --arg duration "$duration" \
-              --arg category "${{ matrix.category }}" \
-              '{spec: $spec, status: $status, duration: $duration, category: $category}')
-            
-            echo "$current" | jq ". += [$new_result]" > results/.test_results.json
-          }
+          echo "Category: ${{ matrix.category }}"
+          echo "Parallel workers: $PARALLEL_WORKERS"
           
           # Determine which spec to run
           if [ -n "${{ inputs.spec_id }}" ]; then
-            # Run specific spec from manual trigger
+            # Run specific spec from manual trigger (no parallel execution)
             SPEC_ID="${{ inputs.spec_id }}"
-            echo "Running specific spec: $SPEC_ID"
-            
-            echo "1" > results/.total_tests
+            echo "Running specific spec: $SPEC_ID (sequential mode)"
             
             BACKEND="${{ inputs.backend || 'auto' }}"
-            START_TIME=$(date +%s)
             
             if [ "$BACKEND" != "auto" ]; then
-              if uv run ./cli.py --spec "$SPEC_ID" --backend "$BACKEND" --ci; then
-                END_TIME=$(date +%s)
-                DURATION=$((END_TIME - START_TIME))
-                record_test_result "$SPEC_ID" "✅ PASSED" "${DURATION}s"
-                echo "1" > results/.passed_tests
-              else
-                END_TIME=$(date +%s)
-                DURATION=$((END_TIME - START_TIME))
-                record_test_result "$SPEC_ID" "❌ FAILED" "${DURATION}s"
-                echo "1" > results/.failed_tests
-                exit 1
-              fi
+              uv run ./cli.py --spec "$SPEC_ID" --backend "$BACKEND" --ci
             else
-              if uv run ./cli.py --spec "$SPEC_ID" --ci; then
-                END_TIME=$(date +%s)
-                DURATION=$((END_TIME - START_TIME))
-                record_test_result "$SPEC_ID" "✅ PASSED" "${DURATION}s"
-                echo "1" > results/.passed_tests
-              else
-                END_TIME=$(date +%s)
-                DURATION=$((END_TIME - START_TIME))
-                record_test_result "$SPEC_ID" "❌ FAILED" "${DURATION}s"
-                echo "1" > results/.failed_tests
-                exit 1
-              fi
+              uv run ./cli.py --spec "$SPEC_ID" --ci
             fi
           else
             # Check if we have specific changed specs to run (targeted testing)
             CHANGED_SPECS='${{ needs.detect-changes.outputs.changed_specs }}'
             
             if [ "$CHANGED_SPECS" != "[]" ] && [ -n "$CHANGED_SPECS" ]; then
-              # Targeted testing: only run changed specs
-              echo "Running targeted tests for changed specs..."
+              # Targeted testing: only run changed specs (use sequential for precision)
+              echo "Running targeted tests for changed specs (sequential mode for precision)"
               echo "Changed specs: $CHANGED_SPECS"
-              
-              TOTAL=0
-              PASSED=0
-              FAILED=0
               
               # Parse JSON array of changed specs
               SPEC_LIST=$(echo "$CHANGED_SPECS" | jq -r '.[]')
@@ -421,87 +392,21 @@ jobs:
                   echo "Running changed spec: $SPEC_ID"
                   echo "================================"
                   
-                  TOTAL=$((TOTAL + 1))
-                  START_TIME=$(date +%s)
-                  
-                  if ! uv run ./cli.py --spec "$SPEC_ID" --ci; then
-                    END_TIME=$(date +%s)
-                    DURATION=$((END_TIME - START_TIME))
-                    echo "❌ Spec $SPEC_ID failed"
-                    record_test_result "$SPEC_ID" "❌ FAILED" "${DURATION}s"
-                    FAILED=$((FAILED + 1))
-                  else
-                    END_TIME=$(date +%s)
-                    DURATION=$((END_TIME - START_TIME))
-                    echo "✅ Spec $SPEC_ID passed"
-                    record_test_result "$SPEC_ID" "✅ PASSED" "${DURATION}s"
-                    PASSED=$((PASSED + 1))
-                  fi
-                else
-                  echo "⏭️  Skipping $SPEC_ID (not in ${{ matrix.category }} category)"
+                  uv run ./cli.py --spec "$SPEC_ID" --ci
                 fi
               done
-              
-              # Save test counts for summary
-              echo "$TOTAL" > results/.total_tests
-              echo "$PASSED" > results/.passed_tests
-              echo "$FAILED" > results/.failed_tests
-              
-              # Exit with failure if any tests failed
-              if [ $FAILED -gt 0 ]; then
-                exit 1
-              fi
             else
-              # Run all specs in category (framework changed or no specific specs detected)
-              echo "Running all specs in category: ${{ matrix.category }}"
-              echo "Reason: Framework changed or helpers/runners modified"
+              # Run all specs in category with parallel execution
+              echo "Running all specs in category: ${{ matrix.category }} with $PARALLEL_WORKERS parallel workers"
               
-              # Get all spec files for this category (exclude README and TEMPLATE)
-              SPEC_FILES=$(find specs/${{ matrix.category }}/ -name "*.md" -type f ! -name "README.md" ! -name "TEMPLATE.md" | sort)
-              
-              if [ -z "$SPEC_FILES" ]; then
-                echo "No specs found for category: ${{ matrix.category }}"
-                exit 0
-              fi
-              
-              TOTAL=0
-              PASSED=0
-              FAILED=0
-              
-              for SPEC_FILE in $SPEC_FILES; do
-                # Extract spec ID from filename
-                SPEC_ID=$(basename "$SPEC_FILE" .md | cut -d'-' -f1-2)
-                echo ""
-                echo "================================"
-                echo "Running spec: $SPEC_ID"
-                echo "================================"
-                
-                TOTAL=$((TOTAL + 1))
-                START_TIME=$(date +%s)
-                
-                if ! uv run ./cli.py --spec "$SPEC_ID" --ci; then
-                  END_TIME=$(date +%s)
-                  DURATION=$((END_TIME - START_TIME))
-                  echo "❌ Spec $SPEC_ID failed"
-                  record_test_result "$SPEC_ID" "❌ FAILED" "${DURATION}s"
-                  FAILED=$((FAILED + 1))
-                else
-                  END_TIME=$(date +%s)
-                  DURATION=$((END_TIME - START_TIME))
-                  echo "✅ Spec $SPEC_ID passed"
-                  record_test_result "$SPEC_ID" "✅ PASSED" "${DURATION}s"
-                  PASSED=$((PASSED + 1))
-                fi
-              done
-              
-              # Save test counts for summary
-              echo "$TOTAL" > results/.total_tests
-              echo "$PASSED" > results/.passed_tests
-              echo "$FAILED" > results/.failed_tests
-              
-              # Exit with failure if any tests failed
-              if [ $FAILED -gt 0 ]; then
-                exit 1
+              if [ $PARALLEL_WORKERS -gt 1 ]; then
+                # Use parallel execution
+                echo "Using parallel execution mode"
+                uv run ./cli.py --category ${{ matrix.category }} --parallel $PARALLEL_WORKERS --ci
+              else
+                # Use sequential execution for single worker
+                echo "Using sequential execution mode (1 worker)"
+                uv run ./cli.py --category ${{ matrix.category }} --parallel 1 --ci
               fi
             fi
           fi

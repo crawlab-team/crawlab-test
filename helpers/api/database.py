@@ -221,7 +221,7 @@ class DatabaseAPIHelper:
             response = requests.post(
                 f"{self.base_url}/databases/{database_id}/connection/test",
                 headers=self._get_headers(),
-                timeout=10
+                timeout=30  # Increased for MongoDB and slow connections
             )
             response.raise_for_status()
             result = response.json()
@@ -244,7 +244,7 @@ class DatabaseAPIHelper:
             response = requests.get(
                 f"{self.base_url}/databases/{database_id}/metadata",
                 headers=self._get_headers(),
-                timeout=10  # Reduced timeout - may hang on connection issues
+                timeout=30  # Increased for connection-dependent operations
             )
             response.raise_for_status()
             result = response.json()
@@ -268,7 +268,7 @@ class DatabaseAPIHelper:
         try:
             response = requests.post(
                 f"{self.base_url}/databases/{database_id}/tables/metadata/get",
-                json={"database": database_name, "table": table_name},
+                json={"database_name": database_name, "table_name": table_name},
                 headers=self._get_headers(),
                 timeout=10
             )
@@ -295,17 +295,19 @@ class DatabaseAPIHelper:
             True if successful, False otherwise
         """
         try:
-            data = {
-                "database": database_name,
-                "table": table_name,
-                "columns": columns
+            # Correct payload format matching API contract
+            payload = {
+                "database_name": database_name,  # Changed from "database"
+                "table": {                        # Changed from string to object
+                    "name": table_name,           # Table name inside object
+                    "columns": columns,           # Columns inside table object
+                    "indexes": indexes or []      # Indexes inside table object
+                }
             }
-            if indexes:
-                data["indexes"] = indexes
                 
             response = requests.post(
                 f"{self.base_url}/databases/{database_id}/tables/create",
-                json=data,
+                json=payload,
                 headers=self._get_headers(),
                 timeout=10
             )
@@ -330,7 +332,7 @@ class DatabaseAPIHelper:
         try:
             response = requests.post(
                 f"{self.base_url}/databases/{database_id}/tables/drop",
-                json={"database": database_name, "table": table_name},
+                json={"database_name": database_name, "table_name": table_name},
                 headers=self._get_headers(),
                 timeout=10
             )
@@ -357,18 +359,20 @@ class DatabaseAPIHelper:
             True if successful, False otherwise
         """
         try:
-            data = {
-                "database": database_name,
-                "table": table_name
-            }
+            table_obj = {"name": table_name}
             if columns:
-                data["columns"] = columns
+                table_obj["columns"] = columns
             if indexes:
-                data["indexes"] = indexes
+                table_obj["indexes"] = indexes
+            
+            payload = {
+                "database_name": database_name,
+                "table": table_obj
+            }
                 
             response = requests.post(
                 f"{self.base_url}/databases/{database_id}/tables/modify",
-                json=data,
+                json=payload,
                 headers=self._get_headers(),
                 timeout=10
             )
@@ -430,13 +434,13 @@ class DatabaseAPIHelper:
         """
         try:
             data = {
-                "database": database_name,
-                "table": table_name,
+                "database": database_name,  # Note: this endpoint uses "database" not "database_name"
+                "table": table_name,        # Note: this endpoint uses "table" not "table_name"
                 "page": page,
                 "size": size
             }
             if conditions:
-                data["conditions"] = conditions
+                data["filter"] = conditions  # Note: API uses "filter" not "conditions"
                 
             response = requests.post(
                 f"{self.base_url}/databases/{database_id}/tables/data/get",
@@ -469,8 +473,8 @@ class DatabaseAPIHelper:
             response = requests.post(
                 f"{self.base_url}/databases/{database_id}/tables/data",
                 json={
-                    "database": database_name,
-                    "table": table_name,
+                    "database_name": database_name,
+                    "table_name": table_name,
                     "action": "insert",
                     "data": row
                 },
@@ -502,8 +506,8 @@ class DatabaseAPIHelper:
             response = requests.post(
                 f"{self.base_url}/databases/{database_id}/tables/data",
                 json={
-                    "database": database_name,
-                    "table": table_name,
+                    "database_name": database_name,
+                    "table_name": table_name,
                     "action": "update",
                     "data": data,
                     "conditions": conditions
@@ -535,8 +539,8 @@ class DatabaseAPIHelper:
             response = requests.post(
                 f"{self.base_url}/databases/{database_id}/tables/data",
                 json={
-                    "database": database_name,
-                    "table": table_name,
+                    "database_name": database_name,
+                    "table_name": table_name,
                     "action": "delete",
                     "conditions": conditions
                 },
@@ -565,7 +569,7 @@ class DatabaseAPIHelper:
             response = requests.post(
                 f"{self.base_url}/databases/{database_id}/query",
                 json={
-                    "database": database_name,
+                    "database_name": database_name,
                     "query": query
                 },
                 headers=self._get_headers(),

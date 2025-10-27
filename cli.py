@@ -21,7 +21,7 @@ from typing import Optional
 # Add current directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-from core import SpecFinder, Config, DockerDetector, ResultHandler
+from core import SpecFinder, Config, DockerDetector, ResultHandler, ParallelTestExecutor
 from backends import ScriptBackend, CopilotBackend, PlaywrightBackend
 
 
@@ -155,6 +155,96 @@ def search_specs_command(args):
     
     if len(specs) > 10:
         print(f"\n... and {len(specs) - 10} more matches")
+
+
+def run_parallel_command(args):
+    """Handle running all specs in a category with parallel execution"""
+    base_dir = Path(__file__).parent
+    
+    # Initialize core modules
+    spec_finder = SpecFinder(base_dir)
+    config = Config(base_dir)
+    docker_detector = DockerDetector()
+    result_handler = ResultHandler(base_dir)
+    
+    # Detect environment
+    is_docker = docker_detector.is_docker_environment()
+    if is_docker:
+        result_handler.log_info("✓ Docker environment detected")
+    else:
+        result_handler.log_info("Local environment detected")
+    
+    # Get category
+    if not args.category or len(args.category) != 1:
+        result_handler.log_error("--parallel requires exactly one category")
+        print("Usage: ./cli.py --category api --parallel [N]")
+        sys.exit(1)
+    
+    category = args.category[0]
+    
+    # Find all specs in category
+    all_specs = spec_finder.list_specs(categories=[category])
+    
+    if not all_specs:
+        result_handler.log_error(f"No specs found for category: {category}")
+        sys.exit(1)
+    
+    result_handler.log_info(f"Found {len(all_specs)} specs in category '{category}'")
+    
+    # Convert to paths
+    spec_paths = [base_dir / spec['file'] for spec in all_specs]
+    
+    # Determine worker count
+    if args.parallel and args.parallel > 0:
+        max_workers = args.parallel
+    else:
+        # Auto-detect based on category (when --parallel used without number)
+        worker_defaults = {
+            'api': 5,        # 15 tests, I/O bound (HTTP requests)
+            'ui': 4,         # 19 tests, CPU/memory intensive (browsers)
+            'cluster': 3,    # 4 tests, Docker intensive
+            'database': 2,   # 1 test, but can be parallelized if more added
+            'dependencies': 2,
+            'scheduler': 3,  # Task execution tests
+            'system': 2,
+        }
+        max_workers = worker_defaults.get(category, 3)
+    
+    result_handler.log_info(f"Using {max_workers} parallel workers")
+    
+    # Build configuration
+    test_config = {
+        'timeout_minutes': args.timeout or config.get_timeout_for_category(category),
+        'retry_count': args.retry or config.get_retry_count_for_category(category),
+        'is_ci': args.ci or config.is_ci,
+        'category': category,
+        'docker_environment': is_docker,
+        'backend': args.backend,
+        'model': args.model,
+    }
+    
+    # Execute in parallel
+    executor = ParallelTestExecutor(base_dir, max_workers=max_workers)
+    results = executor.execute_specs(spec_paths, test_config)
+    
+    # Print summary
+    executor.print_summary(results)
+    
+    # Save results
+    for result in results:
+        result['category'] = category
+        result['docker_info'] = docker_detector.get_docker_info() if is_docker else None
+        result_handler.save_result(result)
+    
+    # Calculate overall status
+    stats = executor.get_stats(results)
+    
+    if stats['failed'] > 0 or stats['error'] > 0:
+        result_handler.log_error(f"✗ {stats['failed'] + stats['error']} tests FAILED")
+        sys.exit(1)
+    else:
+        result_handler.log_info(f"✓ All {stats['passed']} tests PASSED")
+        sys.exit(0)
 
 
 def run_spec_command(args):
@@ -310,6 +400,15 @@ Examples:
   
   # List specs for multiple categories
   %(prog)s --list-specs --category api ui cluster
+  
+  # Run all specs in a category in parallel (auto-detect workers)
+  %(prog)s --category api --parallel
+  
+  # Run all specs in a category with specific worker count
+  %(prog)s --category api --parallel 4
+  
+  # Run all UI tests with 2 parallel workers
+  %(prog)s --category ui --parallel 2
         """,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -341,7 +440,16 @@ Examples:
     parser.add_argument(
         '--category',
         nargs='+',
-        help='Filter specs by category (use with --list-specs). Can specify multiple: --category api ui cluster'
+        help='Filter specs by category (use with --list-specs or --parallel). Can specify multiple: --category api ui cluster'
+    )
+    
+    parser.add_argument(
+        '--parallel',
+        type=int,
+        metavar='N',
+        nargs='?',
+        const=0,
+        help='Run all specs in specified category in parallel with N workers. If N is omitted, auto-detect optimal workers. Requires --category with single value.'
     )
     
     parser.add_argument(
@@ -386,6 +494,8 @@ Examples:
         list_specs_command(args)
     elif args.search:
         search_specs_command(args)
+    elif args.parallel is not None:
+        run_parallel_command(args)
     elif args.spec:
         run_spec_command(args)
     else:

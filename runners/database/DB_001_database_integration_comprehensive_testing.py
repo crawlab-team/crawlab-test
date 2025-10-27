@@ -28,46 +28,121 @@ from helpers.api.cleanup import CleanupHelper
 from helpers.libs.utils import setup_logging
 
 
+def is_docker_environment() -> bool:
+    """
+    Detect if running in Docker/CI environment
+    
+    Returns:
+        True if in Docker/CI environment
+    """
+    # Check for Docker environment indicators
+    if os.path.exists('/.dockerenv'):
+        return True
+    
+    # Check for Crawlab environment variables (set in docker-compose)
+    if os.getenv('CRAWLAB_NODE_MASTER'):
+        return True
+    
+    # Check for CI environment
+    if os.getenv('CI') or os.getenv('GITHUB_ACTIONS'):
+        return True
+    
+    return False
+
+
+def get_database_configs() -> dict:
+    """
+    Get database configurations based on environment
+    
+    Returns:
+        Dictionary of database configurations
+    """
+    is_docker = is_docker_environment()
+    
+    if is_docker:
+        # Docker/CI environment - use container hostnames and internal ports
+        return {
+            'mysql': {
+                'name': 'MySQL Test DB',
+                'data_source': 'mysql',
+                'host': os.getenv('MYSQL_TEST_HOST', 'mysql'),
+                'port': int(os.getenv('MYSQL_TEST_PORT', '3306')),
+                'username': os.getenv('MYSQL_TEST_USER', 'root'),
+                'password': os.getenv('MYSQL_TEST_PASSWORD', 'admin'),
+                'database': 'test'
+            },
+            'postgres': {
+                'name': 'PostgreSQL Test DB',
+                'data_source': 'postgres',
+                'host': os.getenv('POSTGRES_TEST_HOST', 'postgres'),
+                'port': int(os.getenv('POSTGRES_TEST_PORT', '5432')),
+                'username': os.getenv('POSTGRES_TEST_USER', 'admin'),
+                'password': os.getenv('POSTGRES_TEST_PASSWORD', 'admin'),
+                'database': 'test'
+            },
+            'mongo': {
+                'name': 'MongoDB Test DB',
+                'data_source': 'mongo',
+                'host': os.getenv('MONGO_TEST_HOST', 'mongo'),
+                'port': int(os.getenv('MONGO_TEST_PORT', '27017')),
+                'username': os.getenv('MONGO_TEST_USER', 'admin'),
+                'password': os.getenv('MONGO_TEST_PASSWORD', 'admin'),
+                'database': 'test'
+            },
+            'elasticsearch': {
+                'name': 'Elasticsearch Test DB',
+                'data_source': 'elasticsearch',
+                'host': os.getenv('ELASTICSEARCH_TEST_HOST', 'elasticsearch'),
+                'port': int(os.getenv('ELASTICSEARCH_TEST_PORT', '9200')),
+                'username': '',
+                'password': '',
+                'database': ''
+            }
+        }
+    else:
+        # Local environment - use localhost with mapped ports
+        return {
+            'mysql': {
+                'name': 'MySQL Test DB',
+                'data_source': 'mysql',
+                'host': os.getenv('MYSQL_TEST_HOST', 'localhost'),
+                'port': int(os.getenv('MYSQL_TEST_PORT', '3307')),
+                'username': os.getenv('MYSQL_TEST_USER', 'root'),
+                'password': os.getenv('MYSQL_TEST_PASSWORD', 'admin'),
+                'database': 'test'
+            },
+            'postgres': {
+                'name': 'PostgreSQL Test DB',
+                'data_source': 'postgres',
+                'host': os.getenv('POSTGRES_TEST_HOST', 'localhost'),
+                'port': int(os.getenv('POSTGRES_TEST_PORT', '5433')),
+                'username': os.getenv('POSTGRES_TEST_USER', 'admin'),
+                'password': os.getenv('POSTGRES_TEST_PASSWORD', 'admin'),
+                'database': 'test'
+            },
+            'mongo': {
+                'name': 'MongoDB Test DB',
+                'data_source': 'mongo',
+                'host': os.getenv('MONGO_TEST_HOST', 'localhost'),
+                'port': int(os.getenv('MONGO_TEST_PORT', '27017')),
+                'username': os.getenv('MONGO_TEST_USER', 'admin'),
+                'password': os.getenv('MONGO_TEST_PASSWORD', 'admin'),
+                'database': 'test'
+            },
+            'elasticsearch': {
+                'name': 'Elasticsearch Test DB',
+                'data_source': 'elasticsearch',
+                'host': os.getenv('ELASTICSEARCH_TEST_HOST', 'localhost'),
+                'port': int(os.getenv('ELASTICSEARCH_TEST_PORT', '9200')),
+                'username': '',
+                'password': '',
+                'database': ''
+            }
+        }
+
+
 # Test database configurations
-# These match the docker-compose.test.yml setup
-TEST_DATABASES = {
-    'mysql': {
-        'name': 'MySQL Test DB',
-        'data_source': 'mysql',
-        'host': os.getenv('MYSQL_TEST_HOST', 'localhost'),
-        'port': int(os.getenv('MYSQL_TEST_PORT', '3307')),
-        'username': os.getenv('MYSQL_TEST_USER', 'root'),
-        'password': os.getenv('MYSQL_TEST_PASSWORD', 'admin'),
-        'database': 'test'
-    },
-    'postgres': {
-        'name': 'PostgreSQL Test DB',
-        'data_source': 'postgres',
-        'host': os.getenv('POSTGRES_TEST_HOST', 'localhost'),
-        'port': int(os.getenv('POSTGRES_TEST_PORT', '5433')),
-        'username': os.getenv('POSTGRES_TEST_USER', 'admin'),
-        'password': os.getenv('POSTGRES_TEST_PASSWORD', 'admin'),
-        'database': 'test'
-    },
-    'mongo': {
-        'name': 'MongoDB Test DB',
-        'data_source': 'mongo',
-        'host': os.getenv('MONGO_TEST_HOST', 'localhost'),
-        'port': int(os.getenv('MONGO_TEST_PORT', '27017')),
-        'username': os.getenv('MONGO_TEST_USER', 'admin'),
-        'password': os.getenv('MONGO_TEST_PASSWORD', 'admin'),
-        'database': 'test'
-    },
-    'elasticsearch': {
-        'name': 'Elasticsearch Test DB',
-        'data_source': 'elasticsearch',
-        'host': os.getenv('ELASTICSEARCH_TEST_HOST', 'localhost'),
-        'port': int(os.getenv('ELASTICSEARCH_TEST_PORT', '9200')),
-        'username': '',
-        'password': '',
-        'database': ''
-    }
-}
+TEST_DATABASES = get_database_configs()
 
 
 class DatabaseIntegrationTest:
@@ -91,6 +166,15 @@ class DatabaseIntegrationTest:
     def setup(self) -> bool:
         """Setup test environment"""
         self.logger.info("Setting up test environment...")
+        
+        # Detect and log environment
+        is_docker = is_docker_environment()
+        env_type = "Docker/CI" if is_docker else "Local"
+        self.logger.info(f"Environment detected: {env_type}")
+        
+        # Log database connection details
+        for db_type, config in TEST_DATABASES.items():
+            self.logger.info(f"  {db_type}: {config['host']}:{config['port']}")
         
         # Login and get token
         self.token, _ = self.auth.login()
