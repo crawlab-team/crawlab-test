@@ -17,6 +17,7 @@ import logging
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from helpers.api.auth import AuthHelper
+from helpers.api.node import NodeHelper
 from helpers.api.dependency import (
     get_dependency_repos,
     search_dependency_repos,
@@ -25,8 +26,6 @@ from helpers.api.dependency import (
     uninstall_dependency_repo,
     get_dependency_logs
 )
-from helpers.api.node import get_node_list
-from helpers.api.cleanup import cleanup_test_resources
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -36,6 +35,7 @@ logger = logging.getLogger(__name__)
 def run_test():
     """Execute API-013 test scenarios"""
     auth = AuthHelper()
+    node_helper = NodeHelper()
     token = None
     test_steps = []
     node_ids = []
@@ -57,9 +57,9 @@ def run_test():
             return test_steps
         
         # Get available node IDs for later use
-        nodes_data = get_node_list(token, page=1, size=100)
-        if nodes_data and 'data' in nodes_data:
-            node_ids = [node.get('_id') for node in nodes_data['data'] if node.get('_id')]
+        nodes, response = node_helper.list_nodes(token, page=1, size=100)
+        if nodes:
+            node_ids = [node.get('_id') for node in nodes if node.get('_id')]
             logger.info(f"Found {len(node_ids)} available nodes")
         
         # ===== Repository List Operations =====
