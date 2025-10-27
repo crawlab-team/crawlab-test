@@ -233,14 +233,23 @@ def run_parallel_command(args):
     # Print summary
     executor.print_summary(results)
     
-    # Save results
+    # Save results and generate summaries
     results_dir = base_dir / "results"
     results_dir.mkdir(exist_ok=True)
     
-    for result in results:
+    for i, result in enumerate(results):
         result['category'] = category
         result['docker_info'] = docker_detector.get_docker_info() if is_docker else None
-        result_handler.save_result(result)
+        
+        # Generate unique timestamp for each result
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S") + f"_{i:03d}"
+        
+        # Save result JSON
+        result_handler.save_result(result, timestamp)
+        
+        # Generate summary markdown for CI workflow to display
+        spec_path = Path(result.get('spec_path', 'unknown'))
+        result_handler.generate_summary(result, spec_path, category, timestamp)
     
     # Calculate overall status
     stats = executor.get_stats(results)
