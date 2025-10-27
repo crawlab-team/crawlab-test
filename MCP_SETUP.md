@@ -128,31 +128,39 @@ npx @playwright/mcp@latest
 
 ## CI Environment Setup
 
-**✅ Configured in GitHub Actions**: The MCP configuration is set up in the `.github/workflows/copilot-setup-steps.yml` workflow.
+**✅ Configured in GitHub Actions**: The MCP configuration is set up in the `.github/workflows/test.yml` workflow.
 
 ### Workflow Configuration
 
 The GitHub Actions workflow includes these steps:
 
 ```yaml
-- name: Setup MCP configuration
+- name: Install GitHub Copilot CLI and MCP servers
+  if: matrix.category == 'ui' || inputs.backend == 'copilot'
   run: |
-    mkdir -p ~/.copilot
-    cp tests/mcp-config.json ~/.copilot/mcp-config.json
-    echo "✓ MCP config installed to ~/.copilot/mcp-config.json"
+    npm install -g @github/copilot
     npm install -g @playwright/mcp
+    mkdir -p ~/.copilot
+    cp mcp-config.json ~/.copilot/mcp-config.json
+    echo "✓ MCP config installed to ~/.copilot/mcp-config.json"
 ```
 
-**Location**: `.github/workflows/copilot-setup-steps.yml` (Step 11)
+**Location**: `.github/workflows/test.yml` (in the test job steps)
 
 **How it works:**
 1. GitHub Actions runner has a clean home directory
-2. The workflow creates `~/.copilot/` directory
-3. Copies `tests/mcp-config.json` to `~/.copilot/mcp-config.json`
-4. Installs Playwright MCP server globally
-5. When Copilot CLI runs, it automatically loads the config from `~/.copilot/`
+2. Installs GitHub Copilot CLI globally
+3. **Installs Playwright MCP server** globally (`@playwright/mcp`)
+4. Creates `~/.copilot/` directory
+5. Copies `mcp-config.json` to `~/.copilot/mcp-config.json`
+6. When Copilot CLI runs, it **automatically loads MCP config** from `~/.copilot/mcp-config.json`
+7. The Playwright MCP server becomes available as MCP tools in Copilot
 
-**For other workflows**: If you create additional test workflows, include the "Setup MCP configuration" step before running tests with the Copilot backend.
+**Critical**: Both the MCP config file AND the actual MCP server npm package must be installed. The config tells Copilot where to find the server, and the server provides the actual tools.
+
+**For other workflows**: If you create additional test workflows, include both:
+1. Install the MCP server: `npm install -g @playwright/mcp`
+2. Setup the config: Copy `mcp-config.json` to `~/.copilot/mcp-config.json`
 
 ## Verifying MCP Setup
 
@@ -194,9 +202,55 @@ Copilot CLI → MCP Client → Playwright MCP Server → Interactive browser aut
 
 If Copilot CLI can't find the MCP server:
 
-1. Check `npx @playwright/mcp` runs successfully
-2. Verify MCP_CONFIG path is absolute
-3. Check environment variable is set: `echo $MCP_CONFIG`
+1. **Check the MCP server is installed**:
+   ```bash
+   npm list -g @playwright/mcp
+   # Should show the installed version
+   ```
+
+2. **Verify the MCP server runs successfully**:
+   ```bash
+   npx @playwright/mcp
+   # Should start the server without errors
+   ```
+
+3. **Check the MCP config file exists**:
+   ```bash
+   cat ~/.copilot/mcp-config.json
+   # Should show the Playwright server configuration
+   ```
+
+4. **Verify Copilot CLI loads the config**:
+   ```bash
+   # Copilot CLI automatically loads from ~/.copilot/mcp-config.json
+   # No environment variable needed
+   ```
+
+### Common Issue: MCP Config Exists But Tools Not Available
+
+**Symptoms**: 
+- `✓ MCP config installed to: ~/.copilot/mcp-config.json` appears in logs
+- But tests skip with "MCP Playwright tools not available"
+
+**Root Cause**: The MCP **config file** was created, but the actual **MCP server npm package** (`@playwright/mcp`) was never installed.
+
+**Solution**:
+```bash
+# Install the Playwright MCP server package
+npm install -g @playwright/mcp
+
+# Verify it's installed
+npm list -g @playwright/mcp
+
+# Test it works
+npx @playwright/mcp --help
+```
+
+**In CI**: Make sure your workflow includes:
+```yaml
+- name: Install Playwright MCP Server
+  run: npm install -g @playwright/mcp
+```
 
 ### Playwright Installation Issues
 

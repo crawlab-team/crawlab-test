@@ -262,12 +262,21 @@ jobs:
         run: |
           uv run playwright install chromium --with-deps
       
-      - name: Install GitHub Copilot CLI (for copilot backend)
+      - name: Install GitHub Copilot CLI and MCP servers
         if: matrix.category == 'ui' || inputs.backend == 'copilot'
         run: |
           npm install -g @github/copilot
           echo "✓ GitHub Copilot CLI installed"
           copilot --version || echo "⚠ Copilot CLI may require authentication"
+          
+          # Install Playwright MCP server for UI automation
+          npm install -g @playwright/mcp
+          echo "✓ Playwright MCP server installed"
+          
+          # Setup MCP config for Copilot CLI
+          mkdir -p ~/.copilot
+          cp mcp-config.json ~/.copilot/mcp-config.json
+          echo "✓ MCP config installed to ~/.copilot/mcp-config.json"
       
       - name: Set up Docker
         run: |
