@@ -15,8 +15,11 @@ Usage:
 import argparse
 import sys
 import os
+import re
+import json
 from pathlib import Path
 from typing import Optional
+from datetime import datetime
 
 # Add current directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
@@ -231,6 +234,9 @@ def run_parallel_command(args):
     executor.print_summary(results)
     
     # Save results
+    results_dir = base_dir / "results"
+    results_dir.mkdir(exist_ok=True)
+    
     for result in results:
         result['category'] = category
         result['docker_info'] = docker_detector.get_docker_info() if is_docker else None
@@ -238,6 +244,53 @@ def run_parallel_command(args):
     
     # Calculate overall status
     stats = executor.get_stats(results)
+    
+    # Write tracking files for CI workflow (same format as per-spec tracking)
+    (results_dir / ".total_tests").write_text(str(stats['total']))
+    (results_dir / ".passed_tests").write_text(str(stats['passed']))
+    (results_dir / ".failed_tests").write_text(str(stats['failed'] + stats['error']))
+    
+    # Write detailed test results in workflow-compatible format
+    test_results_list = []
+    for result in results:
+        spec_path = Path(result.get('spec_path', 'unknown'))
+        # Extract spec ID from filename (e.g., "API-001-authentication.md" -> "API-001")
+        spec_filename = spec_path.stem  # Remove .md extension
+        # Match pattern: CATEGORY-NUMBER (e.g., API-001, UI-002, CLS-001)
+        match = re.match(r'^([A-Z]+-\d+)', spec_filename)
+        spec_id = match.group(1) if match else spec_filename
+        
+        status = result.get('status', 'unknown')
+        
+        # Calculate duration if available
+        duration = "N/A"
+        if 'start_time' in result and 'end_time' in result:
+            try:
+                start = datetime.fromisoformat(result['start_time'])
+                end = datetime.fromisoformat(result['end_time'])
+                duration_sec = (end - start).total_seconds()
+                duration = f"{duration_sec:.2f}s"
+            except (ValueError, TypeError):
+                pass
+        
+        # Map status to display format
+        status_map = {
+            'passed': '✅ PASSED',
+            'failed': '❌ FAILED',
+            'timeout': '⏱️ TIMEOUT',
+            'error': '⚠️ ERROR',
+            'skipped': '⏭️ SKIPPED',
+            'unknown': '❔ UNKNOWN'
+        }
+        status_display = status_map.get(status, f'❔ {status.upper()}')
+        
+        test_results_list.append({
+            "spec": spec_id,
+            "status": status_display,
+            "duration": duration
+        })
+    
+    (results_dir / ".test_results.json").write_text(json.dumps(test_results_list, indent=2))
     
     if stats['failed'] > 0 or stats['error'] > 0:
         result_handler.log_error(f"✗ {stats['failed'] + stats['error']} tests FAILED")
