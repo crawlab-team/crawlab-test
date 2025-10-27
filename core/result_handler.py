@@ -152,6 +152,14 @@ Timestamp: {datetime.now().isoformat()}
         """
         Write summary to GitHub Actions step summary
         
+        NOTE: In CI mode, individual test summaries are NOT written to 
+        GITHUB_STEP_SUMMARY to avoid verbose output. Instead, test execution 
+        results are tracked and a consolidated summary table is generated 
+        at the job level in the GitHub Actions workflow.
+        
+        This method still generates summary files in the results directory
+        for artifact upload and debugging purposes.
+        
         Args:
             result: Test result dictionary
             spec_path: Path to test specification
@@ -160,6 +168,12 @@ Timestamp: {datetime.now().isoformat()}
         github_step_summary = os.getenv('GITHUB_STEP_SUMMARY')
         
         if not github_step_summary:
+            return
+        
+        # In CI mode, skip writing individual test summaries to step summary
+        # The workflow will generate a consolidated table instead
+        if os.getenv('CI', 'false').lower() == 'true':
+            print("CI mode: Skipping individual step summary (consolidated summary will be generated)")
             return
         
         exit_code = result.get('exit_code', 1)

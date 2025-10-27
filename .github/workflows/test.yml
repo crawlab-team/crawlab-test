@@ -53,6 +53,7 @@ jobs:
     outputs:
       categories: ${{ steps.detect.outputs.categories }}
       run_tests: ${{ steps.detect.outputs.run_tests }}
+      changed_specs: ${{ steps.detect.outputs.changed_specs }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -146,20 +147,49 @@ jobs:
           fi
           
           # If core framework changed, test everything
+          FRAMEWORK_CHANGED=false
           if echo "$CHANGED_FILES" | grep -qE "^cli.py|^backends/|^core/|^requirements.txt"; then
             CATEGORIES=("api" "cluster" "database" "dependencies" "scheduler" "system" "ui")
+            FRAMEWORK_CHANGED=true
+          fi
+          
+          # Detect specific changed specs (for targeted testing)
+          CHANGED_SPECS=()
+          
+          if [ "$FRAMEWORK_CHANGED" = "false" ]; then
+            # Extract spec IDs from changed spec files
+            while IFS= read -r file; do
+              if [[ "$file" =~ ^specs/([^/]+)/([A-Z]+-[0-9]+)- ]]; then
+                SPEC_ID="${BASH_REMATCH[2]}"
+                CHANGED_SPECS+=("$SPEC_ID")
+                echo "Detected changed spec: $SPEC_ID"
+              fi
+            done <<< "$CHANGED_FILES"
           fi
           
           # Convert to JSON array
           if [ ${#CATEGORIES[@]} -eq 0 ]; then
             echo "No test-related changes detected"
             echo "categories=[]" >> $GITHUB_OUTPUT
+            echo "changed_specs=[]" >> $GITHUB_OUTPUT
             echo "run_tests=false" >> $GITHUB_OUTPUT
           else
             CATEGORIES_JSON=$(printf '%s\n' "${CATEGORIES[@]}" | jq -R . | jq -s -c .)
             echo "categories=$CATEGORIES_JSON" >> $GITHUB_OUTPUT
             echo "run_tests=true" >> $GITHUB_OUTPUT
             echo "Will run tests for: ${CATEGORIES[@]}"
+            
+            # Output changed specs for targeted testing
+            if [ ${#CHANGED_SPECS[@]} -gt 0 ]; then
+              # Remove duplicates
+              CHANGED_SPECS=($(printf '%s\n' "${CHANGED_SPECS[@]}" | sort -u))
+              CHANGED_SPECS_JSON=$(printf '%s\n' "${CHANGED_SPECS[@]}" | jq -R . | jq -s -c .)
+              echo "changed_specs=$CHANGED_SPECS_JSON" >> $GITHUB_OUTPUT
+              echo "Changed specs: ${CHANGED_SPECS[@]}"
+            else
+              echo "changed_specs=[]" >> $GITHUB_OUTPUT
+              echo "No specific specs changed (will run all in category)"
+            fi
           fi
       
       - name: Generate detection summary
@@ -306,6 +336,29 @@ jobs:
           echo "0" > results/.passed_tests
           echo "0" > results/.failed_tests
           
+          # Initialize test results tracking file (for summary table)
+          echo "[]" > results/.test_results.json
+          
+          # Helper function to record test result
+          record_test_result() {
+            local spec_id="$1"
+            local status="$2"
+            local duration="${3:-unknown}"
+            
+            # Read current results
+            local current=$(cat results/.test_results.json)
+            
+            # Append new result
+            local new_result=$(jq -n \
+              --arg spec "$spec_id" \
+              --arg status "$status" \
+              --arg duration "$duration" \
+              --arg category "${{ matrix.category }}" \
+              '{spec: $spec, status: $status, duration: $duration, category: $category}')
+            
+            echo "$current" | jq ". += [$new_result]" > results/.test_results.json
+          }
+          
           # Determine which spec to run
           if [ -n "${{ inputs.spec_id }}" ]; then
             # Run specific spec from manual trigger
@@ -315,64 +368,141 @@ jobs:
             echo "1" > results/.total_tests
             
             BACKEND="${{ inputs.backend || 'auto' }}"
+            START_TIME=$(date +%s)
+            
             if [ "$BACKEND" != "auto" ]; then
               if uv run ./cli.py --spec "$SPEC_ID" --backend "$BACKEND" --ci; then
+                END_TIME=$(date +%s)
+                DURATION=$((END_TIME - START_TIME))
+                record_test_result "$SPEC_ID" "✅ PASSED" "${DURATION}s"
                 echo "1" > results/.passed_tests
               else
+                END_TIME=$(date +%s)
+                DURATION=$((END_TIME - START_TIME))
+                record_test_result "$SPEC_ID" "❌ FAILED" "${DURATION}s"
                 echo "1" > results/.failed_tests
                 exit 1
               fi
             else
               if uv run ./cli.py --spec "$SPEC_ID" --ci; then
+                END_TIME=$(date +%s)
+                DURATION=$((END_TIME - START_TIME))
+                record_test_result "$SPEC_ID" "✅ PASSED" "${DURATION}s"
                 echo "1" > results/.passed_tests
               else
+                END_TIME=$(date +%s)
+                DURATION=$((END_TIME - START_TIME))
+                record_test_result "$SPEC_ID" "❌ FAILED" "${DURATION}s"
                 echo "1" > results/.failed_tests
                 exit 1
               fi
             fi
           else
-            # Run all specs in category
-            echo "Running all specs in category: ${{ matrix.category }}"
+            # Check if we have specific changed specs to run (targeted testing)
+            CHANGED_SPECS='${{ needs.detect-changes.outputs.changed_specs }}'
             
-            # Get all spec files for this category (exclude README and TEMPLATE)
-            SPEC_FILES=$(find specs/${{ matrix.category }}/ -name "*.md" -type f ! -name "README.md" ! -name "TEMPLATE.md" | sort)
-            
-            if [ -z "$SPEC_FILES" ]; then
-              echo "No specs found for category: ${{ matrix.category }}"
-              exit 0
-            fi
-            
-            TOTAL=0
-            PASSED=0
-            FAILED=0
-            
-            for SPEC_FILE in $SPEC_FILES; do
-              # Extract spec ID from filename
-              SPEC_ID=$(basename "$SPEC_FILE" .md | cut -d'-' -f1-2)
-              echo ""
-              echo "================================"
-              echo "Running spec: $SPEC_ID"
-              echo "================================"
+            if [ "$CHANGED_SPECS" != "[]" ] && [ -n "$CHANGED_SPECS" ]; then
+              # Targeted testing: only run changed specs
+              echo "Running targeted tests for changed specs..."
+              echo "Changed specs: $CHANGED_SPECS"
               
-              TOTAL=$((TOTAL + 1))
+              TOTAL=0
+              PASSED=0
+              FAILED=0
               
-              if ! uv run ./cli.py --spec "$SPEC_ID" --ci; then
-                echo "❌ Spec $SPEC_ID failed"
-                FAILED=$((FAILED + 1))
-              else
-                echo "✅ Spec $SPEC_ID passed"
-                PASSED=$((PASSED + 1))
+              # Parse JSON array of changed specs
+              SPEC_LIST=$(echo "$CHANGED_SPECS" | jq -r '.[]')
+              
+              for SPEC_ID in $SPEC_LIST; do
+                # Only run if spec belongs to current category
+                if ls specs/${{ matrix.category }}/${SPEC_ID}-*.md 1> /dev/null 2>&1; then
+                  echo ""
+                  echo "================================"
+                  echo "Running changed spec: $SPEC_ID"
+                  echo "================================"
+                  
+                  TOTAL=$((TOTAL + 1))
+                  START_TIME=$(date +%s)
+                  
+                  if ! uv run ./cli.py --spec "$SPEC_ID" --ci; then
+                    END_TIME=$(date +%s)
+                    DURATION=$((END_TIME - START_TIME))
+                    echo "❌ Spec $SPEC_ID failed"
+                    record_test_result "$SPEC_ID" "❌ FAILED" "${DURATION}s"
+                    FAILED=$((FAILED + 1))
+                  else
+                    END_TIME=$(date +%s)
+                    DURATION=$((END_TIME - START_TIME))
+                    echo "✅ Spec $SPEC_ID passed"
+                    record_test_result "$SPEC_ID" "✅ PASSED" "${DURATION}s"
+                    PASSED=$((PASSED + 1))
+                  fi
+                else
+                  echo "⏭️  Skipping $SPEC_ID (not in ${{ matrix.category }} category)"
+                fi
+              done
+              
+              # Save test counts for summary
+              echo "$TOTAL" > results/.total_tests
+              echo "$PASSED" > results/.passed_tests
+              echo "$FAILED" > results/.failed_tests
+              
+              # Exit with failure if any tests failed
+              if [ $FAILED -gt 0 ]; then
+                exit 1
               fi
-            done
-            
-            # Save test counts for summary
-            echo "$TOTAL" > results/.total_tests
-            echo "$PASSED" > results/.passed_tests
-            echo "$FAILED" > results/.failed_tests
-            
-            # Exit with failure if any tests failed
-            if [ $FAILED -gt 0 ]; then
-              exit 1
+            else
+              # Run all specs in category (framework changed or no specific specs detected)
+              echo "Running all specs in category: ${{ matrix.category }}"
+              echo "Reason: Framework changed or helpers/runners modified"
+              
+              # Get all spec files for this category (exclude README and TEMPLATE)
+              SPEC_FILES=$(find specs/${{ matrix.category }}/ -name "*.md" -type f ! -name "README.md" ! -name "TEMPLATE.md" | sort)
+              
+              if [ -z "$SPEC_FILES" ]; then
+                echo "No specs found for category: ${{ matrix.category }}"
+                exit 0
+              fi
+              
+              TOTAL=0
+              PASSED=0
+              FAILED=0
+              
+              for SPEC_FILE in $SPEC_FILES; do
+                # Extract spec ID from filename
+                SPEC_ID=$(basename "$SPEC_FILE" .md | cut -d'-' -f1-2)
+                echo ""
+                echo "================================"
+                echo "Running spec: $SPEC_ID"
+                echo "================================"
+                
+                TOTAL=$((TOTAL + 1))
+                START_TIME=$(date +%s)
+                
+                if ! uv run ./cli.py --spec "$SPEC_ID" --ci; then
+                  END_TIME=$(date +%s)
+                  DURATION=$((END_TIME - START_TIME))
+                  echo "❌ Spec $SPEC_ID failed"
+                  record_test_result "$SPEC_ID" "❌ FAILED" "${DURATION}s"
+                  FAILED=$((FAILED + 1))
+                else
+                  END_TIME=$(date +%s)
+                  DURATION=$((END_TIME - START_TIME))
+                  echo "✅ Spec $SPEC_ID passed"
+                  record_test_result "$SPEC_ID" "✅ PASSED" "${DURATION}s"
+                  PASSED=$((PASSED + 1))
+                fi
+              done
+              
+              # Save test counts for summary
+              echo "$TOTAL" > results/.total_tests
+              echo "$PASSED" > results/.passed_tests
+              echo "$FAILED" > results/.failed_tests
+              
+              # Exit with failure if any tests failed
+              if [ $FAILED -gt 0 ]; then
+                exit 1
+              fi
             fi
           fi
       
@@ -460,12 +590,12 @@ jobs:
       - name: Generate test summary
         if: always()
         run: |
-          echo "## Test Results - ${{ matrix.category }}" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Test Execution Results - ${{ matrix.category }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           # Check if results exist
           if [ -d "results" ] && [ "$(ls -A results)" ]; then
-            # Use tracked counts if available, otherwise fall back to JSON counting
+            # Use tracked counts if available
             if [ -f "results/.total_tests" ]; then
               TOTAL=$(cat results/.total_tests)
               PASSED=$(cat results/.passed_tests)
@@ -477,38 +607,58 @@ jobs:
               FAILED=$((TOTAL - PASSED))
             fi
             
-            echo "### Results:" >> $GITHUB_STEP_SUMMARY
-            echo "- **Total tests**: $TOTAL" >> $GITHUB_STEP_SUMMARY
-            echo "- **Passed**: ✅ $PASSED" >> $GITHUB_STEP_SUMMARY
-            echo "- **Failed**: ❌ $FAILED" >> $GITHUB_STEP_SUMMARY
-            
-            # List results
+            echo "### 📈 Summary" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### Details:" >> $GITHUB_STEP_SUMMARY
-            for RESULT in results/result_*.json; do
-              if [ -f "$RESULT" ]; then
-                SPEC_NAME=$(basename "$RESULT" .json)
-                STATUS=$(jq -r '.status // "unknown"' "$RESULT" 2>/dev/null || echo "unknown")
-                if [ "$STATUS" = "passed" ]; then
-                  echo "- ✅ $SPEC_NAME" >> $GITHUB_STEP_SUMMARY
-                else
-                  echo "- ❌ $SPEC_NAME" >> $GITHUB_STEP_SUMMARY
-                fi
+            echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| **Total Tests** | $TOTAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| **✅ Passed** | $PASSED |" >> $GITHUB_STEP_SUMMARY
+            echo "| **❌ Failed** | $FAILED |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Success Rate** | $(awk "BEGIN {printf \"%.1f%%\", ($PASSED/$TOTAL)*100}") |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Display test results table if we have detailed results
+            if [ -f "results/.test_results.json" ]; then
+              echo "### 📋 Test Results Table" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "| Spec ID | Status | Duration |" >> $GITHUB_STEP_SUMMARY
+              echo "|---------|--------|----------|" >> $GITHUB_STEP_SUMMARY
+              
+              # Read and display each test result
+              jq -r '.[] | "| \(.spec) | \(.status) | \(.duration) |"' results/.test_results.json >> $GITHUB_STEP_SUMMARY
+              
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            # Add collapsible section for detailed logs (from each spec's summary)
+            echo "<details>" >> $GITHUB_STEP_SUMMARY
+            echo "<summary>📄 Detailed Test Logs (Click to expand)</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Include all individual test summaries if they exist
+            for SUMMARY_FILE in results/summary_*.md; do
+              if [ -f "$SUMMARY_FILE" ]; then
+                echo "---" >> $GITHUB_STEP_SUMMARY
+                cat "$SUMMARY_FILE" >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
               fi
             done
             
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
             # Add information about artifacts
+            echo "### 📦 Artifacts Available" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### 📦 Artifacts Available:" >> $GITHUB_STEP_SUMMARY
-            echo "- Test result JSON files" >> $GITHUB_STEP_SUMMARY
-            echo "- Docker container logs (master, worker, mongo, etc.)" >> $GITHUB_STEP_SUMMARY
-            echo "- Container inspect data" >> $GITHUB_STEP_SUMMARY
-            echo "- Network configuration" >> $GITHUB_STEP_SUMMARY
-            echo "- System diagnostics" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Download artifacts from the workflow run to view detailed logs." >> $GITHUB_STEP_SUMMARY
+            echo "Download the test artifacts to view:" >> $GITHUB_STEP_SUMMARY
+            echo "- 📄 Test result JSON files" >> $GITHUB_STEP_SUMMARY
+            echo "- 📋 Docker container logs (master, worker, mongo, etc.)" >> $GITHUB_STEP_SUMMARY
+            echo "- 🔍 Container inspect data" >> $GITHUB_STEP_SUMMARY
+            echo "- 🌐 Network configuration" >> $GITHUB_STEP_SUMMARY
+            echo "- 💻 System diagnostics" >> $GITHUB_STEP_SUMMARY
           else
-            echo "No test results found" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ No test results found" >> $GITHUB_STEP_SUMMARY
           fi
 
   summary:
