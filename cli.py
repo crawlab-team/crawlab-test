@@ -101,11 +101,18 @@ def select_backend(spec_path: Path, backend_arg: str, config: Config, docker_det
 def list_specs_command(args):
     """Handle --list-specs command"""
     spec_finder = SpecFinder()
-    specs = spec_finder.list_specs(category=args.category)
+    specs = spec_finder.list_specs(categories=args.category)
     
     if not specs:
-        print("No specifications found")
+        if args.category:
+            print(f"No specifications found for categories: {', '.join(args.category)}")
+        else:
+            print("No specifications found")
         return
+    
+    # Show filter info if categories specified
+    if args.category:
+        print(f"\nFiltered by categories: {', '.join(args.category)}")
     
     print(f"\nAvailable Test Specifications ({len(specs)}):")
     print("=" * 80)
@@ -300,6 +307,9 @@ Examples:
   
   # List specs by category
   %(prog)s --list-specs --category ui
+  
+  # List specs for multiple categories
+  %(prog)s --list-specs --category api ui cluster
         """,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -330,7 +340,8 @@ Examples:
     
     parser.add_argument(
         '--category',
-        help='Filter specs by category (use with --list-specs)'
+        nargs='+',
+        help='Filter specs by category (use with --list-specs). Can specify multiple: --category api ui cluster'
     )
     
     parser.add_argument(

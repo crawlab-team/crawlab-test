@@ -62,6 +62,12 @@ pip install -r requirements.txt
 # List available tests
 uv run ./cli.py --list-specs
 
+# List tests by category
+uv run ./cli.py --list-specs --category api
+
+# List tests for multiple categories
+uv run ./cli.py --list-specs --category api ui cluster
+
 # Run a specific test (auto-detects best backend)
 uv run ./cli.py --spec UI-001
 

@@ -60,9 +60,10 @@ This document explains the GitHub Actions CI/CD workflows for the Crawlab test f
 
 When manually triggering the **Test Specs** workflow:
 
-- **category**: Choose which tests to run
+- **category**: Choose which tests to run (supports multiple categories)
   - `all` (default) - Run all test categories
-  - `api`, `cluster`, `database`, `dependencies`, `scheduler`, `system`, `ui` - Run specific category
+  - Single category: `api`, `cluster`, `database`, `dependencies`, `scheduler`, `system`, or `ui`
+  - Multiple categories: `api ui` or `api cluster database` (space-separated)
   
 - **backend**: Choose execution method
   - `auto` (default) - Auto-detect best backend
@@ -171,7 +172,7 @@ git push origin feature/my-feature
 # Select "Test Specs" workflow
 # Click "Run workflow"
 # Choose:
-#   - category: api
+#   - category: api ui    (multiple categories with space)
 #   - backend: auto
 #   - spec_id: (leave blank for all)
 #   - timeout: 30

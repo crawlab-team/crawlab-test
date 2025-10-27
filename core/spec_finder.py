@@ -30,45 +30,55 @@ class SpecFinder:
         if not self.specs_dir.exists():
             raise ValueError(f"Specs directory not found: {self.specs_dir}")
     
-    def list_specs(self, category: Optional[str] = None) -> List[Dict]:
+    def list_specs(self, categories: Optional[List[str]] = None) -> List[Dict]:
         """
         List all available test specifications
         
         Args:
-            category: Optional category filter (e.g., 'ui', 'cluster')
+            categories: Optional list of category filters (e.g., ['ui', 'cluster'])
             
         Returns:
             List of spec dictionaries with metadata
         """
         specs = []
         
-        if category:
-            search_dir = self.specs_dir / category
-            if not search_dir.exists():
-                print(f"Category '{category}' not found")
+        # Collect search directories based on categories
+        if categories:
+            search_dirs = []
+            for category in categories:
+                search_dir = self.specs_dir / category
+                if search_dir.exists():
+                    search_dirs.append(search_dir)
+                else:
+                    print(f"Warning: Category '{category}' not found")
+            
+            if not search_dirs:
+                print(f"No valid categories found")
                 return []
         else:
-            search_dir = self.specs_dir
+            search_dirs = [self.specs_dir]
         
-        for spec_file in search_dir.rglob("*.md"):
-            if spec_file.name in ["README.md", "TEMPLATE.md"]:
-                continue
+        # Gather specs from all search directories
+        for search_dir in search_dirs:
+            for spec_file in search_dir.rglob("*.md"):
+                if spec_file.name in ["README.md", "TEMPLATE.md"]:
+                    continue
+                    
+                metadata = self._parse_spec_metadata(spec_file)
                 
-            metadata = self._parse_spec_metadata(spec_file)
-            
-            # Extract spec ID from filename (e.g., UI-001, INF-004, DEP-002)
-            spec_id_match = re.search(r'([A-Z]+)-(\d+)', spec_file.stem)
-            spec_id = spec_id_match.group(0) if spec_id_match else None
-            
-            specs.append({
-                "id": spec_id,
-                "file": str(spec_file.relative_to(self.base_dir)),
-                "category": spec_file.parent.name,
-                "title": metadata.get("title", spec_file.stem),
-                "priority": metadata.get("priority", "unknown"),
-                "duration": metadata.get("duration", "unknown"),
-                "complexity": metadata.get("complexity", "unknown")
-            })
+                # Extract spec ID from filename (e.g., UI-001, INF-004, DEP-002)
+                spec_id_match = re.search(r'([A-Z]+)-(\d+)', spec_file.stem)
+                spec_id = spec_id_match.group(0) if spec_id_match else None
+                
+                specs.append({
+                    "id": spec_id,
+                    "file": str(spec_file.relative_to(self.base_dir)),
+                    "category": spec_file.parent.name,
+                    "title": metadata.get("title", spec_file.stem),
+                    "priority": metadata.get("priority", "unknown"),
+                    "duration": metadata.get("duration", "unknown"),
+                    "complexity": metadata.get("complexity", "unknown")
+                })
         
         return sorted(specs, key=lambda x: (x["category"], x["priority"], x["title"]))
     

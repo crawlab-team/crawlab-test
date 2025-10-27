@@ -12,18 +12,9 @@ on:
   workflow_dispatch:
     inputs:
       category:
-        description: 'Test category to run'
+        description: 'Test categories to run (space-separated: "api ui" or "all")'
         required: false
-        type: choice
-        options:
-          - 'all'
-          - 'api'
-          - 'cluster'
-          - 'database'
-          - 'dependencies'
-          - 'scheduler'
-          - 'system'
-          - 'ui'
+        type: string
         default: 'all'
       backend:
         description: 'Backend to use'
@@ -70,13 +61,40 @@ jobs:
       - name: Detect changed test categories
         id: detect
         run: |
-          # For manual dispatch, use specified category
+          # For manual dispatch, use specified category/categories
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            CATEGORY="${{ inputs.category }}"
-            if [ "$CATEGORY" = "all" ]; then
+            INPUT_CATEGORY="${{ inputs.category }}"
+            
+            # Trim whitespace and convert to lowercase
+            INPUT_CATEGORY=$(echo "$INPUT_CATEGORY" | xargs | tr '[:upper:]' '[:lower:]')
+            
+            if [ "$INPUT_CATEGORY" = "all" ] || [ -z "$INPUT_CATEGORY" ]; then
               echo "categories=[\"api\",\"cluster\",\"database\",\"dependencies\",\"scheduler\",\"system\",\"ui\"]" >> $GITHUB_OUTPUT
+              echo "Running all categories"
             else
-              echo "categories=[\"$CATEGORY\"]" >> $GITHUB_OUTPUT
+              # Parse space-separated categories
+              VALID_CATEGORIES=("api" "cluster" "database" "dependencies" "scheduler" "system" "ui")
+              SELECTED_CATEGORIES=()
+              
+              for CAT in $INPUT_CATEGORY; do
+                # Validate category
+                if [[ " ${VALID_CATEGORIES[@]} " =~ " ${CAT} " ]]; then
+                  SELECTED_CATEGORIES+=("$CAT")
+                  echo "✓ Valid category: $CAT"
+                else
+                  echo "⚠ Warning: Invalid category '$CAT' (skipping)"
+                fi
+              done
+              
+              if [ ${#SELECTED_CATEGORIES[@]} -eq 0 ]; then
+                echo "❌ No valid categories specified, using 'all'"
+                echo "categories=[\"api\",\"cluster\",\"database\",\"dependencies\",\"scheduler\",\"system\",\"ui\"]" >> $GITHUB_OUTPUT
+              else
+                # Convert to JSON array
+                CATEGORIES_JSON=$(printf '%s\n' "${SELECTED_CATEGORIES[@]}" | jq -R . | jq -s -c .)
+                echo "categories=$CATEGORIES_JSON" >> $GITHUB_OUTPUT
+                echo "Running categories: ${SELECTED_CATEGORIES[@]}"
+              fi
             fi
             echo "run_tests=true" >> $GITHUB_OUTPUT
             exit 0
@@ -152,7 +170,7 @@ jobs:
           
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "**Trigger**: Manual workflow dispatch" >> $GITHUB_STEP_SUMMARY
-            echo "**Category**: \`${{ inputs.category }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "**Categories**: \`${{ inputs.category }}\`" >> $GITHUB_STEP_SUMMARY
             echo "**Backend**: \`${{ inputs.backend }}\`" >> $GITHUB_STEP_SUMMARY
             echo "**Image Tag**: \`${{ env.CRAWLAB_IMAGE_TAG }}\`" >> $GITHUB_STEP_SUMMARY
             if [ -n "${{ inputs.spec_id }}" ]; then
