@@ -22,7 +22,7 @@ from pathlib import Path
 tests_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(tests_dir))
 
-from helpers.api.auth import AuthHelper
+from helpers.api.auth import APIAuth
 from helpers.api.database import DatabaseAPIHelper
 from helpers.api.cleanup import CleanupHelper
 from helpers.libs.utils import setup_logging
@@ -75,7 +75,7 @@ class DatabaseIntegrationTest:
     
     def __init__(self):
         self.logger = setup_logging("DB-001")
-        self.auth_helper = AuthHelper()
+        self.auth = APIAuth()
         self.cleanup = CleanupHelper()
         self.token = None
         self.db_helper = None
@@ -93,7 +93,7 @@ class DatabaseIntegrationTest:
         self.logger.info("Setting up test environment...")
         
         # Login and get token
-        self.token = self.auth_helper.login_default()
+        self.token, _ = self.auth.login()
         if not self.token:
             self.logger.error("Failed to authenticate")
             return False

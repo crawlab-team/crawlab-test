@@ -9,7 +9,6 @@ Supports connection testing, metadata retrieval, CRUD operations, and more.
 import logging
 import requests
 from typing import Dict, List, Optional, Any
-from helpers.libs.utils import get_api_base_url
 
 
 class DatabaseAPIHelper:
@@ -20,10 +19,10 @@ class DatabaseAPIHelper:
         Initialize database API helper
         
         Args:
-            base_url: API base URL (auto-detected if not provided)
+            base_url: API base URL (default: http://localhost:8080/api)
             token: Authentication token
         """
-        self.base_url = base_url or get_api_base_url()
+        self.base_url = (base_url or "http://localhost:8080/api").rstrip('/')
         self.token = token
         self.logger = logging.getLogger(self.__class__.__name__)
         

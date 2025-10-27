@@ -140,6 +140,61 @@ GET /api/tasks/:id/logs
 }
 ```
 
+#### Batch Update Tasks
+```bash
+# Check endpoint
+curl -s http://localhost:8080/api/openapi.json | jq '.paths."/tasks".patch'
+
+# Check schema - NOTE: field name is "update" not "data"!
+curl -s http://localhost:8080/api/openapi.json | jq '.components.schemas.Batch_update_task_listInput'
+
+# Request
+PATCH /api/tasks
+{
+  "ids": ["task_id_1", "task_id_2"],
+  "update": {               # ← Field name is "update" not "data"!
+    "priority": 7,
+    "description": "Updated description"
+  }
+}
+
+# Response
+{
+  "data": {...}
+}
+```
+
+#### Delete Multiple Tasks
+```bash
+# Check endpoint
+curl -s http://localhost:8080/api/openapi.json | jq '.paths."/tasks".delete'
+
+# Important: DELETE uses JSON body, not query params!
+DELETE /api/tasks
+{
+  "ids": ["task_id_1", "task_id_2"]
+}
+
+# Response
+{
+  "data": null  # Void response on success
+}
+```
+
+#### Restart Task
+```bash
+# Check endpoint
+curl -s http://localhost:8080/api/openapi.json | jq '.paths."/tasks/{id}/restart".post'
+
+# Request
+POST /api/tasks/:id/restart
+
+# Response - Returns ARRAY of new task IDs (not single object!)
+{
+  "data": ["new_task_id"]
+}
+```
+
 ### 3. Authentication
 
 #### Login
@@ -213,6 +268,43 @@ if isinstance(logs_data, list):
     logs = '\n'.join(logs_data)
 else:
     logs = str(logs_data) if logs_data else ''
+```
+
+### ❌ Wrong: Guessing batch operation field names
+```python
+# Wrong field name - will fail!
+response = requests.patch(f"{API_URL}/tasks", json={
+    "ids": task_ids,
+    "data": {"priority": 7}  # Should be "update" not "data"!
+})
+```
+
+### ✅ Right: Check schema for exact field names
+```python
+# Check spec first:
+# curl -s http://localhost:8080/api/openapi.json | jq '.components.schemas.Batch_update_task_listInput'
+# Shows: {"ids": [...], "update": {...}}
+
+response = requests.patch(f"{API_URL}/tasks", json={
+    "ids": task_ids,
+    "update": {"priority": 7}  # Correct field name
+})
+```
+
+### ❌ Wrong: Using query params for DELETE
+```python
+# Wrong - sends as "?ids=id1,id2" which MongoDB can't parse as array
+response = requests.delete(f"{API_URL}/tasks", params={"ids": ",".join(task_ids)})
+# Error: "$in needs an array"
+```
+
+### ✅ Right: DELETE endpoints can use JSON body
+```python
+# Correct - sends JSON body with array
+response = requests.delete(f"{API_URL}/tasks", 
+    headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+    json={"ids": task_ids}
+)
 ```
 
 ## Workflow for Creating API Tests

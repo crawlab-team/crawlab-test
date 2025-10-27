@@ -248,7 +248,9 @@ class TaskHelper:
             
             if response.status_code == 200:
                 data = response.json()
-                new_task_id = data.get('data', {}).get('_id')
+                # Response is array of ObjectIDs
+                task_ids = data.get('data', [])
+                new_task_id = task_ids[0] if task_ids and len(task_ids) > 0 else None
                 return new_task_id, data
             else:
                 return None, {"error": f"Restart task failed with status {response.status_code}"}
@@ -384,7 +386,7 @@ class TaskHelper:
         try:
             payload = {
                 "ids": task_ids,
-                "data": updates
+                "update": updates  # Changed from "data" to "update" per OpenAPI spec
             }
             
             response = requests.patch(
@@ -411,13 +413,11 @@ class TaskHelper:
             Tuple of (success, response_data)
         """
         try:
-            # Try query parameter approach first
-            params = {"ids": ",".join(task_ids)}
-            
+            # DELETE endpoint expects JSON body with ids array
             response = requests.delete(
                 f"{self.base_url}/tasks",
-                headers={"Authorization": f"Bearer {token}"},
-                params=params,
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                json={"ids": task_ids},
                 timeout=10
             )
             

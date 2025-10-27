@@ -44,9 +44,11 @@ Determine which category your test belongs to:
 2. **Common API patterns to verify**:
    - **Request wrapper**: Some endpoints require `{"data": {...}}` wrapper
    - **Response format**: Check if data is in `.data`, `.data[0]`, or direct
-   - **Array vs Object**: Task run returns array of IDs, not single object
-   - **Required fields**: Check schema for required vs optional fields
+   - **Array vs Object**: Task run/restart returns array of IDs, not single object
+   - **Required fields**: Check schema for required vs optional fields (e.g., batch update needs `"update"` not `"data"`)
    - **Endpoint variations**: `/spiders/:id/files/save` vs `/spiders/:id/files/save/batch`
+   - **DELETE methods**: Can use JSON body (not just query params) - check backend implementation
+   - **Batch operations**: Verify exact field names in schema (case-sensitive: `"update"` vs `"Update"`)
 
 3. **Example - Spider Creation**:
    ```bash
@@ -59,12 +61,23 @@ Determine which category your test belongs to:
    # Returns: {"data": {...}} wrapper required!
    ```
 
-4. **Document your findings**:
+4. **Example - Batch Operations**:
+   ```bash
+   # Check batch update schema
+   curl -s http://localhost:8080/api/openapi.json | jq '.components.schemas.Batch_update_task_listInput'
+   # Returns: {"ids": [...], "update": {...}}  <- Note: "update" not "data"!
+   
+   # Check DELETE endpoint (may not show params in OpenAPI)
+   # Look at backend code: crawlab/core/controllers/task.go
+   # DeleteTaskListParams expects JSON body: {"ids": [...]}
+   ```
+
+5. **Document your findings**:
    - Add API endpoint details in test spec
    - Include example request/response payloads
    - Note any quirks or non-standard patterns
 
-**Why this matters**: The OpenAPI spec is the source of truth. Guessing payload formats wastes time and leads to flaky tests.
+**Why this matters**: The OpenAPI spec is the source of truth. Guessing payload formats wastes time and leads to flaky tests. When OpenAPI is incomplete, check backend code.
 
 #### 1.2 Use the Unified Template
 Start with the [SPEC_TEMPLATE.md](SPEC_TEMPLATE.md) and fill in all sections:

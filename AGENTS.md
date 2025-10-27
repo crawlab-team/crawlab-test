@@ -53,9 +53,15 @@
 ### Test Categories
 
 - **API tests**: Backend API validation, endpoint testing, data integrity
-  - ALWAYS check `http://localhost:8080/api/openapi.json` before writing API tests
-  - See [specs/api/README.md](specs/api/README.md) for API testing guide
+  - **CRITICAL**: Always check `http://localhost:8080/api/openapi.json` before writing API tests
+  - See [specs/api/README.md](specs/api/README.md) for comprehensive API testing guide
   - Verify request/response formats, wrappers, and field requirements
+  - **Common patterns**:
+    - Some endpoints need `{"data": {...}}` wrapper, others don't
+    - Task run/restart returns **array of IDs**, not single object
+    - Batch operations use specific field names (e.g., `"update"` not `"data"`)
+    - DELETE can use JSON body: `{"ids": [...]}` not query params
+    - Field names are **case-sensitive** - verify in OpenAPI schema
 - **Cluster tests**: Distributed system behavior, node disconnection/reconnection
 - **Database tests**: Database integration, connection management, CRUD operations
 - **Dependencies tests**: Package installation, dependency management
@@ -88,6 +94,34 @@
 - **Cleanup**: Always clean up test data, containers, and processes after tests
 - **Screenshots**: UI tests should capture screenshots at critical steps
 - **Logging**: Detailed logging for debugging failed test runs
+
+### API Helper Development
+
+When creating or updating API helpers (`helpers/api/*.py`):
+
+1. **Check OpenAPI spec first**: Verify request/response formats before implementation
+   ```bash
+   curl -s http://localhost:8080/api/openapi.json | jq '.paths."/tasks".patch'
+   curl -s http://localhost:8080/api/openapi.json | jq '.components.schemas.Batch_update_task_listInput'
+   ```
+
+2. **Handle response formats correctly**:
+   - Some endpoints return objects: `data.get('data', {}).get('_id')`
+   - Some return arrays: `data.get('data', [])[0]`
+   - Check OpenAPI response schema to determine which
+
+3. **Verify field names are case-sensitive**:
+   - Batch update uses `"update"` not `"data"` or `"Update"`
+   - Always match exact field names from OpenAPI schema
+
+4. **DELETE can use JSON body**:
+   ```python
+   # Correct approach for batch delete
+   requests.delete(url, headers=headers, json={"ids": [...]})
+   # Not: params={"ids": ",".join(...)}  # Causes "$in needs an array" error
+   ```
+
+5. **Document helper behavior**: Include docstrings with return types and example usage
 
 ## 🔧 Development Standards
 
