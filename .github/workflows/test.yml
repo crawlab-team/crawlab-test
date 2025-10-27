@@ -334,13 +334,13 @@ jobs:
           # Determine parallel worker count based on category
           case "${{ matrix.category }}" in
             api)
-              PARALLEL_WORKERS=5  # 15 tests, I/O bound
+              PARALLEL_WORKERS=5  # 15 tests, I/O bound - safe for parallel
               ;;
             ui)
-              PARALLEL_WORKERS=4  # 19 tests, browser tests
+              PARALLEL_WORKERS=4  # 19 tests, browser tests - safe for parallel
               ;;
             cluster)
-              PARALLEL_WORKERS=3  # 4 tests, Docker tests
+              PARALLEL_WORKERS=1  # 4 tests, Docker manipulation - MUST be sequential
               ;;
             scheduler)
               PARALLEL_WORKERS=3  # Task execution

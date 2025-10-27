@@ -200,12 +200,12 @@ def run_parallel_command(args):
     else:
         # Auto-detect based on category (when --parallel used without number)
         worker_defaults = {
-            'api': 5,        # 15 tests, I/O bound (HTTP requests)
-            'ui': 4,         # 19 tests, CPU/memory intensive (browsers)
-            'cluster': 3,    # 4 tests, Docker intensive
+            'api': 5,        # 15 tests, I/O bound (HTTP requests) - SAFE for parallel
+            'ui': 4,         # 19 tests, CPU/memory intensive (browsers) - SAFE for parallel
+            'cluster': 1,    # 4 tests, Docker manipulation - UNSAFE, must be sequential
             'database': 2,   # 1 test, but can be parallelized if more added
             'dependencies': 2,
-            'scheduler': 3,  # Task execution tests
+            'scheduler': 3,  # Task execution tests - generally safe
             'system': 2,
         }
         max_workers = worker_defaults.get(category, 3)
