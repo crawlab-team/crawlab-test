@@ -204,43 +204,54 @@ class NodeManager:
             print(f"Could not find running worker container")
             return False
         
-        # Get the Docker Compose network name
-        import os
-        compose_namespace = os.environ.get('CRAWLAB_COMPOSE_NAMESPACE', 'crawlab_test')
-        
-        # Try different network names that might be used
-        potential_networks = [
-            f'{compose_namespace}_crawlab_test',  # Standard compose network from docker-compose.yml
-            f'{compose_namespace}_default',       # Default compose network
-            'dev_default',                        # Current actual network name
-            'bridge',                             # Default Docker bridge network
-        ]
+        # First, inspect the container to find ALL networks it's actually connected to
+        try:
+            inspect_result = subprocess.run(
+                ['docker', 'inspect', worker_container, '--format', '{{json .NetworkSettings.Networks}}'], 
+                capture_output=True, text=True, check=True
+            )
+            
+            import json
+            networks_data = json.loads(inspect_result.stdout.strip())
+            connected_networks = list(networks_data.keys())
+            
+            print(f"Container {worker_container} is connected to networks: {connected_networks}")
+            
+            if not connected_networks:
+                print(f"Container is not connected to any networks")
+                return False
+                
+        except (subprocess.CalledProcessError, json.JSONDecodeError) as e:
+            print(f"Failed to inspect container networks: {e}")
+            # Fallback to trying common network names
+            import os
+            compose_namespace = os.environ.get('CRAWLAB_COMPOSE_NAMESPACE', 'crawlab_test')
+            connected_networks = [
+                f'{compose_namespace}_crawlab_test',
+                f'{compose_namespace}_default',
+                'dev_default',
+                'bridge',
+            ]
+            print(f"Falling back to trying common network names: {connected_networks}")
         
         disconnected_from = []
         
-        for network_name in potential_networks:
+        for network_name in connected_networks:
             try:
-                # Check if container is connected to this network first
-                inspect_result = subprocess.run(
-                    ['docker', 'inspect', worker_container], 
-                    capture_output=True, text=True, check=True
+                # Disconnect from this network
+                result = subprocess.run(
+                    ['docker', 'network', 'disconnect', network_name, worker_container], 
+                    capture_output=True, text=True
                 )
                 
-                if network_name in inspect_result.stdout:
-                    # Disconnect from this network
-                    result = subprocess.run(
-                        ['docker', 'network', 'disconnect', network_name, worker_container], 
-                        capture_output=True, text=True
-                    )
+                if result.returncode == 0:
+                    print(f"Successfully disconnected {worker_container} from network {network_name}")
+                    disconnected_from.append(network_name)
+                else:
+                    print(f"Failed to disconnect from {network_name}: {result.stderr}")
                     
-                    if result.returncode == 0:
-                        print(f"Successfully disconnected {worker_container} from network {network_name}")
-                        disconnected_from.append(network_name)
-                    else:
-                        print(f"Failed to disconnect from {network_name}: {result.stderr}")
-                        
             except subprocess.CalledProcessError as e:
-                print(f"Could not inspect/disconnect container from {network_name}: {e}")
+                print(f"Could not disconnect container from {network_name}: {e}")
                 continue
         
         if disconnected_from:

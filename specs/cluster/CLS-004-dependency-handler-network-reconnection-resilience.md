@@ -1,7 +1,7 @@
-# DEP-002 - Dependency Handler Network Reconnection Resilience
+# CLS-004 - Dependency Handler Network Reconnection Resilience
 
 ## Metadata
-- **Category**: dependencies
+- **Category**: cluster
 - **Priority**: critical
 - **Complexity**: moderate
 - **Duration**: 10-15 minutes
