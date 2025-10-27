@@ -45,7 +45,7 @@ def run_test():
         
         # Step 1: Authentication
         logger.info("\n[Step 1] Authenticating as admin user...")
-        auth_helper = APIAuth(base_url=api_url)
+        auth_helper = AuthHelper(base_url=api_url)
         token, response = auth_helper.login("admin", "admin")
         if not token:
             raise Exception("Authentication failed")

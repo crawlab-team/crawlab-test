@@ -34,7 +34,7 @@ def run_test():
     """Run API-006 test suite."""
     
     # Initialize helpers
-    auth_helper = APIAuth(API_URL)
+    auth_helper = AuthHelper(API_URL)
     spider_helper = SpiderHelper(API_URL)
     task_helper = TaskHelper(API_URL)
     cleanup = CleanupHelper()

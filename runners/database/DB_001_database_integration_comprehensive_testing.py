@@ -75,7 +75,7 @@ class DatabaseIntegrationTest:
     
     def __init__(self):
         self.logger = setup_logging("DB-001")
-        self.auth = APIAuth()
+        self.auth = AuthHelper()
         self.cleanup = CleanupHelper()
         self.token = None
         self.db_helper = None

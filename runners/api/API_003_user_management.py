@@ -16,7 +16,7 @@ os.environ['NO_PROXY'] = 'localhost,127.0.0.1'
 # Add helpers to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../helpers'))
 
-from api.auth import APIAuth
+from api.auth import AuthHelper
 from api.user import UserHelper
 from api.cleanup import CleanupHelper
 
@@ -32,7 +32,7 @@ def main():
     print("=" * 80)
     
     # Initialize helpers
-    auth = APIAuth(API_URL)
+    auth = AuthHelper(API_URL)
     user_helper = UserHelper(API_URL)
     cleanup = CleanupHelper(API_URL)
     
