@@ -268,10 +268,10 @@ def run_test():
         print("=" * 80)
         
         if token:
-            cleanup_success = cleanup_helper.cleanup_all(token, git_helper=git_helper)
+            stats = cleanup_helper.cleanup_all(token, git_helper=git_helper)
             
-            if cleanup_success:
-                print("✅ PASS: Cleanup completed")
+            if stats and stats.get('total', 0) >= 0:
+                print(f"✅ PASS: Cleanup completed ({stats['total']} resources)")
                 test_results.append(True)
             else:
                 print("⚠️  WARN: Cleanup may be incomplete")

@@ -9,7 +9,7 @@ import requests
 from typing import Dict, Optional, Tuple
 
 
-class APIAuth:
+class AuthHelper:
     """Helper class for API authentication operations."""
     
     def __init__(self, base_url: str = "http://localhost:8080/api"):
@@ -234,7 +234,7 @@ def quick_login(username: str = "admin", password: str = "admin") -> Optional[st
     Returns:
         JWT token string or None on failure
     """
-    auth = APIAuth()
+    auth = AuthHelper()
     token, _ = auth.login(username, password)
     return token
 
@@ -249,5 +249,5 @@ def get_auth_headers(token: str) -> Dict[str, str]:
     Returns:
         Dictionary with Authorization header
     """
-    auth = APIAuth()
+    auth = AuthHelper()
     return auth.get_auth_headers(token)

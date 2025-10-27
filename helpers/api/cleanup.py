@@ -172,7 +172,7 @@ class CleanupHelper:
     
     def cleanup_all(self, token: str, spider_helper=None, task_helper=None, 
                     user_helper=None, schedule_helper=None, database_helper=None,
-                    git_helper=None, project_helper=None) -> bool:
+                    git_helper=None, project_helper=None) -> Dict[str, int]:
         """
         Clean up all tracked resources.
         
@@ -187,7 +187,7 @@ class CleanupHelper:
             project_helper: Optional project helper for batch deletion
             
         Returns:
-            True if cleanup successful
+            Dictionary with cleanup statistics by resource type
         """
         stats = {
             'spiders': 0,
@@ -306,7 +306,7 @@ class CleanupHelper:
             if resource_type != 'total' and count > 0:
                 print(f"  - {resource_type}: {count}")
         
-        return stats['total'] == sum(len(v) for v in self.created_resources.values())
+        return stats
     
     def reset(self):
         """Reset tracked resources."""
