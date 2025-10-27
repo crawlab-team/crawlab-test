@@ -9,6 +9,7 @@ from .spider import SpiderHelper
 from .task import TaskHelper
 from .user import UserHelper
 from .schedule import ScheduleHelper
+from .node import NodeHelper
 from .cleanup import CleanupHelper
 from .assertions import APIAssertions
 
@@ -18,6 +19,7 @@ __all__ = [
     'TaskHelper',
     'UserHelper',
     'ScheduleHelper',
+    'NodeHelper',
     'CleanupHelper',
     'APIAssertions',
     'quick_login',
