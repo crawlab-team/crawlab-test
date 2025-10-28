@@ -272,7 +272,7 @@ class DatabaseAPIHelper:
         try:
             response = requests.post(
                 f"{self.base_url}/databases/{database_id}/tables/metadata/get",
-                json={"database_name": database_name, "table_name": table_name},
+                json={"database": database_name, "table": table_name},
                 headers=self._get_headers(),
                 timeout=10
             )
