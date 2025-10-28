@@ -18,11 +18,12 @@ class SpecFinder:
         Initialize SpecFinder
 
         Args:
-            base_dir: Base directory for tests (defaults to tests directory)
+            base_dir: Base directory for tests (defaults to workspace root)
         """
         if base_dir is None:
-            # Default to tests directory (parent of core)
-            base_dir = Path(__file__).parent.parent
+            # Default to workspace root (3 levels up from this file: crawlab_test/core/spec_finder.py)
+            # This gives us the repo root where specs/ directory lives
+            base_dir = Path(__file__).parent.parent.parent
 
         self.base_dir = Path(base_dir)
         self.specs_dir = self.base_dir / "specs"
