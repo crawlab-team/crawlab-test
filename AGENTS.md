@@ -195,6 +195,33 @@ uv run ./cli.py --spec UI-001 --dry-run
 
 ## 🔍 Troubleshooting Test Failures
 
+### Investigation Workflow (MUST FOLLOW)
+
+When API tests fail, follow this **exact order**:
+
+```
+1. CHECK OPENAPI SPEC FIRST ← START HERE
+   curl -s http://localhost:8080/api/openapi.json | jq '.paths."/endpoint/path"'
+   ↓
+2. Compare request/response format with helper code
+   ↓
+3. Check for infrastructure issues (databases running? network OK?)
+   ↓
+4. (Only if still unclear) Read backend controller code
+```
+
+**DO NOT**:
+- ❌ Start with manual curl testing without checking spec
+- ❌ Jump straight to reading Go code
+- ❌ Make assumptions about API format
+- ❌ Batch-update todos - mark in-progress/completed individually
+
+**Common Mistakes to Avoid**:
+- Assuming all responses wrapped in `{"data": {...}}`
+- Using wrong HTTP methods (POST vs DELETE vs PUT)
+- Incorrect field names (case-sensitive!)
+- Wrong request body structure (check OpenAPI schema)
+
 ### Using GitHub MCP Tools
 
 When tests fail in CI/CD, use GitHub MCP tools to investigate:
