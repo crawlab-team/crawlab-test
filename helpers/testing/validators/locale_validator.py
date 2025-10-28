@@ -10,12 +10,13 @@ import logging
 from pathlib import Path
 import textwrap
 
-# Add common helpers to path using absolute location for reliability
-helpers_root = Path(__file__).resolve().parents[1]
-sys.path.append(str(helpers_root / 'common'))
+# Add tests directory to path for imports
+TESTS_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+if str(TESTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(TESTS_ROOT))
 
-from docker_utils import docker_utils
-from utils import setup_logging
+from helpers.infrastructure.docker import docker_utils
+from helpers.infrastructure.utils import setup_logging
 
 class LocaleValidator:
     def __init__(self):

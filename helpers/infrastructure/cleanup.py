@@ -7,13 +7,16 @@ import argparse
 import logging
 import sys
 import os
+from pathlib import Path
 
-# Add the helpers directory to Python path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add tests directory to path for imports
+TESTS_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(TESTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(TESTS_ROOT))
 
-from common.database import DatabaseHelper
-from common.utils import setup_logging
-from common.system import filesystem_manager, process_manager
+from helpers.infrastructure.database import DatabaseHelper
+from helpers.infrastructure.utils import setup_logging
+from helpers.infrastructure.system import process_manager, filesystem_manager
 
 def cleanup_reconciliation_test_data():
     """Clean up data specific to reconciliation tests"""
@@ -74,6 +77,12 @@ def cleanup_test_processes():
     
     if total_killed > 0:
         logger.info(f"Killed {total_killed} test processes")
+
+def cleanup_all_resources():
+    """Clean up all test resources (wrapper for backward compatibility)"""
+    cleanup_reconciliation_test_data()
+    cleanup_temp_files()
+    cleanup_test_processes()
 
 def main():
     parser = argparse.ArgumentParser(description='Clean up test data and resources')
