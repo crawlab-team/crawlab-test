@@ -1,7 +1,7 @@
-# CLS-002 - Docker Container Node Disconnection and Recovery
+# REL-002 - Docker Container Node Disconnection and Recovery
 
 ## Metadata
-- **Category**: cluster
+- **Category**: reliability
 - **Priority**: critical
 - **Complexity**: moderate
 - **Duration**: 15-20 minutes

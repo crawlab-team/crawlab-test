@@ -1,7 +1,7 @@
-# CLS-004 - Dependency Handler Network Reconnection Resilience
+# REL-003 - Dependency Handler Network Reconnection Resilience
 
 ## Metadata
-- **Category**: cluster
+- **Category**: reliability
 - **Priority**: critical
 - **Complexity**: moderate
 - **Duration**: 10-15 minutes

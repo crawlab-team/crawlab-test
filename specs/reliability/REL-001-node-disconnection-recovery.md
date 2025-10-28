@@ -1,7 +1,7 @@
-# CLS-001 - Master/Worker Node Disconnection and Reconnection Stability
+# REL-001 - Master/Worker Node Disconnection and Reconnection Stability
 
 ## Metadata
-- **Category**: cluster
+- **Category**: reliability
 - **Priority**: critical
 - **Complexity**: moderate
 - **Duration**: 15-20 minutes

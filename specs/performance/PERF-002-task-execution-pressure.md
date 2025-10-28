@@ -1,7 +1,7 @@
-# SCH-002 - Task Execution Pressure Test
+# PERF-002 - Task Execution Pressure Test
 
 ## Metadata
-- **Category**: scheduler
+- **Category**: performance
 - **Priority**: high
 - **Complexity**: moderate
 - **Duration**: 15-60 minutes (depends on load level)

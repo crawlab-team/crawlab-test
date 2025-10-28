@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       category:
-        description: 'Test categories to run (space-separated: "api ui" or "all")'
+        description: 'Test categories to run (space-separated: "api reliability performance integration ui" or "all")'
         required: false
         type: string
         default: 'all'
@@ -26,7 +26,7 @@ on:
           - 'copilot'
         default: 'auto'
       spec_id:
-        description: 'Specific spec ID to run (e.g., UI-001)'
+        description: 'Specific spec ID to run (e.g., API-001, REL-001, PERF-001, INT-001, UI-001)'
         required: false
         type: string
       timeout:
@@ -70,11 +70,11 @@ jobs:
             INPUT_CATEGORY=$(echo "$INPUT_CATEGORY" | xargs | tr '[:upper:]' '[:lower:]')
             
             if [ "$INPUT_CATEGORY" = "all" ] || [ -z "$INPUT_CATEGORY" ]; then
-              echo "categories=[\"api\",\"cluster\",\"database\",\"dependencies\",\"scheduler\",\"system\",\"ui\"]" >> $GITHUB_OUTPUT
+              echo "categories=[\"api\",\"reliability\",\"performance\",\"integration\",\"ui\"]" >> $GITHUB_OUTPUT
               echo "Running all categories"
             else
               # Parse space-separated categories
-              VALID_CATEGORIES=("api" "cluster" "database" "dependencies" "scheduler" "system" "ui")
+              VALID_CATEGORIES=("api" "reliability" "performance" "integration" "ui")
               SELECTED_CATEGORIES=()
               
               for CAT in $INPUT_CATEGORY; do
@@ -89,7 +89,7 @@ jobs:
               
               if [ ${#SELECTED_CATEGORIES[@]} -eq 0 ]; then
                 echo "❌ No valid categories specified, using 'all'"
-                echo "categories=[\"api\",\"cluster\",\"database\",\"dependencies\",\"scheduler\",\"system\",\"ui\"]" >> $GITHUB_OUTPUT
+                echo "categories=[\"api\",\"reliability\",\"performance\",\"integration\",\"ui\"]" >> $GITHUB_OUTPUT
               else
                 # Convert to JSON array
                 CATEGORIES_JSON=$(printf '%s\n' "${SELECTED_CATEGORIES[@]}" | jq -R . | jq -s -c .)

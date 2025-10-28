@@ -1,7 +1,7 @@
-# SYS-001 - Chinese Locale Support Validation
+# INT-004 - Chinese Locale Support Validation
 
 ## Metadata
-- **Category**: system
+- **Category**: integration
 - **Priority**: high
 - **Complexity**: simple
 - **Duration**: 5-10 minutes

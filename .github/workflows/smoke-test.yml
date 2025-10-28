@@ -55,7 +55,7 @@ jobs:
           fi
           
           # Check that required categories exist
-          CATEGORIES=("api" "cluster" "database" "dependencies" "scheduler" "system" "ui")
+          CATEGORIES=("api" "reliability" "performance" "integration" "ui")
           for cat in "${CATEGORIES[@]}"; do
             if [ ! -d "specs/$cat" ]; then
               echo "⚠️  Warning: specs/$cat/ directory not found"

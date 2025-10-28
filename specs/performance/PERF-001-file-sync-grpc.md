@@ -1,7 +1,7 @@
-# CLS-003 - File Sync gRPC Streaming Performance and Reliability
+# PERF-001 - File Sync gRPC Streaming Performance and Reliability
 
 ## Metadata
-- **Category**: cluster
+- **Category**: performance
 - **Priority**: high
 - **Complexity**: moderate
 - **Duration**: 20-25 minutes

@@ -1,7 +1,7 @@
-# DB-001 - Database Integration Comprehensive Testing
+# INT-001 - Database Integration Comprehensive Testing
 
 ## Metadata
-- **Category**: database
+- **Category**: integration
 - **Priority**: high
 - **Complexity**: complex
 - **Duration**: 30-45 minutes

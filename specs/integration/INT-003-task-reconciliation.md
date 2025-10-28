@@ -1,7 +1,7 @@
-# SCH-001 - Task Status Reconciliation and Process Verification
+# INT-003 - Task Status Reconciliation and Process Verification
 
 ## Metadata
-- **Category**: scheduler
+- **Category**: integration
 - **Priority**: critical
 - **Complexity**: complex
 - **Duration**: 25-30 minutes

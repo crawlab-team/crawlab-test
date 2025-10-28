@@ -1,7 +1,7 @@
-# DEP-001 - Dependencies Installation Robustness
+# INT-002 - Dependencies Installation Robustness
 
 ## Metadata
-- **Category**: dependencies
+- **Category**: integration
 - **Priority**: high
 - **Complexity**: moderate
 - **Duration**: 10-15 minutes
