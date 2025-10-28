@@ -21,7 +21,7 @@ from typing import Dict, List, Optional
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from helpers.infrastructure.api_client import CrawlabAPIClient
-from helpers.infrastructure.docker_utils import docker_utils
+from helpers.infrastructure.docker import docker_utils
 
 logging.basicConfig(
     level=logging.INFO,
