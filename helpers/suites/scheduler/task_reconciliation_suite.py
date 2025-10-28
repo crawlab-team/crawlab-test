@@ -23,8 +23,8 @@ from helpers.infrastructure.api_client import CrawlabAPIClient
 from helpers.infrastructure.database import DatabaseHelper
 from helpers.infrastructure.utils import setup_logging, TestMetrics, format_duration, load_config
 
-# Import NodeManager from hyphenated filename
-node_manager_path = os.path.join(os.path.dirname(__file__), 'node-manager.py')
+# Import NodeManager from helpers/testing/managers
+node_manager_path = Path(__file__).parent.parent.parent / 'testing' / 'managers' / 'node_manager.py'
 spec = importlib.util.spec_from_file_location("node_manager", node_manager_path)
 node_manager_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(node_manager_module)
