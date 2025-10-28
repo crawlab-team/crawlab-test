@@ -10,9 +10,6 @@ import os
 import sys
 import time
 
-# Add project root to Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-
 from crawlab_test.helpers.api.auth import AuthHelper
 from crawlab_test.helpers.api.project_environment import ProjectEnvironmentAPIHelper
 
@@ -247,9 +244,7 @@ def run_test():
         # Step 22: Duplicate project name
         logger.info("\nStep 22: Test project creation with duplicate name")
         if project1 and project1.get("name"):
-            pe_helper.create_project(
-                {"name": project1.get("name"), "description": "Duplicate name test"}
-            )
+            pe_helper.create_project({"name": project1.get("name"), "description": "Duplicate name test"})
             # May be allowed or rejected depending on API
             check(True, "Duplicate name handling tested")
 

@@ -6,6 +6,7 @@ actual disconnection scenarios that trigger genuine reconciliation behavior.
 """
 
 import argparse
+import contextlib
 import logging
 import os
 import signal
@@ -16,11 +17,6 @@ from datetime import datetime
 from typing import Any, Dict, List
 
 import psutil
-
-# Add the helpers directory to Python path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import contextlib
 
 from crawlab_test.helpers.infrastructure.api_client import CrawlabAPIClient
 from crawlab_test.helpers.infrastructure.database import (

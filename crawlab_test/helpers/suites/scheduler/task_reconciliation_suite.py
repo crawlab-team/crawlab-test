@@ -16,9 +16,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-# Add the helpers directory to Python path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from crawlab_test.helpers.infrastructure.api_client import CrawlabAPIClient
 from crawlab_test.helpers.infrastructure.database import DatabaseHelper
 from crawlab_test.helpers.infrastructure.utils import TestMetrics, load_config, setup_logging
@@ -276,9 +273,7 @@ class TaskReconciliationTestSuite:
 
         try:
             # Clean up test data
-            self.run_helper_script(
-                "../common/cleanup.py", ["--reconciliation-test-data", "--temp-files"]
-            )
+            self.run_helper_script("../common/cleanup.py", ["--reconciliation-test-data", "--temp-files"])
 
             # Reset any offline nodes (best effort)
             try:

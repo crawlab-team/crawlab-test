@@ -103,7 +103,10 @@ class DockerUtils:
             image = container.get("Image", "")
 
             # Check if this is a master container
-            if any(keyword in names.lower() for keyword in ["master", "_master_", "test_master"]) or "master" in image.lower():
+            if (
+                any(keyword in names.lower() for keyword in ["master", "_master_", "test_master"])
+                or "master" in image.lower()
+            ):
                 return container
 
         # If no explicit master found, use first crawlab container

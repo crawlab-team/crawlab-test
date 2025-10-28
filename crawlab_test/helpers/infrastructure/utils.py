@@ -12,7 +12,6 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
 # Add the helpers directory to Python path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def setup_logging(level: Union[str, int] = "INFO", log_file: Optional[str] = None) -> logging.Logger:

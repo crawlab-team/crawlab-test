@@ -8,16 +8,12 @@ Ensures that uncertain statuses are kept rather than assumed as errors.
 import argparse
 import json
 import logging
-import os
 import sys
 import time
 from datetime import datetime
 from typing import Any, Dict
 
 from bson import ObjectId
-
-# Add the helpers directory to Python path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from crawlab_test.helpers.infrastructure.api_client import CrawlabAPIClient
 from crawlab_test.helpers.infrastructure.database import (

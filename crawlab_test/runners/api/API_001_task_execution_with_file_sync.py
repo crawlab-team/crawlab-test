@@ -8,14 +8,8 @@ Tests the complete workflow: spider creation → file upload → task execution 
 
 import sys
 import time
-from pathlib import Path
 
 import requests
-
-# Add parent directory to path
-TESTS_DIR = Path(__file__).resolve().parent.parent.parent
-if str(TESTS_DIR) not in sys.path:
-    sys.path.insert(0, str(TESTS_DIR))
 
 from crawlab_test.helpers.infrastructure.utils import setup_logging
 

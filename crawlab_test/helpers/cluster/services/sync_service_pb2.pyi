@@ -16,9 +16,7 @@ class FileSyncRequest(_message.Message):
     spider_id: str
     path: str
     node_key: str
-    def __init__(
-        self, spider_id: str | None = ..., path: str | None = ..., node_key: str | None = ...
-    ) -> None: ...
+    def __init__(self, spider_id: str | None = ..., path: str | None = ..., node_key: str | None = ...) -> None: ...
 
 class FileInfo(_message.Message):
     __slots__ = ("name", "path", "full_path", "extension", "is_dir", "file_size", "mod_time", "mode", "hash")
@@ -79,9 +77,7 @@ class FileDownloadRequest(_message.Message):
     spider_id: str
     path: str
     node_key: str
-    def __init__(
-        self, spider_id: str | None = ..., path: str | None = ..., node_key: str | None = ...
-    ) -> None: ...
+    def __init__(self, spider_id: str | None = ..., path: str | None = ..., node_key: str | None = ...) -> None: ...
 
 class FileDownloadChunk(_message.Message):
     __slots__ = ("data", "is_complete", "error", "total_bytes")

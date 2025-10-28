@@ -8,12 +8,6 @@ and fix inconsistent task states between the database and actual worker processe
 
 import logging
 import sys
-from pathlib import Path
-
-# Add parent directory to path for imports
-TESTS_DIR = Path(__file__).resolve().parent.parent.parent
-if str(TESTS_DIR) not in sys.path:
-    sys.path.insert(0, str(TESTS_DIR))
 
 from crawlab_test.helpers.infrastructure.docker import docker_utils
 from crawlab_test.helpers.infrastructure.utils import setup_logging

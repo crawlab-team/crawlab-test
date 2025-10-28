@@ -8,12 +8,8 @@ Tests dependency configuration management endpoints including:
 """
 
 import logging
-import os
 import sys
 import time
-
-# Add parent directories to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from crawlab_test.helpers.api.auth import AuthHelper
 from crawlab_test.helpers.api.dependency import (
@@ -253,9 +249,7 @@ def run_test():
 
         # Step 15: Invalid Node ID
         logger.info("\n[Step 15] Installing with invalid node ID...")
-        install_dependency_config_setup(
-            token, "python", mode="specific", node_ids=["invalid-node-id-12345"]
-        )
+        install_dependency_config_setup(token, "python", mode="specific", node_ids=["invalid-node-id-12345"])
         # API might accept the request but fail during execution
         if True:
             # Either case is acceptable - API accepts and validates later, or rejects immediately

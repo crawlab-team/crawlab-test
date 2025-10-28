@@ -8,10 +8,6 @@ Tests database connection management and query execution APIs.
 import logging
 import os
 import sys
-from pathlib import Path
-
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 # Import helpers
 from crawlab_test.helpers.api import AuthHelper

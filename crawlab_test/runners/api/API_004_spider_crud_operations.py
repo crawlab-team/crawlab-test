@@ -6,10 +6,6 @@ Tests complete CRUD operations for spiders via Crawlab API.
 """
 
 import sys
-from pathlib import Path
-
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from crawlab_test.helpers.api import APIAssertions, AuthHelper, CleanupHelper, SpiderHelper
 

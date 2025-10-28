@@ -21,7 +21,9 @@ class NodeManager:
         self.headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_token}" if api_token else ""}
         self._disconnected_networks = []  # Track networks we disconnect from
 
-    def _find_worker_container(self, include_stopped: bool = False, target_worker_node: Optional[Dict] = None) -> Optional[str]:
+    def _find_worker_container(
+        self, include_stopped: bool = False, target_worker_node: Optional[Dict] = None
+    ) -> Optional[str]:
         """Find the worker container name based on Docker compose setup"""
         import os
 

@@ -13,8 +13,6 @@ import requests
 # Set NO_PROXY for localhost
 os.environ["NO_PROXY"] = "localhost,127.0.0.1"
 
-# Add helpers to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../helpers"))
 
 from api.auth import AuthHelper
 from api.cleanup import CleanupHelper

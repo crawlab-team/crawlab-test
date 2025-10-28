@@ -4,18 +4,12 @@ gRPC Sync Client - Makes actual gRPC calls to test file sync service
 """
 
 import socket
-import sys
 import time
-from pathlib import Path
 from typing import Dict
 
 import grpc
 
 # Add paths for imports
-CLUSTER_DIR = Path(__file__).resolve().parent
-if str(CLUSTER_DIR) not in sys.path:
-    sys.path.insert(0, str(CLUSTER_DIR))
-
 from services import sync_service_pb2, sync_service_pb2_grpc
 
 

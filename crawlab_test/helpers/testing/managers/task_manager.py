@@ -14,9 +14,6 @@ import time
 from datetime import datetime
 from typing import Any, Dict, List
 
-# Add the helpers directory to Python path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from crawlab_test.helpers.infrastructure.api_client import CrawlabAPIClient
 from crawlab_test.helpers.infrastructure.database import (
     NODE_STATUS_ONLINE,

@@ -9,12 +9,6 @@ for applications that need to display Chinese characters in screenshots, logs, o
 import argparse
 import logging
 import sys
-from pathlib import Path
-
-# Add tests directory to path for imports
-TESTS_ROOT = Path(__file__).resolve().parent.parent.parent
-if str(TESTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(TESTS_ROOT))
 
 from crawlab_test.helpers.infrastructure.utils import setup_logging
 from crawlab_test.helpers.testing.validators.locale_validator import LocaleValidator

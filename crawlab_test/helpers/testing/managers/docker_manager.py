@@ -8,13 +8,8 @@ import argparse
 import logging
 import sys
 import time
-from pathlib import Path
 
 # Add tests directory to path
-tests_dir = Path(__file__).resolve().parent.parent.parent
-if str(tests_dir) not in sys.path:
-    sys.path.insert(0, str(tests_dir))
-
 from typing import Optional
 
 from crawlab_test.helpers.infrastructure.api_client import CrawlabAPIClient

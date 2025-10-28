@@ -9,14 +9,10 @@ Validates system performance, stability, and error handling under various load l
 import argparse
 import concurrent.futures
 import json
-import os
 import sys
 import time
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
-
-# Add helpers to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from crawlab_test.helpers.api.auth import AuthHelper
 from crawlab_test.helpers.api.node import NodeHelper

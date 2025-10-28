@@ -6,11 +6,7 @@ Tests Crawlab's advanced git integration features including pull, commit, push,
 branch management, and remote operations.
 """
 
-import os
 import sys
-
-# Add helpers to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from crawlab_test.helpers.api.auth import AuthHelper
 from crawlab_test.helpers.api.cleanup import CleanupHelper

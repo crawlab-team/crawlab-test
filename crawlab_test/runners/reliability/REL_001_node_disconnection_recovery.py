@@ -9,12 +9,6 @@ and reconnection, integrating with the docker-manager utility and test framework
 import logging
 import sys
 import time
-from pathlib import Path
-
-# Add parent directory to path for imports
-TESTS_DIR = Path(__file__).resolve().parent.parent.parent
-if str(TESTS_DIR) not in sys.path:
-    sys.path.insert(0, str(TESTS_DIR))
 
 from crawlab_test.helpers.infrastructure.api_client import CrawlabAPIClient
 from crawlab_test.helpers.infrastructure.docker import docker_utils

@@ -20,8 +20,6 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional
 
-# Add the tests directory to Python path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 from crawlab_test.helpers.infrastructure.api_client import CrawlabAPIClient
 from crawlab_test.helpers.infrastructure.utils import setup_logging, wait_for_condition
 

@@ -16,11 +16,6 @@ Supports MongoDB, MySQL, PostgreSQL, Elasticsearch.
 import os
 import sys
 import time
-from pathlib import Path
-
-# Add tests directory to path for helper imports
-tests_dir = Path(__file__).resolve().parent.parent.parent
-sys.path.insert(0, str(tests_dir))
 
 from crawlab_test.helpers.api.auth import AuthHelper
 from crawlab_test.helpers.api.cleanup import CleanupHelper

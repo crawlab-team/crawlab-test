@@ -6,7 +6,6 @@ using Python's multiprocessing for improved test execution speed.
 """
 
 import multiprocessing
-import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
@@ -28,7 +27,6 @@ def _execute_single_spec(spec_info: Tuple[Path, Dict, Path]) -> Dict:
     spec_path, config, base_dir = spec_info
 
     # Import here to avoid pickling issues
-    sys.path.insert(0, str(base_dir))
     from crawlab_test.backends import CopilotBackend, PlaywrightBackend, ScriptBackend
 
     result = {

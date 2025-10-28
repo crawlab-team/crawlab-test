@@ -21,7 +21,9 @@ except ImportError:
 
 
 class CrawlabAPIClient:
-    def __init__(self, base_url: Optional[str] = None, api_token: Optional[str] = None, auto_detect_docker: bool = True):
+    def __init__(
+        self, base_url: Optional[str] = None, api_token: Optional[str] = None, auto_detect_docker: bool = True
+    ):
         self.base_url = base_url or self._detect_crawlab_url(auto_detect_docker)
         self.api_token = api_token or os.getenv("CRAWLAB_API_TOKEN")
         self.session = requests.Session()

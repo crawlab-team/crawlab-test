@@ -5,14 +5,8 @@ Cleanup utility for test data and temporary files
 
 import argparse
 import logging
-import sys
-from pathlib import Path
 
 # Add tests directory to path for imports
-TESTS_ROOT = Path(__file__).resolve().parent.parent.parent
-if str(TESTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(TESTS_ROOT))
-
 from crawlab_test.helpers.infrastructure.database import DatabaseHelper
 from crawlab_test.helpers.infrastructure.system import filesystem_manager, process_manager
 from crawlab_test.helpers.infrastructure.utils import setup_logging

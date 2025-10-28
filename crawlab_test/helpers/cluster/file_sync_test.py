@@ -14,11 +14,7 @@ import subprocess
 import sys
 import time
 from datetime import datetime
-from pathlib import Path
 from typing import Dict, List, Optional
-
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from helpers.infrastructure.api_client import CrawlabAPIClient
 from helpers.infrastructure.docker import docker_utils

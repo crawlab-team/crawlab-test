@@ -17,15 +17,10 @@ import subprocess
 import sys
 import time
 from dataclasses import dataclass
-from pathlib import Path
 
 # Ensure tests directory is importable regardless of working directory
-TESTS_ROOT = Path(__file__).resolve().parent.parent.parent
-if str(TESTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(TESTS_ROOT))
-
-from crawlab_test.helpers.infrastructure.docker import docker_utils  # noqa: E402
-from crawlab_test.helpers.infrastructure.utils import format_duration, setup_logging  # noqa: E402
+from crawlab_test.helpers.infrastructure.docker import docker_utils
+from crawlab_test.helpers.infrastructure.utils import format_duration, setup_logging
 
 
 @dataclass

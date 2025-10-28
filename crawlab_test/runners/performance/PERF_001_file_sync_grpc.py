@@ -10,12 +10,6 @@ import json
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
-
-# Add parent directory to path
-TESTS_DIR = Path(__file__).resolve().parent.parent.parent
-if str(TESTS_DIR) not in sys.path:
-    sys.path.insert(0, str(TESTS_DIR))
 
 from crawlab_test.helpers.cluster.file_sync_test_setup import get_test_data_path
 from crawlab_test.helpers.cluster.grpc_sync_client import (

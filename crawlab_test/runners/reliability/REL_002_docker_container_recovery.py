@@ -6,17 +6,10 @@ This script automates Docker container disconnection testing, validating that
 the cluster can handle container-level network failures gracefully.
 """
 
+import contextlib
 import logging
 import sys
 import time
-from pathlib import Path
-
-# Add parent directory to path for imports
-TESTS_DIR = Path(__file__).resolve().parent.parent.parent
-if str(TESTS_DIR) not in sys.path:
-    sys.path.insert(0, str(TESTS_DIR))
-
-import contextlib
 
 from crawlab_test.helpers.infrastructure.docker import docker_utils
 from crawlab_test.helpers.infrastructure.utils import setup_logging

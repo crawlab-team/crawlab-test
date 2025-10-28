@@ -8,13 +8,8 @@ import argparse
 import logging
 import sys
 import textwrap
-from pathlib import Path
 
 # Add tests directory to path for imports
-TESTS_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-if str(TESTS_ROOT) not in sys.path:
-    sys.path.insert(0, str(TESTS_ROOT))
-
 from crawlab_test.helpers.infrastructure.docker import docker_utils
 from crawlab_test.helpers.infrastructure.utils import setup_logging
 

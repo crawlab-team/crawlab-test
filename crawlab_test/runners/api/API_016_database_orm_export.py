@@ -10,9 +10,6 @@ import os
 import sys
 import time
 
-# Add project root to Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-
 from crawlab_test.helpers.api.auth import AuthHelper
 from crawlab_test.helpers.api.database import DatabaseAPIHelper
 
