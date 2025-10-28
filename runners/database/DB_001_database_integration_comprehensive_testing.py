@@ -264,8 +264,9 @@ class DatabaseIntegrationTest:
             metadata = self.db_helper.get_metadata(db_id)
             if metadata is not None and isinstance(metadata, dict):
                 self.record_result(f"{db_type}_metadata", True)
-                # Log summary
-                db_count = len(metadata.get('databases', []))
+                # Log summary - handle case where databases field is None
+                databases = metadata.get('databases', [])
+                db_count = len(databases) if databases is not None else 0
                 self.logger.info(f"  Found {db_count} databases")
             else:
                 self.record_result(f"{db_type}_metadata", False, "Failed to retrieve metadata")

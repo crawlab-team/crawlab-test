@@ -291,11 +291,22 @@ jobs:
         run: |
           echo "Starting Crawlab services for testing..."
           
-          # Start services using test compose file
-          docker compose -f docker-compose.test.yml up -d master worker mongo
+          # Determine which services to start based on test category
+          SERVICES="master worker mongo"
           
-          # Wait for services to be healthy
-          echo "Waiting for services to be healthy..."
+          if [ "${{ matrix.category }}" = "database" ]; then
+            # For database tests, also start database services
+            SERVICES="$SERVICES mysql postgres elasticsearch"
+            echo "📊 Database category detected - starting additional database services"
+          fi
+          
+          echo "Starting services: $SERVICES"
+          
+          # Start services using test compose file
+          docker compose -f docker-compose.test.yml up -d $SERVICES
+          
+          # Wait for core services to be healthy
+          echo "Waiting for core services to be healthy..."
           timeout=180
           elapsed=0
           
@@ -307,9 +318,7 @@ jobs:
               # Check worker is running
               if docker compose -f docker-compose.test.yml ps worker | grep -q "Up"; then
                 echo "✅ Worker is running"
-                echo "All services are ready!"
-                docker compose -f docker-compose.test.yml ps
-                exit 0
+                break
               fi
             fi
             
@@ -318,9 +327,57 @@ jobs:
             echo "Waiting... ($elapsed/$timeout seconds)"
           done
           
-          echo "❌ Services failed to become healthy within timeout"
-          docker compose -f docker-compose.test.yml logs
-          exit 1
+          if [ $elapsed -ge $timeout ]; then
+            echo "❌ Core services failed to become healthy within timeout"
+            docker compose -f docker-compose.test.yml logs
+            exit 1
+          fi
+          
+          # If database tests, wait for database services to be healthy
+          if [ "${{ matrix.category }}" = "database" ]; then
+            echo "Waiting for database services to be healthy..."
+            timeout=120
+            elapsed=0
+            
+            while [ $elapsed -lt $timeout ]; do
+              mysql_healthy=false
+              postgres_healthy=false
+              es_healthy=false
+              
+              # Check MySQL
+              if docker compose -f docker-compose.test.yml ps mysql | grep -q "healthy"; then
+                mysql_healthy=true
+              fi
+              
+              # Check PostgreSQL
+              if docker compose -f docker-compose.test.yml ps postgres | grep -q "healthy"; then
+                postgres_healthy=true
+              fi
+              
+              # Check Elasticsearch
+              if docker compose -f docker-compose.test.yml ps elasticsearch | grep -q "healthy"; then
+                es_healthy=true
+              fi
+              
+              if [ "$mysql_healthy" = true ] && [ "$postgres_healthy" = true ] && [ "$es_healthy" = true ]; then
+                echo "✅ All database services are healthy"
+                break
+              fi
+              
+              sleep 5
+              elapsed=$((elapsed + 5))
+              echo "Waiting for database services... ($elapsed/$timeout seconds)"
+              echo "  MySQL: $mysql_healthy, PostgreSQL: $postgres_healthy, Elasticsearch: $es_healthy"
+            done
+            
+            if [ $elapsed -ge $timeout ]; then
+              echo "⚠️ Some database services may not be fully healthy, but continuing..."
+              docker compose -f docker-compose.test.yml ps
+            fi
+          fi
+          
+          echo "All required services are ready!"
+          docker compose -f docker-compose.test.yml ps
       
       - name: List available specs
         run: |
