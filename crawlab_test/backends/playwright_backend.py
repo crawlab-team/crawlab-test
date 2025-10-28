@@ -22,13 +22,21 @@ class PlaywrightBackend(TestBackend):
         Initialize PlaywrightBackend
 
         Args:
-            base_dir: Base directory for tests (defaults to tests directory)
+            base_dir: Base directory for tests (repo root)
         """
         if base_dir is None:
-            # Default to tests directory (parent of backends)
-            base_dir = Path(__file__).parent.parent
+            # Check if current working directory has specs/ directory
+            cwd = Path.cwd()
+            if (cwd / "specs").exists():
+                base_dir = cwd
+            else:
+                # Fall back to calculating from package location (development mode)
+                # Package is at /repo/crawlab_test, so repo root is one level up
+                package_dir = Path(__file__).parent.parent
+                base_dir = package_dir.parent
 
         self.base_dir = Path(base_dir)
+        # UI Playwright tests are at repo root (if they exist)
         self.ui_playwright_dir = self.base_dir / "ui-playwright"
 
     def get_name(self) -> str:

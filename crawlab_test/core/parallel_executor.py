@@ -92,7 +92,15 @@ class ParallelTestExecutor:
             max_workers: Maximum number of parallel workers (defaults to CPU count)
         """
         if base_dir is None:
-            base_dir = Path(__file__).parent.parent
+            # First, check if current working directory has specs/ directory
+            # This handles pip-installed packages where specs/ is in the repo root
+            cwd = Path.cwd()
+            if (cwd / "specs").exists():
+                base_dir = cwd
+            else:
+                # Fall back to calculating from package location (development mode)
+                # From crawlab_test/core/parallel_executor.py, go up 2 levels to repo root
+                base_dir = Path(__file__).parent.parent.parent
 
         self.base_dir = Path(base_dir)
         # Default to CPU count but allow override for I/O-bound tests

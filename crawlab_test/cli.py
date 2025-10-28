@@ -27,12 +27,28 @@ def get_base_dir() -> Path:
     """
     Get the base directory for the test framework.
     This should be the repository root, not the package directory.
+
+    When installed via pip, the package could be in site-packages,
+    but specs/ and runners/ are in the working directory (repo root).
     """
-    # When installed as a package, we need to find the repo root
+    # First, check if current working directory has specs/ directory
+    # This handles pip-installed packages where specs/ is in the repo root
+    cwd = Path.cwd()
+    if (cwd / "specs").exists():
+        return cwd
+
+    # Fall back to calculating from package location (development mode)
     # The package is at: /path/to/repo/crawlab_test/
     # So we go up one level to get: /path/to/repo/
     package_dir = Path(__file__).parent
-    return package_dir.parent
+    repo_root = package_dir.parent
+
+    # Verify specs/ exists at calculated location
+    if (repo_root / "specs").exists():
+        return repo_root
+
+    # If neither worked, return cwd as last resort
+    return cwd
 
 
 def select_backend(spec_path: Path, backend_arg: str, config: Config, docker_detector: DockerDetector):
