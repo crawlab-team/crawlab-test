@@ -6,9 +6,9 @@ This script automates Docker container disconnection testing, validating that
 the cluster can handle container-level network failures gracefully.
 """
 
+import logging
 import sys
 import time
-import logging
 from pathlib import Path
 
 # Add parent directory to path for imports
@@ -16,33 +16,32 @@ TESTS_DIR = Path(__file__).resolve().parent.parent.parent
 if str(TESTS_DIR) not in sys.path:
     sys.path.insert(0, str(TESTS_DIR))
 
+import contextlib
+
 from crawlab_test.helpers.infrastructure.docker import docker_utils
-from crawlab_test.helpers.infrastructure.api_client import CrawlabAPIClient
 from crawlab_test.helpers.infrastructure.utils import setup_logging
 
 
 class DockerContainerDisconnectionTest:
     """Test harness for Docker container disconnection scenarios."""
-    
+
     def __init__(self):
         self.logger = setup_logging("CLS-002")
         self.docker = docker_utils
         self.api_client = None
         self.worker_container = None
         self.network_name = None
-        
+
         if not self.docker.is_available():
             raise RuntimeError("Docker is not available. Please ensure Docker is installed and running.")
-        
+
         # Find Crawlab containers
         containers = self.docker.find_crawlab_containers()
         if not containers:
             import os
-            is_ci = os.getenv('CI', '').lower() == 'true'
-            error_msg = (
-                "No Crawlab containers found. "
-                "This test requires a running Crawlab cluster.\\n"
-            )
+
+            is_ci = os.getenv("CI", "").lower() == "true"
+            error_msg = "No Crawlab containers found. " "This test requires a running Crawlab cluster.\\n"
             if is_ci:
                 error_msg += (
                     "In CI environment, ensure that:\\n"
@@ -52,88 +51,85 @@ class DockerContainerDisconnectionTest:
                     "\\nExpected containers: crawlab_test_master, crawlab_test_worker"
                 )
             else:
-                error_msg += (
-                    "Please start Crawlab using:\n"
-                    "  docker compose -f docker-compose.test.yml up -d\n"
-                )
+                error_msg += "Please start Crawlab using:\n" "  docker compose -f docker-compose.test.yml up -d\n"
             raise RuntimeError(error_msg)
-        
+
         # Find worker container
         for container in containers:
-            name = container.get('Names', '')
-            if 'worker' in name.lower():
+            name = container.get("Names", "")
+            if "worker" in name.lower():
                 self.worker_container = name
                 break
-        
+
         if not self.worker_container:
             raise RuntimeError("No worker container found")
-        
+
         self.logger.info(f"Selected worker container: {self.worker_container}")
-        
+
         # Get network name
         inspect = self.docker.get_container_inspect(self.worker_container)
-        if inspect and 'NetworkSettings' in inspect:
-            networks = inspect['NetworkSettings'].get('Networks', {})
+        if inspect and "NetworkSettings" in inspect:
+            networks = inspect["NetworkSettings"].get("Networks", {})
             if networks:
-                self.network_name = list(networks.keys())[0]
-        
+                self.network_name = next(iter(networks.keys()))
+
         if not self.network_name:
             raise RuntimeError("Could not determine container network")
-        
+
         self.logger.info(f"Using network: {self.network_name}")
-    
+
     def run(self) -> bool:
         """Execute the full test suite."""
         success = True
-        
+
         try:
             # Step 1: List containers
             self.logger.info("Step 1: Listing Docker containers")
             success &= self.list_containers()
-            
+
             # Step 2: Health check
             self.logger.info("Step 2: Verifying cluster health")
             success &= self.verify_cluster_health()
-            
+
             # Step 3: Network disconnection test
             self.logger.info("Step 3: Testing network disconnection")
             success &= self.test_network_disconnection()
-            
+
             # Step 4: Pause/unpause test
             self.logger.info("Step 4: Testing container pause/unpause")
             success &= self.test_container_pause()
-            
+
             return success
-            
+
         except Exception as e:
             self.logger.error(f"Test failed with error: {e}")
             return False
-    
+
     def list_containers(self) -> bool:
         """List all Crawlab containers."""
         try:
             containers = self.docker.find_crawlab_containers()
             self.logger.info(f"Found {len(containers)} Crawlab containers:")
             for container in containers:
-                name = container.get('Names', '')
-                status = container.get('Status', '')
+                name = container.get("Names", "")
+                status = container.get("Status", "")
                 self.logger.info(f"  - {name}: {status}")
             return True
         except Exception as e:
             self.logger.error(f"Failed to list containers: {e}")
             return False
-    
+
     def verify_cluster_health(self) -> bool:
         """Verify cluster is healthy."""
         try:
             containers = self.docker.find_crawlab_containers()
-            running = sum(1 for c in containers if 'Up' in c.get('Status', ''))
+            running = sum(1 for c in containers if "Up" in c.get("Status", ""))
             self.logger.info(f"Found {running}/{len(containers)} containers running")
             return running > 0
         except Exception as e:
             self.logger.error(f"Health check failed: {e}")
             return False
-    
+
     def test_network_disconnection(self) -> bool:
         """Test network disconnection and reconnection."""
         try:
@@ -142,36 +138,34 @@ class DockerContainerDisconnectionTest:
             if not self.docker.simulate_network_disconnect(self.worker_container, self.network_name):
                 self.logger.error("Failed to disconnect")
                 return False
-            
+
             # Wait for disconnection to be detected
             # Master monitors every 20s and requires 2 consecutive failures (40s) before marking offline
             self.logger.info("Waiting 45s for disconnection detection...")
             time.sleep(45)
-            
+
             # Reconnect
             self.logger.info(f"Reconnecting {self.worker_container} to network")
             if not self.docker.simulate_network_reconnect(self.worker_container, self.network_name):
                 self.logger.error("Failed to reconnect")
                 return False
-            
+
             # Wait for node to stabilize after reconnection
             # Worker needs time to re-establish gRPC connection and master needs to confirm health
             # Master checks every 20s, so we need to wait at least 50s for stability confirmation
             self.logger.info("Waiting 50s for node stabilization after reconnection...")
             time.sleep(50)
-            
+
             # Verify cluster health
             return self.verify_cluster_health()
-            
+
         except Exception as e:
             self.logger.error(f"Network disconnection test failed: {e}")
             # Ensure cleanup
-            try:
+            with contextlib.suppress(Exception):
                 self.docker.simulate_network_reconnect(self.worker_container, self.network_name)
-            except:
-                pass
             return False
-    
+
     def test_container_pause(self) -> bool:
         """Test container pause and unpause."""
         try:
@@ -180,41 +174,40 @@ class DockerContainerDisconnectionTest:
             if not self.docker.pause_container(self.worker_container):
                 self.logger.error("Failed to pause container")
                 return False
-            
+
             # Wait for pause to be detected (similar to disconnection timing)
             self.logger.info("Waiting 45s for pause detection...")
             time.sleep(45)
-            
+
             # Unpause
             self.logger.info(f"Unpausing {self.worker_container}")
             if not self.docker.unpause_container(self.worker_container):
                 self.logger.error("Failed to unpause container")
                 return False
-            
+
             # Wait for node to stabilize after unpause
             self.logger.info("Waiting 50s for node stabilization after unpause...")
             time.sleep(50)
-            
+
             # Verify cluster health
             return self.verify_cluster_health()
-            
+
         except Exception as e:
             self.logger.error(f"Container pause test failed: {e}")
             # Ensure cleanup
-            try:
+            with contextlib.suppress(Exception):
                 self.docker.unpause_container(self.worker_container)
-            except:
-                pass
             return False
 
 
 def main():
     """Main entry point."""
     import argparse
+
     parser = argparse.ArgumentParser(description="CLS-002 Docker Container Disconnection Test")
     parser.add_argument("--ci", action="store_true", help="Running in CI environment")
-    args = parser.parse_args()
-    
+    parser.parse_args()
+
     try:
         test = DockerContainerDisconnectionTest()
         success = test.run()

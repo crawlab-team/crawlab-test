@@ -6,8 +6,8 @@ from .actions.spider_actions import SpiderActions
 from .browser.playwright_wrapper import PlaywrightWrapper
 
 __all__ = [
-    'AuthActions',
-    'NavigationActions',
-    'SpiderActions',
-    'PlaywrightWrapper',
+    "AuthActions",
+    "NavigationActions",
+    "SpiderActions",
+    "PlaywrightWrapper",
 ]

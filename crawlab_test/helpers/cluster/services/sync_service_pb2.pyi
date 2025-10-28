@@ -1,8 +1,10 @@
-from google.protobuf.internal import containers as _containers
+from collections.abc import Iterable as _Iterable
+from collections.abc import Mapping as _Mapping
+from typing import ClassVar as _ClassVar
+
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from collections.abc import Iterable as _Iterable, Mapping as _Mapping
-from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
+from google.protobuf.internal import containers as _containers
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -14,7 +16,9 @@ class FileSyncRequest(_message.Message):
     spider_id: str
     path: str
     node_key: str
-    def __init__(self, spider_id: _Optional[str] = ..., path: _Optional[str] = ..., node_key: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self, spider_id: str | None = ..., path: str | None = ..., node_key: str | None = ...
+    ) -> None: ...
 
 class FileInfo(_message.Message):
     __slots__ = ("name", "path", "full_path", "extension", "is_dir", "file_size", "mod_time", "mode", "hash")
@@ -36,7 +40,18 @@ class FileInfo(_message.Message):
     mod_time: int
     mode: int
     hash: str
-    def __init__(self, name: _Optional[str] = ..., path: _Optional[str] = ..., full_path: _Optional[str] = ..., extension: _Optional[str] = ..., is_dir: bool = ..., file_size: _Optional[int] = ..., mod_time: _Optional[int] = ..., mode: _Optional[int] = ..., hash: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        name: str | None = ...,
+        path: str | None = ...,
+        full_path: str | None = ...,
+        extension: str | None = ...,
+        is_dir: bool = ...,
+        file_size: int | None = ...,
+        mod_time: int | None = ...,
+        mode: int | None = ...,
+        hash: str | None = ...,
+    ) -> None: ...
 
 class FileScanChunk(_message.Message):
     __slots__ = ("files", "is_complete", "error", "total_files")
@@ -48,7 +63,13 @@ class FileScanChunk(_message.Message):
     is_complete: bool
     error: str
     total_files: int
-    def __init__(self, files: _Optional[_Iterable[_Union[FileInfo, _Mapping]]] = ..., is_complete: bool = ..., error: _Optional[str] = ..., total_files: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        files: _Iterable[FileInfo | _Mapping] | None = ...,
+        is_complete: bool = ...,
+        error: str | None = ...,
+        total_files: int | None = ...,
+    ) -> None: ...
 
 class FileDownloadRequest(_message.Message):
     __slots__ = ("spider_id", "path", "node_key")
@@ -58,7 +79,9 @@ class FileDownloadRequest(_message.Message):
     spider_id: str
     path: str
     node_key: str
-    def __init__(self, spider_id: _Optional[str] = ..., path: _Optional[str] = ..., node_key: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self, spider_id: str | None = ..., path: str | None = ..., node_key: str | None = ...
+    ) -> None: ...
 
 class FileDownloadChunk(_message.Message):
     __slots__ = ("data", "is_complete", "error", "total_bytes")
@@ -70,4 +93,10 @@ class FileDownloadChunk(_message.Message):
     is_complete: bool
     error: str
     total_bytes: int
-    def __init__(self, data: _Optional[bytes] = ..., is_complete: bool = ..., error: _Optional[str] = ..., total_bytes: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        data: bytes | None = ...,
+        is_complete: bool = ...,
+        error: str | None = ...,
+        total_bytes: int | None = ...,
+    ) -> None: ...
