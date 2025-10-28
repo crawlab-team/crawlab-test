@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       category:
-        description: 'Test categories to run (space-separated: "api reliability performance integration ui" or "all")'
+        description: 'Test categories to run (space-separated: "api integration performance reliability ui" or "all")'
         required: false
         type: string
         default: 'all'
@@ -26,7 +26,7 @@ on:
           - 'copilot'
         default: 'auto'
       spec_id:
-        description: 'Specific spec ID to run (e.g., API-001, REL-001, PERF-001, INT-001, UI-001)'
+        description: 'Specific spec ID to run (e.g., API-001, INT-001, PERF-001, REL-001, UI-001)'
         required: false
         type: string
       timeout:
@@ -70,11 +70,11 @@ jobs:
             INPUT_CATEGORY=$(echo "$INPUT_CATEGORY" | xargs | tr '[:upper:]' '[:lower:]')
             
             if [ "$INPUT_CATEGORY" = "all" ] || [ -z "$INPUT_CATEGORY" ]; then
-              echo "categories=[\"api\",\"reliability\",\"performance\",\"integration\",\"ui\"]" >> $GITHUB_OUTPUT
+              echo "categories=[\"api\",\"integration\",\"performance\",\"reliability\",\"ui\"]" >> $GITHUB_OUTPUT
               echo "Running all categories"
             else
               # Parse space-separated categories
-              VALID_CATEGORIES=("api" "reliability" "performance" "integration" "ui")
+              VALID_CATEGORIES=("api" "integration" "performance" "reliability" "ui")
               SELECTED_CATEGORIES=()
               
               for CAT in $INPUT_CATEGORY; do
@@ -89,7 +89,7 @@ jobs:
               
               if [ ${#SELECTED_CATEGORIES[@]} -eq 0 ]; then
                 echo "❌ No valid categories specified, using 'all'"
-                echo "categories=[\"api\",\"reliability\",\"performance\",\"integration\",\"ui\"]" >> $GITHUB_OUTPUT
+                echo "categories=[\"api\",\"integration\",\"performance\",\"reliability\",\"ui\"]" >> $GITHUB_OUTPUT
               else
                 # Convert to JSON array
                 CATEGORIES_JSON=$(printf '%s\n' "${SELECTED_CATEGORIES[@]}" | jq -R . | jq -s -c .)
@@ -122,24 +122,16 @@ jobs:
             CATEGORIES+=("api")
           fi
           
-          if echo "$CHANGED_FILES" | grep -qE "^specs/cluster/|^runners/cluster/|^helpers/cluster/"; then
-            CATEGORIES+=("cluster")
+          if echo "$CHANGED_FILES" | grep -qE "^specs/integration/|^runners/integration/|^helpers/integration/"; then
+            CATEGORIES+=("integration")
           fi
           
-          if echo "$CHANGED_FILES" | grep -qE "^specs/database/|^runners/database/|^helpers/database/"; then
-            CATEGORIES+=("database")
+          if echo "$CHANGED_FILES" | grep -qE "^specs/performance/|^runners/performance/|^helpers/performance/"; then
+            CATEGORIES+=("performance")
           fi
           
-          if echo "$CHANGED_FILES" | grep -qE "^specs/dependencies/|^runners/dependencies/|^helpers/dependencies/"; then
-            CATEGORIES+=("dependencies")
-          fi
-          
-          if echo "$CHANGED_FILES" | grep -qE "^specs/scheduler/|^runners/scheduler/|^helpers/scheduler/"; then
-            CATEGORIES+=("scheduler")
-          fi
-          
-          if echo "$CHANGED_FILES" | grep -qE "^specs/system/|^runners/system/|^helpers/system/"; then
-            CATEGORIES+=("system")
+          if echo "$CHANGED_FILES" | grep -qE "^specs/reliability/|^runners/reliability/|^helpers/reliability/"; then
+            CATEGORIES+=("reliability")
           fi
           
           if echo "$CHANGED_FILES" | grep -qE "^specs/ui/|^runners/ui/|^helpers/ui/"; then
@@ -149,7 +141,7 @@ jobs:
           # If core framework changed, test everything
           FRAMEWORK_CHANGED=false
           if echo "$CHANGED_FILES" | grep -qE "^cli.py|^backends/|^core/|^requirements.txt"; then
-            CATEGORIES=("api" "cluster" "database" "dependencies" "scheduler" "system" "ui")
+            CATEGORIES=("api" "integration" "performance" "reliability" "ui")
             FRAMEWORK_CHANGED=true
           fi
           
@@ -294,10 +286,10 @@ jobs:
           # Determine which services to start based on test category
           SERVICES="master worker mongo"
           
-          if [ "${{ matrix.category }}" = "database" ]; then
-            # For database tests, also start database services
+          if [ "${{ matrix.category }}" = "integration" ]; then
+            # For integration tests, also start database services
             SERVICES="$SERVICES mysql postgres elasticsearch"
-            echo "📊 Database category detected - starting additional database services"
+            echo "📊 Integration category detected - starting additional database services"
           fi
           
           echo "Starting services: $SERVICES"
@@ -334,7 +326,7 @@ jobs:
           fi
           
           # If database tests, wait for database services to be healthy
-          if [ "${{ matrix.category }}" = "database" ]; then
+          if [ "${{ matrix.category }}" = "integration" ]; then
             echo "Waiting for database services to be healthy..."
             timeout=120
             elapsed=0
@@ -400,22 +392,19 @@ jobs:
           # Determine parallel worker count based on category
           case "${{ matrix.category }}" in
             api)
-              PARALLEL_WORKERS=5  # 15 tests, I/O bound - safe for parallel
+              PARALLEL_WORKERS=5  # API tests - I/O bound, safe for parallel
               ;;
             ui)
-              PARALLEL_WORKERS=4  # 19 tests, browser tests - safe for parallel
+              PARALLEL_WORKERS=4  # Browser tests - safe for parallel
               ;;
-            cluster)
-              PARALLEL_WORKERS=1  # 4 tests, Docker manipulation - MUST be sequential
+            integration)
+              PARALLEL_WORKERS=2  # Integration tests - moderate parallelism
               ;;
-            scheduler)
-              PARALLEL_WORKERS=3  # Task execution
+            performance)
+              PARALLEL_WORKERS=1  # Performance tests - sequential for accuracy
               ;;
-            database)
-              PARALLEL_WORKERS=2
-              ;;
-            dependencies)
-              PARALLEL_WORKERS=2
+            reliability)
+              PARALLEL_WORKERS=1  # Reliability tests - sequential for determinism
               ;;
             *)
               PARALLEL_WORKERS=2
