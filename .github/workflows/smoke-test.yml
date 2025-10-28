@@ -33,6 +33,7 @@ jobs:
       - name: Install crawlab-test package
         run: |
           uv sync
+          uv tool install ruff
           echo "✅ Package installed in editable mode (includes all dependencies)"
       
       - name: Verify CLI works
@@ -46,7 +47,7 @@ jobs:
           echo "Running Ruff checks for critical issues..."
           # Check for fatal errors: undefined names, syntax errors, import issues
           # This replaces py_compile as Ruff catches syntax errors too
-          uv run ruff check . --select=F,E9 --output-format=github
+          uvx ruff check . --select=F,E9 --output-format=github
           echo "✅ No critical Ruff violations found"
       
       - name: Verify test structure
