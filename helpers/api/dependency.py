@@ -310,7 +310,7 @@ def get_dependency_repo_versions(
     response = requests.get(
         f"{API_URL}/dependencies/repos/versions",
         headers=_get_headers(token),
-        params={"lang": lang, "name": name},
+        params={"lang": lang, "repo": name},
         timeout=timeout
     )
     if response.status_code == 200:
@@ -380,7 +380,7 @@ def uninstall_dependency_repo(
     Returns:
         True if successful, False otherwise
     """
-    payload = {"lang": lang, "name": name, "mode": mode}
+    payload = {"lang": lang, "names": [name], "mode": mode}
     if node_ids:
         payload["node_ids"] = node_ids
         
