@@ -11,13 +11,13 @@ import logging
 import argparse
 from pathlib import Path
 
-# Add helpers to path using absolute locations to avoid CWD issues
-helpers_root = Path(__file__).resolve().parents[2] / 'helpers'
-sys.path.append(str(helpers_root / 'tools'))
-sys.path.append(str(helpers_root / 'libs'))
+# Add tests directory to path for imports
+TESTS_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(TESTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(TESTS_ROOT))
 
-from locale_validator import LocaleValidator
-from utils import setup_logging
+from helpers.testing.validators.locale_validator import LocaleValidator
+from helpers.infrastructure.utils import setup_logging
 
 def run_sys_001_test(container_name: str = "master", verbose: bool = False, 
                      include_browsers: bool = True) -> bool:
