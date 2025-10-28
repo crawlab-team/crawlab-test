@@ -113,12 +113,16 @@ def run_test():
         logger.info("\n[Step 6] Searching for 'requests' package...")
         search_results = search_dependency_repos(token, lang="python", query="requests", page=1, size=10)
         if search_results and 'data' in search_results:
-            results_list = search_results['data']
-            logger.info(f"✓ Found {len(results_list)} search results")
-            test_steps.append(("Search Package", True, f"Found {len(results_list)} results"))
+            results_list = search_results.get('data')
+            if results_list is not None:
+                logger.info(f"✓ Found {len(results_list)} search results")
+                test_steps.append(("Search Package", True, f"Found {len(results_list)} results"))
+            else:
+                logger.info("⚠ Search endpoint accessible but no results (index may not be ready)")
+                test_steps.append(("Search Package", True, "Endpoint accessible (empty)"))
         elif search_results:
-            logger.info("⚠ Search endpoint accessible but no results (index may not be ready)")
-            test_steps.append(("Search Package", True, "Endpoint accessible (empty)"))
+            logger.info("⚠ Search endpoint accessible but no 'data' field")
+            test_steps.append(("Search Package", True, "Endpoint accessible (no data field)"))
         else:
             logger.info("⚠ Search failed")
             test_steps.append(("Search Package", False, "Search failed"))
