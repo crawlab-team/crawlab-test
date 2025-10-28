@@ -42,7 +42,6 @@ on:
 
 env:
   PYTHON_VERSION: '3.9'
-  UV_VERSION: '0.5.20'
   CRAWLAB_API_URL: 'http://localhost:8080/api'
   CRAWLAB_IMAGE_TAG: ${{ inputs.image_tag || 'develop' }}
 
@@ -238,10 +237,10 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v3
         with:
-          version: ${{ env.UV_VERSION }}
           enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
       
       - name: Set up Python
         run: uv python install ${{ env.PYTHON_VERSION }}
@@ -251,8 +250,7 @@ jobs:
       
       - name: Install crawlab-test package
         run: |
-          uv pip install -e .
-          echo "✅ Package installed in editable mode"
+          echo "✅ Package installed via uv sync"
       
       - name: Install Playwright (UI tests only)
         if: matrix.category == 'ui'
@@ -379,7 +377,7 @@ jobs:
       - name: List available specs
         run: |
           echo "Available specs for category: ${{ matrix.category }}"
-          ./cli.py --list-specs --category ${{ matrix.category }}
+          uv run ./cli.py --list-specs --category ${{ matrix.category }}
       
       - name: Run tests
         env:
