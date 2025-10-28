@@ -19,10 +19,10 @@ from datetime import datetime, timedelta
 # Add the helpers directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from helpers.libs.api_client import CrawlabAPIClient
-from helpers.libs.database import (DatabaseHelper, TASK_STATUS_RUNNING, TASK_STATUS_FINISHED,
+from helpers.infrastructure.api_client import CrawlabAPIClient
+from helpers.infrastructure.database import (DatabaseHelper, TASK_STATUS_RUNNING, TASK_STATUS_FINISHED,
                            TASK_STATUS_ERROR, TASK_STATUS_NODE_DISCONNECTED, TASK_STATUS_PENDING)
-from helpers.libs.utils import setup_logging, TestMetrics, format_duration, load_config
+from helpers.infrastructure.utils import setup_logging, TestMetrics, format_duration, load_config
 
 class NetworkSimulator:
     """Network-level simulation for testing reconciliation"""

@@ -15,9 +15,9 @@ from datetime import datetime, timedelta
 # Add the helpers directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from helpers.libs.api_client import CrawlabAPIClient
-from helpers.libs.database import DatabaseHelper, TASK_STATUS_RUNNING, TASK_STATUS_NODE_DISCONNECTED
-from helpers.libs.utils import setup_logging, wait_with_timeout, format_duration, TestMetrics, load_config
+from helpers.infrastructure.api_client import CrawlabAPIClient
+from helpers.infrastructure.database import DatabaseHelper, TASK_STATUS_RUNNING, TASK_STATUS_NODE_DISCONNECTED
+from helpers.infrastructure.utils import setup_logging, wait_with_timeout, format_duration, TestMetrics, load_config
 
 class ReconciliationHealthChecker:
     def __init__(self, api_client: CrawlabAPIClient, db_helper: DatabaseHelper):

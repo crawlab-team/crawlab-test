@@ -25,7 +25,7 @@ sys.path.insert(0, str(tests_dir))
 from helpers.api.auth import AuthHelper
 from helpers.api.database import DatabaseAPIHelper
 from helpers.api.cleanup import CleanupHelper
-from helpers.libs.utils import setup_logging
+from helpers.infrastructure.utils import setup_logging
 
 
 def is_docker_environment() -> bool:

@@ -29,9 +29,16 @@
 **Key Directories**:
 - `specs/` - Test specifications (api, cluster, database, dependencies, scheduler, system, ui)
 - `runners/` - Python test runners that execute specifications
-- `helpers/` - Reusable utilities and helper scripts
+- `helpers/` - Reusable utilities organized by purpose:
+  - `api/` - API client helpers (auth, spider, task, etc.)
+  - `infrastructure/` - Core infrastructure (API client, Docker, database, system utilities)
+  - `testing/` - Testing tools (monitors, simulators, validators, managers)
+  - `cluster/` - Cluster-specific utilities (gRPC, file sync)
+  - `ui/` - UI test helpers (actions, browser, validators)
+  - `suites/` - Reusable test suites
 - `backends/` - Backend implementations (script, copilot, playwright)
 - `docs/` - Testing framework documentation
+- `core/` - Core framework (config, parallel execution, spec finder)
 
 ## 🧪 Testing Workflow
 

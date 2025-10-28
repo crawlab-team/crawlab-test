@@ -24,8 +24,8 @@ from helpers.cluster.grpc_sync_client import (
     verify_grpc_server_accessible,
     test_grpc_connection
 )
-from helpers.libs.docker_utils import docker_utils
-from helpers.libs.utils import setup_logging
+from helpers.infrastructure.docker_utils import docker_utils
+from helpers.infrastructure.utils import setup_logging
 
 
 def _verify_grpc_server(master, logger):

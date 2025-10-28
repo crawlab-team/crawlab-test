@@ -13,8 +13,8 @@ TESTS_DIR = Path(__file__).resolve().parent.parent.parent
 if str(TESTS_DIR) not in sys.path:
     sys.path.insert(0, str(TESTS_DIR))
 
-from helpers.libs.docker_utils import docker_utils
-from helpers.libs.api_client import CrawlabAPIClient
+from helpers.infrastructure.docker_utils import docker_utils
+from helpers.infrastructure.api_client import CrawlabAPIClient
 
 
 def get_test_data_path():

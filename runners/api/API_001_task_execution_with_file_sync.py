@@ -16,7 +16,7 @@ TESTS_DIR = Path(__file__).resolve().parent.parent.parent
 if str(TESTS_DIR) not in sys.path:
     sys.path.insert(0, str(TESTS_DIR))
 
-from helpers.libs.utils import setup_logging
+from helpers.infrastructure.utils import setup_logging
 
 # Configuration
 API_URL = "http://localhost:8080/api"

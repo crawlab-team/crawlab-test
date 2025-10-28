@@ -15,8 +15,8 @@ tests_dir = Path(__file__).resolve().parent.parent.parent
 if str(tests_dir) not in sys.path:
     sys.path.insert(0, str(tests_dir))
 
-from helpers.libs.api_client import CrawlabAPIClient
-from helpers.libs.docker_utils import docker_utils
+from helpers.infrastructure.api_client import CrawlabAPIClient
+from helpers.infrastructure.docker_utils import docker_utils
 
 class DockerContainerManager:
     def __init__(self, api_client: CrawlabAPIClient = None):

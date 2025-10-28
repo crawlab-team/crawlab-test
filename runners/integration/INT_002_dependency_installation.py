@@ -25,8 +25,8 @@ TESTS_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(TESTS_ROOT) not in sys.path:
     sys.path.insert(0, str(TESTS_ROOT))
 
-from helpers.libs.docker_utils import docker_utils  # noqa: E402
-from helpers.libs.utils import format_duration, setup_logging  # noqa: E402
+from helpers.infrastructure.docker_utils import docker_utils  # noqa: E402
+from helpers.infrastructure.utils import format_duration, setup_logging  # noqa: E402
 
 
 @dataclass

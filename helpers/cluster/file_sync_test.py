@@ -20,8 +20,8 @@ from typing import Dict, List, Optional
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from helpers.libs.api_client import CrawlabAPIClient
-from helpers.libs.docker_utils import docker_utils
+from helpers.infrastructure.api_client import CrawlabAPIClient
+from helpers.infrastructure.docker_utils import docker_utils
 
 logging.basicConfig(
     level=logging.INFO,

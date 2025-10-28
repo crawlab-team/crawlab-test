@@ -19,9 +19,9 @@ from pathlib import Path
 # Add the helpers directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from helpers.libs.api_client import CrawlabAPIClient
-from helpers.libs.database import DatabaseHelper
-from helpers.libs.utils import setup_logging, TestMetrics, format_duration, load_config
+from helpers.infrastructure.api_client import CrawlabAPIClient
+from helpers.infrastructure.database import DatabaseHelper
+from helpers.infrastructure.utils import setup_logging, TestMetrics, format_duration, load_config
 
 # Import NodeManager from hyphenated filename
 node_manager_path = os.path.join(os.path.dirname(__file__), 'node-manager.py')

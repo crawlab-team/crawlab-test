@@ -25,8 +25,8 @@ from typing import Dict, List, Optional
 
 # Add the tests directory to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
-from helpers.libs.api_client import CrawlabAPIClient
-from helpers.libs.utils import wait_for_condition, setup_logging
+from helpers.infrastructure.api_client import CrawlabAPIClient
+from helpers.infrastructure.utils import wait_for_condition, setup_logging
 
 # Import NodeManager from helpers/tools
 node_manager_path = Path(__file__).parent.parent.parent / 'tools' / 'node_manager.py'

@@ -19,10 +19,10 @@ from datetime import datetime
 # Add the helpers directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from helpers.libs.api_client import CrawlabAPIClient
-from helpers.libs.database import DatabaseHelper, TASK_STATUS_RUNNING
-from helpers.libs.utils import setup_logging, TestMetrics, load_config
-from helpers.libs.system import process_manager, ProcessManager
+from helpers.infrastructure.api_client import CrawlabAPIClient
+from helpers.infrastructure.database import DatabaseHelper, TASK_STATUS_RUNNING
+from helpers.infrastructure.utils import setup_logging, TestMetrics, load_config
+from helpers.infrastructure.system import process_manager, ProcessManager
 
 class ProcessKiller:
     def __init__(self, api_client: CrawlabAPIClient, db_helper: DatabaseHelper):
