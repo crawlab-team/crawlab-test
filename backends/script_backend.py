@@ -151,12 +151,17 @@ class ScriptBackend(TestBackend):
         """
         Find runner script for a specification
         
+        Only matches by spec ID (e.g., API-001), not the full filename.
+        This allows flexible naming of runner scripts as long as they include the spec ID.
+        
         Args:
             spec_path: Path to spec file
             
         Returns:
             Path to runner script or None
         """
+        import re
+        
         # Get category from spec path
         try:
             parts = spec_path.parts
@@ -178,19 +183,23 @@ class ScriptBackend(TestBackend):
         if not runner_dir.exists():
             return None
         
-        # Convert spec filename to script name
-        # e.g., UI-001-spider-management.md -> UI_001_spider_management.py
-        spec_name = spec_path.stem.replace('-', '_')
+        # Extract spec ID from filename (e.g., API-001, UI-002, CLS-001)
+        spec_id_match = re.search(r'([A-Z]+)-(\d+)', spec_path.stem)
+        if not spec_id_match:
+            return None
         
-        # Look for matching scripts
-        test_scripts = list(runner_dir.glob(f"*{spec_name}*.py"))
+        spec_id = spec_id_match.group(0)  # e.g., "API-001"
+        spec_id_underscore = spec_id.replace('-', '_')  # e.g., "API_001"
+        
+        # Look for runner scripts that start with the spec ID (with underscore)
+        # e.g., API_001_*.py matches the spec API-001-*.md
+        test_scripts = list(runner_dir.glob(f"{spec_id_underscore}*.py"))
         
         if test_scripts:
             return test_scripts[0]
         
-        # Try without underscores
-        spec_name_simple = ''.join(c for c in spec_path.stem if c.isalnum())
-        test_scripts = list(runner_dir.glob(f"*{spec_name_simple}*.py"))
+        # Try with hyphen format (less common but possible)
+        test_scripts = list(runner_dir.glob(f"{spec_id}*.py"))
         
         if test_scripts:
             return test_scripts[0]
