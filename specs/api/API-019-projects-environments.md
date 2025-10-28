@@ -54,11 +54,11 @@ This test covers the following endpoints:
 11. Verify project deleted
 
 ### Environments
-12. Create environment
-13. Verify environment created with correct properties
+12. Create environment (with key/value fields)
+13. Verify environment created with correct properties (key and value)
 14. List environments with pagination
 15. Get environment details by ID
-16. Update environment properties
+16. Update environment properties (key/value)
 17. Verify environment updated
 18. Create second environment for batch operations
 19. Batch update multiple environments
@@ -79,7 +79,7 @@ This test covers the following endpoints:
 
 - Authentication successful
 - Projects can be created with name and description
-- Environments can be created with name and configuration
+- Environments can be created with key and value (not name/description)
 - List operations support pagination
 - Get operations return correct details
 - Update operations persist changes
@@ -91,8 +91,8 @@ This test covers the following endpoints:
 ## Expected Results
 
 - All API endpoints respond with appropriate status codes
-- Projects organize related spiders
-- Environments define execution contexts
+- Projects organize related spiders with name/description fields
+- Environments define key-value pairs (not name/description/config)
 - Batch operations handle multiple IDs correctly
 - Invalid parameters return 400/404 errors
 - Operations on non-existent resources return 404
@@ -101,6 +101,7 @@ This test covers the following endpoints:
 ## Notes
 
 - Projects and environments are organizational features
+- **Important**: Environment model uses `key` and `value` fields, NOT `name`, `description`, or `config`
 - They may have relationships with spiders and tasks
 - Test focuses on CRUD operations and API correctness
 - Actual usage requires integration with spider management

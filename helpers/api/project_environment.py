@@ -210,9 +210,8 @@ class ProjectEnvironmentAPIHelper:
         
         Args:
             data: Environment data including:
-                - name: Environment name
-                - description: Environment description (optional)
-                - config: Environment configuration (optional)
+                - key: Environment key/name
+                - value: Environment value
                 
         Returns:
             Created environment object or None on failure

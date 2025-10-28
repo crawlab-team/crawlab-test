@@ -162,12 +162,8 @@ def run_test():
         # Step 12: Create environment
         logger.info("\nStep 12: Create environment")
         env1 = pe_helper.create_environment({
-            "name": f"test_env_{int(time.time())}",
-            "description": "Test environment description",
-            "config": {
-                "type": "production",
-                "region": "us-east-1"
-            }
+            "key": f"test_env_{int(time.time())}",
+            "value": "Test environment value"
         })
         check(env1 is not None, "Environment created successfully")
         
@@ -176,8 +172,8 @@ def run_test():
             env1_id = env1.get('_id')
             environment_ids.append(env1_id)
             check(env1_id is not None, "Environment ID received")
-            check(env1.get('name') is not None, "Environment has name")
-            check(env1.get('description') is not None, "Environment has description")
+            check(env1.get('key') is not None, "Environment has key")
+            check(env1.get('value') is not None, "Environment has value")
         
         # Step 14: List environments
         logger.info("\nStep 14: List environments with pagination")
@@ -200,12 +196,8 @@ def run_test():
         if env1_id:
             logger.info("\nStep 16: Update environment properties")
             updated_env = pe_helper.update_environment(env1_id, {
-                "name": f"test_env_updated_{int(time.time())}",
-                "description": "Updated environment description",
-                "config": {
-                    "type": "staging",
-                    "region": "us-west-2"
-                }
+                "key": f"test_env_updated_{int(time.time())}",
+                "value": "Updated environment value"
             })
             check(updated_env is not None, "Environment updated successfully")
         
@@ -214,15 +206,15 @@ def run_test():
             logger.info("\nStep 17: Verify environment updated")
             env_detail = pe_helper.get_environment(env1_id)
             if env_detail:
-                check("updated" in env_detail.get('description', '').lower() or
-                      "updated" in env_detail.get('name', '').lower(),
+                check("updated" in env_detail.get('value', '').lower() or
+                      "updated" in env_detail.get('key', '').lower(),
                       "Environment update reflected")
         
         # Step 18: Create second environment
         logger.info("\nStep 18: Create second environment for batch operations")
         env2 = pe_helper.create_environment({
-            "name": f"test_env_2_{int(time.time())}",
-            "description": "Second test environment"
+            "key": f"test_env_2_{int(time.time())}",
+            "value": "Second test environment value"
         })
         check(env2 is not None, "Second environment created")
         
@@ -236,7 +228,7 @@ def run_test():
             logger.info("\nStep 19: Batch update multiple environments")
             batch_updated = pe_helper.batch_update_environments(
                 environment_ids[:2],
-                {"description": "Batch updated description"}
+                {"value": "Batch updated value"}
             )
             check(batch_updated, "Environments batch updated successfully")
         
@@ -270,8 +262,8 @@ def run_test():
         # Step 23: Environment with invalid properties
         logger.info("\nStep 23: Test environment with invalid properties")
         invalid_env = pe_helper.create_environment({
-            "name": "",  # Empty name
-            "description": "Invalid test"
+            "key": "",  # Empty key
+            "value": "Invalid test"
         })
         check(invalid_env is None or True, "Invalid environment properties handled")
         
