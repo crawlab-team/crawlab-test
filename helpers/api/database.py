@@ -454,7 +454,9 @@ class DatabaseAPIHelper:
             )
             response.raise_for_status()
             result = response.json()
-            return result.get('data')
+            # Return full response object with data, total, status
+            # The 'data' field contains the array of rows
+            return result
         except Exception as e:
             self.logger.error(f"Failed to get table data: {e}")
             return None

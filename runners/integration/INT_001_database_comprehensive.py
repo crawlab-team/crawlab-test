@@ -306,7 +306,7 @@ class DatabaseIntegrationTest:
                 {
                     "name": "id",
                     "type": "INT" if db_type == 'mysql' else "INTEGER",
-                    "primary_key": True,
+                    "primary": True,
                     "auto_increment": True
                 },
                 {
@@ -377,7 +377,7 @@ class DatabaseIntegrationTest:
             table_name = f"test_crud_{int(time.time())}"
             columns = [
                 {"name": "id", "type": "INT" if db_type == 'mysql' else "INTEGER", 
-                 "primary_key": True, "auto_increment": True},
+                 "primary": True, "auto_increment": True},
                 {"name": "name", "type": "VARCHAR(100)", "not_null": True},
                 {"name": "value", "type": "INT" if db_type == 'mysql' else "INTEGER"}
             ]
