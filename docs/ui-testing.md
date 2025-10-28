@@ -22,7 +22,7 @@ The framework is organized into three main layers:
 │   ├── browser/                        # Browser automation
 │   │   └── playwright_wrapper.py      # Playwright wrapper
 │   └── validators/                     # UI validators
-└── helpers/libs/
+└── helpers/infrastructure/
     └── ui_base.py                      # Base UI test class
 ```
 

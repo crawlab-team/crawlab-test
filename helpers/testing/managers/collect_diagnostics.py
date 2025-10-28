@@ -6,9 +6,9 @@ Collects Docker logs, system information, and test artifacts for troubleshooting
 Useful for debugging test failures both locally and in CI environments.
 
 Usage:
-    ./helpers/tools/collect_diagnostics.py
-    ./helpers/tools/collect_diagnostics.py --output-dir /tmp/diagnostics
-    ./helpers/tools/collect_diagnostics.py --containers master worker
+    ./helpers/testing/managers/collect_diagnostics.py
+    ./helpers/testing/managers/collect_diagnostics.py --output-dir /tmp/diagnostics
+    ./helpers/testing/managers/collect_diagnostics.py --containers master worker
 """
 
 import argparse

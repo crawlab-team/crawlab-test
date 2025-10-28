@@ -286,7 +286,7 @@ When human judgment is required:
 1. **Identify the scenario**: "Test gRPC streaming under high load"
 2. **Create the spec**: `specs/cluster/CLS-004-grpc-load-test.md`
 3. **Create Python runner**: `runners/cluster/CLS_004_grpc_load_test.py`
-4. **Use helper libraries**: Import from `helpers/libs/` for common operations
+4. **Use helper libraries**: Import from `helpers/infrastructure/` for common operations
 5. **Execute and validate**: `./cli.py --spec CLS-004`
 6. **Document performance**: Include timing and resource usage
 

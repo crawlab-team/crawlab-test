@@ -121,12 +121,12 @@ docker compose -f docker-compose.test.yml ps
 
 ### Container Management
 
-Use `helpers/tools/docker_manager.py` for container operations:
+Use `helpers/testing/managers/docker_manager.py` for container operations:
 
 ```bash
-./helpers/tools/docker_manager.py --action health
-./helpers/tools/docker_manager.py --action list
-./helpers/tools/docker_manager.py --action disconnect --container worker-1
+./helpers/testing/managers/docker_manager.py --action health
+./helpers/testing/managers/docker_manager.py --action list
+./helpers/testing/managers/docker_manager.py --action disconnect --container worker-1
 ```
 
 ### Diagnostics Collection
@@ -135,16 +135,16 @@ Collect Docker logs and system diagnostics for troubleshooting:
 
 ```bash
 # Collect all diagnostics (logs, system info, network config)
-./helpers/tools/collect_diagnostics.py
+./helpers/testing/managers/collect_diagnostics.py
 
 # Specify output directory
-./helpers/tools/collect_diagnostics.py --output-dir /tmp/diagnostics
+./helpers/testing/managers/collect_diagnostics.py --output-dir /tmp/diagnostics
 
 # Collect logs from specific containers only
-./helpers/tools/collect_diagnostics.py --containers master worker
+./helpers/testing/managers/collect_diagnostics.py --containers master worker
 
 # Use custom namespace (for CI environments)
-./helpers/tools/collect_diagnostics.py --namespace crawlab_ci_12345
+./helpers/testing/managers/collect_diagnostics.py --namespace crawlab_ci_12345
 ```
 
 **Collected artifacts include**:

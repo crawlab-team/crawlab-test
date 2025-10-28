@@ -88,7 +88,7 @@ Common differences between local and CI:
 uv run ./cli.py --spec <TEST-ID> --timeout 30
 
 # Add health checks before proceeding
-./helpers/tools/docker_manager.py --action health
+./helpers/testing/managers/docker_manager.py --action health
 
 # Verify all services are up
 docker ps --format "table {{.Names}}\t{{.Status}}"
@@ -274,7 +274,7 @@ done
 uv run ./cli.py --spec <TEST-ID> --ci
 
 # Check Docker state
-./helpers/tools/docker_manager.py --action health
+./helpers/testing/managers/docker_manager.py --action health
 ```
 
 ### After CI Failure
@@ -314,7 +314,7 @@ uv run ./cli.py --spec <TEST-ID> --ci
 docker-compose logs -f master
 
 # Check container health
-./helpers/tools/docker_manager.py --action health
+./helpers/testing/managers/docker_manager.py --action health
 
 # Download latest CI artifacts
 gh run download $(gh run list --limit 1 --json databaseId -q '.[0].databaseId')
