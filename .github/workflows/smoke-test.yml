@@ -31,6 +31,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e .
+          pip install ruff
           echo "✅ Package installed in editable mode (includes all dependencies)"
       
       - name: Verify CLI works
@@ -38,6 +39,13 @@ jobs:
           chmod +x cli.py
           ./cli.py --help
           ./cli.py --list-specs
+      
+      - name: Run Ruff linter
+        run: |
+          echo "Running Ruff checks for critical issues..."
+          # Only check for fatal errors: undefined names, syntax errors, import issues
+          ruff check . --select=F,E9 --output-format=github
+          echo "✅ No critical Ruff violations found"
       
       - name: Check Python syntax
         run: |
@@ -104,6 +112,7 @@ jobs:
             echo "❌ Spec finder tests failed" >> $GITHUB_STEP_SUMMARY
           fi
           
+          echo "✅ Ruff code quality checks completed" >> $GITHUB_STEP_SUMMARY
           echo "✅ Python syntax checks completed" >> $GITHUB_STEP_SUMMARY
           echo "✅ CLI is executable and functional" >> $GITHUB_STEP_SUMMARY
           echo "✅ Test structure validated" >> $GITHUB_STEP_SUMMARY
