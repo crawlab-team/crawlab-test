@@ -238,11 +238,21 @@ class DatabaseIntegrationTest:
             time.sleep(1)  # Brief delay for connection initialization
             result = self.db_helper.test_connection(db_id)
             
-            if result.get('status') == 'online' or result.get('status') == 'success':
+            # Check for various success indicators
+            status = result.get('status', '')
+            if status in ['online', 'success', 'ok']:
                 self.record_result(f"{db_type}_connection", True)
             else:
+                error_msg = result.get('message', result.get('error', 'Unknown error'))
+                # Check for common database unavailability errors
+                if any(indicator in str(error_msg).lower() for indicator in [
+                    'lookup', 'server misbehaving', 'connection refused', 
+                    'no such host', 'dial tcp', 'timeout', 'cannot connect'
+                ]):
+                    self.logger.warning(f"  Database service may not be running: {error_msg}")
+                    self.logger.warning(f"  Start databases with: docker compose -f docker-compose.test.yml up -d {db_type}")
                 self.record_result(f"{db_type}_connection", False, 
-                                 f"Connection failed: {result.get('message', 'Unknown error')}")
+                                 f"Connection failed: {error_msg}")
                 all_passed = False
         
         return all_passed

@@ -225,7 +225,11 @@ class DatabaseAPIHelper:
             )
             response.raise_for_status()
             result = response.json()
-            return result.get('data', {})
+            # API returns {"status": "ok", "message": "success"} or {"error": "..."} directly
+            # Not wrapped in 'data' field
+            if 'error' in result:
+                return {"status": "error", "message": result['error']}
+            return result
         except Exception as e:
             self.logger.error(f"Failed to test connection: {e}")
             return {"status": "error", "message": str(e)}
@@ -330,7 +334,7 @@ class DatabaseAPIHelper:
             True if successful, False otherwise
         """
         try:
-            response = requests.post(
+            response = requests.delete(
                 f"{self.base_url}/databases/{database_id}/tables/drop",
                 json={"database_name": database_name, "table_name": table_name},
                 headers=self._get_headers(),
@@ -475,8 +479,12 @@ class DatabaseAPIHelper:
                 json={
                     "database_name": database_name,
                     "table_name": table_name,
-                    "action": "insert",
-                    "data": row
+                    "rows": [
+                        {
+                            "status": "new",
+                            "row": row
+                        }
+                    ]
                 },
                 headers=self._get_headers(),
                 timeout=10
@@ -508,9 +516,13 @@ class DatabaseAPIHelper:
                 json={
                     "database_name": database_name,
                     "table_name": table_name,
-                    "action": "update",
-                    "data": data,
-                    "conditions": conditions
+                    "rows": [
+                        {
+                            "status": "updated",
+                            "filter": conditions,
+                            "update": data
+                        }
+                    ]
                 },
                 headers=self._get_headers(),
                 timeout=10
@@ -541,8 +553,12 @@ class DatabaseAPIHelper:
                 json={
                     "database_name": database_name,
                     "table_name": table_name,
-                    "action": "delete",
-                    "conditions": conditions
+                    "rows": [
+                        {
+                            "status": "deleted",
+                            "filter": conditions
+                        }
+                    ]
                 },
                 headers=self._get_headers(),
                 timeout=10
