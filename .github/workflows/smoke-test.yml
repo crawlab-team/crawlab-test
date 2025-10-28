@@ -45,6 +45,7 @@ jobs:
           python -m py_compile crawlab_test/backends/*.py
           python -m py_compile crawlab_test/core/*.py
           python -m py_compile crawlab_test/helpers/*/*.py
+          python -m py_compile crawlab_test/runners/*/*.py
       
       - name: Verify test structure
         run: |

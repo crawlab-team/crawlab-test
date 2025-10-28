@@ -81,5 +81,5 @@ line-length = 120
 target-version = "py38"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "UP"]
-ignore = ["E501"]  # Line length handled by formatter
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "RUF"]
+ignore = ["E501", "E722"]

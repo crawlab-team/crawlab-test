@@ -91,6 +91,9 @@ curl -s http://localhost:8080/api/openapi.json | jq '.paths."/tasks".patch'
 - **Type hints** for function signatures
 - **Error handling**: Handle exceptions explicitly
 - **Dependencies**: Use `uv` for management (pip fallback available)
+- **Code style**: Ruff enforced (120 char lines, sorted imports, modern Python syntax)
+
+**Before committing**: `uv run ruff format . && uv run ruff check --fix .`
 
 ### TypeScript (UI Tests)
 - **Strict mode** enabled
