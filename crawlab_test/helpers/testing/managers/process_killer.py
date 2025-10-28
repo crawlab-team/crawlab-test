@@ -16,6 +16,8 @@ import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
+import psutil
+
 from crawlab_test.helpers.infrastructure.api_client import CrawlabAPIClient
 from crawlab_test.helpers.infrastructure.database import TASK_STATUS_RUNNING, DatabaseHelper
 from crawlab_test.helpers.infrastructure.system import ProcessManager
