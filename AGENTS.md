@@ -1,292 +1,138 @@
 # Crawlab Test - AI Agent Guidelines
 
-## 🎯 Testing Principles
+## 🎯 Core Principles
 
-**Test Quality**: Tests should be deterministic, maintainable, and provide real value.
+**Test Quality**: Deterministic, maintainable, and valuable tests only.
 
-- **Spec-driven development**: Write specifications before implementation
-- **Deterministic execution**: Same test → Same result every time
-- **Reusable components**: DRY principle - write once, use everywhere
-- **Clear documentation**: Each test should be self-explanatory
+**Key Philosophies**:
+- **Spec-driven**: Write specifications before implementation
+- **Deterministic**: Same test → Same result every time
+- **DRY**: Reusable components over duplication
+- **No unnecessary docs**: Code and tests are the documentation
 
-### ⚠️ CRITICAL: NO UNNECESSARY DOCUMENTATION
-**DO NOT create, update, or maintain any of the following:**
-- Summary documents (e.g., `SUMMARY.md`, `CHANGES.md`, `UPDATES.md`)
-- Progress tracking files (e.g., `PROGRESS.md`, `STATUS.md`)
-- Redundant documentation that duplicates code comments
-- Session notes, implementation logs, or work journals
+### ⚠️ Documentation Policy
 
-**Only documentation allowed:**
-- Updates to existing critical docs (README, TESTING_SOP, etc.) when materially outdated
-- Test specifications in `specs/` following [SPEC_TEMPLATE.md](SPEC_TEMPLATE.md)
-- Code comments explaining complex logic (not obvious operations)
-- Helper script documentation when adding new utilities
+**FORBIDDEN**:
+- Summary/progress files (`SUMMARY.md`, `CHANGES.md`, `PROGRESS.md`)
+- Session notes, implementation logs, work journals
 
-**For multi-session tasks:**
-- Use the built-in `manage_todo_list` tool to track progress
-- Git commit messages provide the historical record
-- If you must leave notes, use a `tmp/` directory (add to .gitignore)
+**ALLOWED**:
+- Test specs in `specs/` following [SPEC_TEMPLATE.md](SPEC_TEMPLATE.md)
+- Updates to critical docs when materially outdated
+- Helper script documentation
+- Code comments for complex logic only
 
-**When in doubt: Don't create documentation. Write tests.**
+**Multi-session tasks**: Use `manage_todo_list` tool (persists automatically)
 
 ## 🏗️ Repository Structure
 
-### Directory Layout
-- **`specs/`**: Test specifications in markdown (api, cluster, database, dependencies, scheduler, system, ui)
-- **`runners/`**: Python test runners that execute specifications
-- **`helpers/`**: Reusable utilities and helper scripts
-- **`backends/`**: Backend implementations (script, copilot, playwright)
-- **`core/`**: Core modules (config, spec finder, docker detection, result handler)
-- **`ui-playwright/`**: TypeScript/Playwright UI test suite
-- **`docs/`**: Testing framework documentation
-- **`results/`**: Test execution results (gitignored)
+**Key Directories**:
+- `specs/` - Test specifications (api, cluster, database, dependencies, scheduler, system, ui)
+- `runners/` - Python test runners that execute specifications
+- `helpers/` - Reusable utilities and helper scripts
+- `backends/` - Backend implementations (script, copilot, playwright)
+- `docs/` - Testing framework documentation
 
 ## 🧪 Testing Workflow
 
-### Before Creating Tests
-
-1. **Check existing patterns**: Search for similar test specs and runners
-2. **Understand the test category**: API, cluster, database, dependencies, scheduler, system, or UI?
-3. **Choose the right backend**: Script (Python), Copilot (AI-assisted), or Playwright (TypeScript UI)
-4. **Review TESTING_SOP.md**: Follow established patterns and guidelines
-
 ### Test Categories
 
-- **API tests**: Backend API validation, endpoint testing, data integrity
-  - **CRITICAL**: Always check `http://localhost:8080/api/openapi.json` before writing API tests
-  - See [specs/api/README.md](specs/api/README.md) for comprehensive API testing guide
-  - Verify request/response formats, wrappers, and field requirements
-  - **Common patterns**:
-    - Some endpoints need `{"data": {...}}` wrapper, others don't
-    - Task run/restart returns **array of IDs**, not single object
-    - Batch operations use specific field names (e.g., `"update"` not `"data"`)
-    - DELETE can use JSON body: `{"ids": [...]}` not query params
-    - Field names are **case-sensitive** - verify in OpenAPI schema
-- **Cluster tests**: Distributed system behavior, node disconnection/reconnection
-- **Database tests**: Database integration, connection management, CRUD operations
-- **Dependencies tests**: Package installation, dependency management
-- **Scheduler tests**: Task execution, reconciliation, process verification
-- **System tests**: Configuration, locale support, system-level operations
-- **UI tests**: End-to-end user workflows, browser automation
+Choose the right category and backend:
 
-### Test Execution Methods
+| Category | Backend | Best For |
+|----------|---------|----------|
+| **API** | script | Backend validation, endpoint testing (fast: ~10s) |
+| **Cluster** | script | Distributed system, node operations |
+| **Database** | script | DB integration, connection management |
+| **Scheduler** | script | Task execution, process verification |
+| **UI** | playwright | End-to-end workflows (slow: ~10-15min) |
 
-| Backend | Best For | Tools |
-|---------|----------|-------|
-| **script** | API, cluster, system tests | Python runners with helper libraries |
-| **copilot** | Complex scenarios, AI-assisted execution | GitHub Copilot CLI |
-| **playwright** | UI tests, browser automation | TypeScript/Playwright framework |
+### Creating Tests
 
-### Creating New Tests
+1. **Write spec**: `specs/[category]/[TEST-ID]-[name].md` (use [SPEC_TEMPLATE.md](SPEC_TEMPLATE.md))
+2. **Implement runner**: `runners/[category]/[TEST-ID]_[name].py` (if script backend)
+3. **Test locally**: `uv run ./cli.py --spec [TEST-ID]`
+4. **Verify determinism**: Run multiple times
 
-1. **Write specification**: Copy [SPEC_TEMPLATE.md](SPEC_TEMPLATE.md) to `specs/[category]/[TEST-ID]-[name].md`
-2. **Implement runner** (if using script backend): Create `runners/[category]/[TEST-ID]_[name].py`
-3. **Add helpers** (if needed): Create reusable utilities in `helpers/[category]/`
-4. **Test locally**: Run `uv run ./cli.py --spec [TEST-ID]`
-5. **Verify determinism**: Run test multiple times to ensure consistent results
+### Critical: API Testing
 
-### Testing Best Practices
+**ALWAYS check OpenAPI spec first**: `http://localhost:8080/api/openapi.json`
 
-- **Fast validation**: Prefer API tests (10s) over UI tests (10-15min) for backend validation
-- **Deterministic UI tests**: Use Python/Playwright test runners, not autonomous AI
-- **Docker support**: Tests auto-detect Docker environments automatically
-- **Error handling**: Tests should handle failures gracefully and report clear errors
-- **Cleanup**: Always clean up test data, containers, and processes after tests
-- **Screenshots**: UI tests should capture screenshots at critical steps
-- **Logging**: Detailed logging for debugging failed test runs
+```bash
+# Check endpoint format
+curl -s http://localhost:8080/api/openapi.json | jq '.paths."/tasks".patch'
+```
 
-### API Helper Development
+**Common patterns**:
+- Some endpoints need `{"data": {...}}` wrapper, others don't
+- Task run/restart returns **array of IDs**, not single object
+- Batch operations: field name is `"update"` not `"data"`
+- DELETE can use JSON body: `{"ids": [...]}`
+- Field names are **case-sensitive**
 
-When creating or updating API helpers (`helpers/api/*.py`):
+📖 **Full details**: [specs/api/README.md](specs/api/README.md) | [docs/API_TEST_TROUBLESHOOTING.md](docs/API_TEST_TROUBLESHOOTING.md)
 
-1. **Check OpenAPI spec first**: Verify request/response formats before implementation
-   ```bash
-   curl -s http://localhost:8080/api/openapi.json | jq '.paths."/tasks".patch'
-   curl -s http://localhost:8080/api/openapi.json | jq '.components.schemas.Batch_update_task_listInput'
-   ```
+## 🔧 Code Standards
 
-2. **Handle response formats correctly**:
-   - Some endpoints return objects: `data.get('data', {}).get('_id')`
-   - Some return arrays: `data.get('data', [])[0]`
-   - Check OpenAPI response schema to determine which
+### Python (Test Runners)
+- **Python 3.9+** required
+- **Type hints** for function signatures
+- **Error handling**: Handle exceptions explicitly
+- **Dependencies**: Use `uv` for management (pip fallback available)
 
-3. **Verify field names are case-sensitive**:
-   - Batch update uses `"update"` not `"data"` or `"Update"`
-   - Always match exact field names from OpenAPI schema
+### TypeScript (UI Tests)
+- **Strict mode** enabled
+- **Page object pattern** for maintainability
+- **Async/await** for all browser operations
 
-4. **DELETE can use JSON body**:
-   ```python
-   # Correct approach for batch delete
-   requests.delete(url, headers=headers, json={"ids": [...]})
-   # Not: params={"ids": ",".join(...)}  # Causes "$in needs an array" error
-   ```
-
-5. **Document helper behavior**: Include docstrings with return types and example usage
-
-## 🔧 Development Standards
-
-### Python Code Standards
-- **Python version**: 3.9+ required (for grpcio-tools + protobuf 6.x compatibility)
-- **Type hints**: Use type annotations for function signatures
-- **Error handling**: Always handle exceptions explicitly
-- **Logging**: Use Python logging module for observability
-- **Dependencies**: Use `uv` for dependency management (pip fallback available)
-
-### TypeScript Code Standards (UI tests)
-- **TypeScript**: Strict mode enabled
-- **Playwright**: Follow Playwright best practices
-- **Page Objects**: Use page object pattern for maintainability
-- **Async/await**: Proper async handling for all browser operations
-
-### Test Specification Standards
-- **Markdown format**: Follow [SPEC_TEMPLATE.md](SPEC_TEMPLATE.md) structure
-- **Clear objectives**: Define what the test validates
-- **Prerequisites**: List all required setup steps
-- **Step-by-step**: Detailed execution steps
-- **Success criteria**: Explicit validation criteria
-- **Cleanup**: Document cleanup procedures
+### Test Specifications
+- Follow [SPEC_TEMPLATE.md](SPEC_TEMPLATE.md)
+- Clear objectives and success criteria
+- Detailed execution steps
+- Document cleanup procedures
 
 ## 🚀 Running Tests
 
-### Quick Start
+### Quick Commands
 ```bash
-# Install dependencies (recommended: uv)
-curl -LsSf https://astral.sh/uv/install.sh | sh  # Install uv if needed
-uv sync                              # Fast, reproducible install
-./setup-playwright.sh                # For UI tests
-
-# Or use pip (fallback)
-pip install -r requirements.txt
-
-# List available tests
+# List/search tests
 uv run ./cli.py --list-specs
-
-# Run a specific test
-uv run ./cli.py --spec UI-001
-uv run ./cli.py --spec CLS-001 --backend script
-uv run ./cli.py --spec DB-001 --backend copilot --model gpt-4o
-
-# Search for tests
 uv run ./cli.py --search docker
 
-# Note: Scripts work without 'uv run' if dependencies installed
-```
+# Run specific test
+uv run ./cli.py --spec UI-001
+uv run ./cli.py --spec CLS-001 --backend script
 
-### CI/CD Integration
-```bash
-# Run in CI mode with timeout
+# CI mode with timeout
 uv run ./cli.py --spec UI-001 --ci --timeout 15
-
-# Dry run to preview execution
-uv run ./cli.py --spec UI-001 --dry-run
 ```
 
-### Docker Testing
-```bash
-# Check Docker environment
-./helpers/tools/docker_manager.py --action health
-
-# List Crawlab containers
-./helpers/tools/docker_manager.py --action list
-
-# Test container operations
-./helpers/tools/docker_manager.py --action disconnect --container worker-1
-```
+**Full documentation**: [README.md](README.md) | [TESTING_SOP.md](TESTING_SOP.md)
 
 ## 🔍 Troubleshooting Test Failures
 
-### Investigation Workflow (MUST FOLLOW)
+### Quick Workflow
 
-When API tests fail, follow this **exact order**:
+**For API test failures:**
+1. ✅ Check OpenAPI spec first: `curl -s http://localhost:8080/api/openapi.json | jq '.paths."/endpoint"'`
+2. Compare with helper code implementation
+3. Check infrastructure (Docker, databases, network)
+4. Only then read backend Go code
 
-```
-1. CHECK OPENAPI SPEC FIRST ← START HERE
-   curl -s http://localhost:8080/api/openapi.json | jq '.paths."/endpoint/path"'
-   ↓
-2. Compare request/response format with helper code
-   ↓
-3. Check for infrastructure issues (databases running? network OK?)
-   ↓
-4. (Only if still unclear) Read backend controller code
-```
+**For CI/CD failures:**
+1. Download artifacts (screenshots, logs, system-info)
+2. Reproduce locally with `--ci` flag
+3. Compare local vs CI environment
+4. Check for timing/resource issues
 
-**DO NOT**:
-- ❌ Start with manual curl testing without checking spec
-- ❌ Jump straight to reading Go code
-- ❌ Make assumptions about API format
-- ❌ Batch-update todos - mark in-progress/completed individually
+**DO NOT:**
+- ❌ Guess API formats without checking spec
+- ❌ Batch-update todos (mark individually)
+- ❌ Skip investigation and re-run blindly
 
-**Common Mistakes to Avoid**:
-- Assuming all responses wrapped in `{"data": {...}}`
-- Using wrong HTTP methods (POST vs DELETE vs PUT)
-- Incorrect field names (case-sensitive!)
-- Wrong request body structure (check OpenAPI schema)
-
-### Using GitHub MCP Tools
-
-When tests fail in CI/CD, use GitHub MCP tools to investigate:
-
-**1. List Recent Workflow Runs**
-```bash
-# Search for failed test runs (use mcp_github_search_issues for workflow-related issues)
-# Or check GitHub Actions directly through the repository
-```
-
-**2. Access Workflow Logs**
-- GitHub Actions logs contain detailed test execution information
-- Look for patterns: timeout errors, assertion failures, connection issues
-- Check job steps: setup, test execution, cleanup
-
-**3. Download Test Artifacts**
-- Test results (JSON reports)
-- Screenshots (for UI tests)
-- System information (Docker containers, network state)
-- Log files (application logs, test runner logs)
-
-**4. Analyze Common Failure Patterns**
-
-| Failure Type | Investigation Steps | Tools to Use |
-|--------------|---------------------|--------------|
-| **Timeout** | Check workflow duration, container health, network delays | Workflow logs, artifact analysis |
-| **Flaky test** | Compare multiple runs, identify non-deterministic steps | Issue search, workflow comparison |
-| **Environment** | Verify Docker state, dependencies, configuration | Artifact system-info, workflow logs |
-| **Assertion** | Review test output, expected vs actual values | Test result artifacts, logs |
-
-**5. Create Issues for Persistent Failures**
-- Use `mcp_github_create_issue` to track test failures
-- Include: Test ID, failure pattern, reproduction steps, logs
-- Tag with appropriate labels: `bug`, `test-failure`, `flaky-test`
-- Link to failed workflow run for context
-
-**6. Comment on Existing Issues**
-- Use `mcp_github_add_issue_comment` to add findings
-- Update with new failure occurrences or patterns
-- Share analysis and potential root causes
-
-### Troubleshooting Workflow
-
-1. **Identify the failure**: Check CI/CD status, note which test failed
-2. **Gather context**: Use GitHub MCP tools to access logs and artifacts
-3. **Reproduce locally**: Run the test with same configuration
-4. **Analyze differences**: Compare local vs CI environment
-5. **Fix and verify**: Make changes, run test multiple times for determinism
-6. **Document findings**: Update test spec if needed, close related issues
-
-### Common CI/CD Issues
-
-- **Docker state**: Containers not cleaned up between runs
-- **Timing issues**: Race conditions, insufficient wait times
-- **Resource constraints**: Memory limits, CPU throttling in CI
-- **Network flakiness**: API timeouts, connection resets
-- **Test dependencies**: Tests assuming specific initial state
-
-### Best Practices
-
-- **Always check artifacts first**: Most failures have clues in screenshots or logs
-- **Look for patterns**: Single failure vs consistent failure vs flaky behavior
-- **Test in CI conditions**: Use `--ci` flag to simulate CI environment locally
-- **Update test specs**: Document known issues and workarounds
-- **Close the loop**: Comment on issues when fixed, verify in multiple runs
+📖 **Full guides**: 
+- [API Test Troubleshooting](docs/API_TEST_TROUBLESHOOTING.md)
+- [CI/CD Troubleshooting](docs/CI_TROUBLESHOOTING.md)
 
 ## 📋 Decision Framework
 
