@@ -248,9 +248,10 @@ jobs:
       - name: Install dependencies
         run: uv sync
       
-      - name: Install crawlab-test package
+      - name: Install crawlab-test package in editable mode
         run: |
-          echo "✅ Package installed via uv sync"
+          uv pip install -e .
+          echo "✅ Package installed in editable mode"
       
       - name: Install Playwright (UI tests only)
         if: matrix.category == 'ui'

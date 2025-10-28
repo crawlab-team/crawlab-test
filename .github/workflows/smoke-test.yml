@@ -30,9 +30,10 @@ jobs:
       - name: Set up Python
         run: uv python install ${{ env.PYTHON_VERSION }}
       
-      - name: Install crawlab-test package
+      - name: Install crawlab-test package in editable mode
         run: |
           uv sync
+          uv pip install -e .
           uv tool install ruff
           echo "✅ Package installed in editable mode (includes all dependencies)"
       
