@@ -36,6 +36,9 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Install all dependencies (including Python if needed)
 uv sync
 
+# Install crawlab-test package in editable mode (REQUIRED)
+uv pip install -e .
+
 # Install Playwright browsers (required for UI tests)
 ./setup-playwright.sh
 
@@ -49,8 +52,8 @@ uv sync
 #### Using pip (Fallback)
 
 ```bash
-# Install Python dependencies
-pip install -r requirements.txt
+# Install crawlab-test package in editable mode (REQUIRED - includes all dependencies)
+pip install -e .
 
 # Install Playwright browsers
 ./setup-playwright.sh

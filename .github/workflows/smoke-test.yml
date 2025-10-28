@@ -27,10 +27,11 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
       
-      - name: Install dependencies
+      - name: Install crawlab-test package
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -e .
+          echo "✅ Package installed in editable mode (includes all dependencies)"
       
       - name: Verify CLI works
         run: |
@@ -41,8 +42,9 @@ jobs:
       - name: Check Python syntax
         run: |
           python -m py_compile cli.py
-          python -m py_compile backends/*.py
-          python -m py_compile core/*.py
+          python -m py_compile crawlab_test/backends/*.py
+          python -m py_compile crawlab_test/core/*.py
+          python -m py_compile crawlab_test/helpers/*/*.py
       
       - name: Verify test structure
         run: |
@@ -65,13 +67,18 @@ jobs:
             fi
           done
           
-          # Check that backends exist
-          if [ ! -f "backends/script_backend.py" ]; then
+          # Check that package structure exists
+          if [ ! -d "crawlab_test" ]; then
+            echo "❌ crawlab_test package not found"
+            exit 1
+          fi
+          
+          if [ ! -f "crawlab_test/backends/script_backend.py" ]; then
             echo "❌ script_backend.py not found"
             exit 1
           fi
           
-          if [ ! -f "backends/copilot_backend.py" ]; then
+          if [ ! -f "crawlab_test/backends/copilot_backend.py" ]; then
             echo "❌ copilot_backend.py not found"
             exit 1
           fi

@@ -26,19 +26,24 @@
 
 ## 🏗️ Repository Structure
 
-**Key Directories**:
+**Package Structure** (pip-installable):
+- `crawlab_test/` - Main Python package (installed via `pip install -e .`)
+  - `backends/` - Backend implementations (script, copilot, playwright)
+  - `core/` - Core framework (config, parallel execution, spec finder)
+  - `helpers/` - Reusable utilities organized by purpose:
+    - `api/` - API client helpers (auth, spider, task, etc.)
+    - `infrastructure/` - Core infrastructure (API client, Docker, database, system utilities)
+    - `testing/` - Testing tools (monitors, simulators, validators, managers)
+    - `cluster/` - Cluster-specific utilities (gRPC, file sync)
+    - `ui/` - UI test helpers (actions, browser, validators)
+    - `suites/` - Reusable test suites
+  - `runners/` - Python test runners that execute specifications
+  - `cli.py` - Main CLI module (used by package entry point)
+
+**Other Directories**:
 - `specs/` - Test specifications (api, cluster, database, dependencies, scheduler, system, ui)
-- `runners/` - Python test runners that execute specifications
-- `helpers/` - Reusable utilities organized by purpose:
-  - `api/` - API client helpers (auth, spider, task, etc.)
-  - `infrastructure/` - Core infrastructure (API client, Docker, database, system utilities)
-  - `testing/` - Testing tools (monitors, simulators, validators, managers)
-  - `cluster/` - Cluster-specific utilities (gRPC, file sync)
-  - `ui/` - UI test helpers (actions, browser, validators)
-  - `suites/` - Reusable test suites
-- `backends/` - Backend implementations (script, copilot, playwright)
 - `docs/` - Testing framework documentation
-- `core/` - Core framework (config, parallel execution, spec finder)
+- `cli.py` - CLI wrapper (imports from package)
 
 ## 🧪 Testing Workflow
 

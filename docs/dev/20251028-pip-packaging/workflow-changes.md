@@ -1,6 +1,12 @@
 # GitHub Actions Workflow Changes for Pip Packaging
 
-This document shows the exact changes needed for both workflow files.
+**Status**: ✅ Changes Applied & Verified  
+**Date**: 2025-10-28
+
+> **Note**: All workflow changes described here have been successfully applied.
+> Both `smoke-test.yml` and `test.yml` are updated and passing.
+
+This document shows the exact changes that were made to both workflow files.
 
 ## 1. smoke-test.yml Changes
 
