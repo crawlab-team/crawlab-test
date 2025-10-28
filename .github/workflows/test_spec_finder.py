@@ -4,10 +4,7 @@
 import sys
 from pathlib import Path
 
-# Add parent directory to path to import core modules
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
-from core.spec_finder import SpecFinder
+from crawlab_test.core.spec_finder import SpecFinder
 
 
 def main():
