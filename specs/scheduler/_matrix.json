@@ -1,4 +1,15 @@
 {
   "timeout": 30,
-  "default_method": "script"
+  "default_method": "script",
+  "tests": {
+    "SCH-001": {
+      "timeout": 30,
+      "method": "script"
+    },
+    "SCH-002": {
+      "timeout": 60,
+      "method": "script",
+      "description": "Task execution pressure test with configurable load levels"
+    }
+  }
 }

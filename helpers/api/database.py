@@ -627,3 +627,180 @@ class DatabaseAPIHelper:
         except Exception as e:
             self.logger.error(f"Failed to get column types: {e}")
             return None
+    
+    # ORM Operations
+    
+    def get_orm_compatibility(self, database_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Check ORM compatibility for database
+        
+        Args:
+            database_id: Database ID
+            
+        Returns:
+            Compatibility info or None on failure
+        """
+        try:
+            response = requests.get(
+                f"{self.base_url}/databases/{database_id}/orm/compatibility",
+                headers=self._get_headers(),
+                timeout=10
+            )
+            response.raise_for_status()
+            result = response.json()
+            return result.get('data')
+        except Exception as e:
+            self.logger.error(f"Failed to get ORM compatibility: {e}")
+            return None
+    
+    def get_orm_status(self, database_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get ORM status for database
+        
+        Args:
+            database_id: Database ID
+            
+        Returns:
+            ORM status info or None on failure
+        """
+        try:
+            response = requests.get(
+                f"{self.base_url}/databases/{database_id}/orm/status",
+                headers=self._get_headers(),
+                timeout=10
+            )
+            response.raise_for_status()
+            result = response.json()
+            return result.get('data')
+        except Exception as e:
+            self.logger.error(f"Failed to get ORM status: {e}")
+            return None
+    
+    def update_orm_status(self, database_id: str, enabled: bool) -> bool:
+        """
+        Enable or disable ORM for database
+        
+        Args:
+            database_id: Database ID
+            enabled: True to enable ORM, False to disable
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            response = requests.put(
+                f"{self.base_url}/databases/{database_id}/orm/status",
+                json={"enabled": enabled},
+                headers=self._get_headers(),
+                timeout=10
+            )
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to update ORM status: {e}")
+            return False
+    
+    def initialize_orm(self, database_id: str) -> bool:
+        """
+        Initialize ORM settings for database
+        
+        Args:
+            database_id: Database ID
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            response = requests.post(
+                f"{self.base_url}/databases/{database_id}/orm/initialize",
+                headers=self._get_headers(),
+                timeout=30  # ORM initialization might take longer
+            )
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to initialize ORM: {e}")
+            return False
+    
+    # Export Operations
+    
+    def export_data(self, database_id: str, export_type: str, target: str,
+                    filter_query: Optional[str] = None) -> Optional[str]:
+        """
+        Start a data export
+        
+        Args:
+            database_id: Database ID
+            export_type: Type of export (csv, json)
+            target: Export target (table name or collection name)
+            filter_query: Optional filter query
+            
+        Returns:
+            Export ID or None on failure
+        """
+        try:
+            params = {"target": target}
+            if filter_query:
+                params["filter"] = filter_query
+                
+            response = requests.post(
+                f"{self.base_url}/databases/{database_id}/export/{export_type}",
+                params=params,
+                headers=self._get_headers(),
+                timeout=30
+            )
+            response.raise_for_status()
+            result = response.json()
+            return result.get('data')
+        except Exception as e:
+            self.logger.error(f"Failed to start export: {e}")
+            return None
+    
+    def get_export_status(self, database_id: str, export_type: str, export_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get export status
+        
+        Args:
+            database_id: Database ID
+            export_type: Type of export (csv, json)
+            export_id: Export ID
+            
+        Returns:
+            Export status info or None on failure
+        """
+        try:
+            response = requests.get(
+                f"{self.base_url}/databases/{database_id}/export/{export_type}/{export_id}",
+                headers=self._get_headers(),
+                timeout=10
+            )
+            response.raise_for_status()
+            result = response.json()
+            return result.get('data')
+        except Exception as e:
+            self.logger.error(f"Failed to get export status: {e}")
+            return None
+    
+    def download_export(self, database_id: str, export_type: str, export_id: str) -> Optional[bytes]:
+        """
+        Download export file
+        
+        Args:
+            database_id: Database ID
+            export_type: Type of export (csv, json)
+            export_id: Export ID
+            
+        Returns:
+            Export file content or None on failure
+        """
+        try:
+            response = requests.get(
+                f"{self.base_url}/databases/{database_id}/export/{export_type}/{export_id}/download",
+                headers=self._get_headers(),
+                timeout=30
+            )
+            response.raise_for_status()
+            return response.content
+        except Exception as e:
+            self.logger.error(f"Failed to download export: {e}")
+            return None
