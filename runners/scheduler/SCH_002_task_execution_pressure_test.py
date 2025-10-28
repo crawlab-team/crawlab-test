@@ -444,6 +444,7 @@ def main():
     parser.add_argument('--verbose', action='store_true', help='Verbose output')
     parser.add_argument('--base-url', default='http://localhost:8080/api', help='API base URL')
     parser.add_argument('--output', help='Save results to JSON file')
+    parser.add_argument('--ci', action='store_true', help='CI mode (minimal output, strict validation)')
     
     args = parser.parse_args()
     
