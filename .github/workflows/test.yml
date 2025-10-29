@@ -594,22 +594,31 @@ jobs:
               echo "" >> $GITHUB_STEP_SUMMARY
             fi
             
-            # Add collapsible section for detailed logs (from each spec's summary)
-            echo "<details>" >> $GITHUB_STEP_SUMMARY
-            echo "<summary>📄 Detailed Test Logs (Click to expand)</summary>" >> $GITHUB_STEP_SUMMARY
+            # Add collapsible sections for detailed logs - one per test case
+            echo "### 📄 Detailed Test Logs" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             
-            # Include all individual test summaries if they exist
+            # Include all individual test summaries with their own expandable sections
             for SUMMARY_FILE in results/summary_*.md; do
               if [ -f "$SUMMARY_FILE" ]; then
-                echo "---" >> $GITHUB_STEP_SUMMARY
+                # Extract test spec ID from the summary file content
+                SPEC_ID=$(grep -oP '(?<=Specification.*: ).*' "$SUMMARY_FILE" | head -1 || echo "Unknown")
+                TEST_STATUS=$(grep -oP '(?<=Status.*: ).*' "$SUMMARY_FILE" | head -1 || echo "Unknown")
+                
+                # Extract just the spec filename for cleaner display
+                SPEC_NAME=$(basename "$SPEC_ID" .md 2>/dev/null || echo "$SPEC_ID")
+                
+                # Create expandable section for this test
+                echo "<details>" >> $GITHUB_STEP_SUMMARY
+                echo "<summary>$TEST_STATUS - $SPEC_NAME</summary>" >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
                 cat "$SUMMARY_FILE" >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo "</details>" >> $GITHUB_STEP_SUMMARY
                 echo "" >> $GITHUB_STEP_SUMMARY
               fi
             done
             
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "</details>" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             
             # Add information about artifacts
