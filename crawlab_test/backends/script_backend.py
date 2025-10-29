@@ -18,12 +18,13 @@ from .base import TestBackend
 class ScriptBackend(TestBackend):
     """Backend for executing Python/Shell test scripts"""
 
-    def __init__(self, base_dir: Optional[Path] = None):
+    def __init__(self, base_dir: Optional[Path] = None, runners_dir: Optional[Path] = None):
         """
         Initialize ScriptBackend
 
         Args:
             base_dir: Base directory for tests (repo root for specs, not package dir)
+            runners_dir: Directory containing runner scripts (defaults to package's runners/)
         """
         # For runners, we always use package location since runners/ is part of the package
         # From crawlab_test/backends/script_backend.py, go up one level to crawlab_test/
@@ -41,9 +42,15 @@ class ScriptBackend(TestBackend):
                 base_dir = package_dir.parent
 
         self.base_dir = Path(base_dir)
+        
         # Runners are always in the package directory, not repo root
-        self.runners_dir = package_dir / "runners"
-        self.helpers_dir = package_dir / "helpers"
+        # Allow override for subprocess context where __file__ may not resolve correctly
+        if runners_dir is not None:
+            self.runners_dir = Path(runners_dir)
+            self.helpers_dir = self.runners_dir.parent / "helpers"
+        else:
+            self.runners_dir = package_dir / "runners"
+            self.helpers_dir = package_dir / "helpers"
 
     def get_name(self) -> str:
         """Get backend name"""

@@ -12,19 +12,19 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 
-def _execute_single_spec(spec_info: Tuple[Path, Dict, Path]) -> Dict:
+def _execute_single_spec(spec_info: Tuple[Path, Dict, Path, Optional[Path]]) -> Dict:
     """
     Execute a single test specification (worker function)
 
     This function runs in a separate process and must be pickleable.
 
     Args:
-        spec_info: Tuple of (spec_path, config, base_dir)
+        spec_info: Tuple of (spec_path, config, base_dir, runners_dir)
 
     Returns:
         Result dictionary with test execution details
     """
-    spec_path, config, base_dir = spec_info
+    spec_path, config, base_dir, runners_dir = spec_info
 
     # Import here to avoid pickling issues
     from crawlab_test.backends import CopilotBackend, PlaywrightBackend, ScriptBackend
@@ -42,7 +42,7 @@ def _execute_single_spec(spec_info: Tuple[Path, Dict, Path]) -> Dict:
         backend = None
 
         if backend_name == "script" or backend_name == "auto":
-            script_backend = ScriptBackend(base_dir)
+            script_backend = ScriptBackend(base_dir, runners_dir=runners_dir)
             if script_backend.supports_spec(spec_path):
                 backend = script_backend
 
@@ -105,6 +105,16 @@ class ParallelTestExecutor:
         self.base_dir = Path(base_dir)
         # Default to CPU count but allow override for I/O-bound tests
         self.max_workers = max_workers or multiprocessing.cpu_count()
+        
+        # Calculate runners_dir in main process to avoid __file__ resolution issues in subprocesses
+        # When package is installed via pip, __file__ in subprocess may not resolve correctly
+        try:
+            import crawlab_test
+            package_dir = Path(crawlab_test.__file__).parent
+            self.runners_dir = package_dir / "runners"
+        except (ImportError, AttributeError):
+            # Fallback: assume runners is adjacent to base_dir (development mode)
+            self.runners_dir = self.base_dir / "crawlab_test" / "runners"
 
     def execute_specs(self, spec_paths: List[Path], config: Dict) -> List[Dict]:
         """
@@ -123,7 +133,7 @@ class ParallelTestExecutor:
         # Single spec - no need for parallel execution
         if len(spec_paths) == 1:
             print("Single spec detected, running sequentially")
-            return [_execute_single_spec((spec_paths[0], config, self.base_dir))]
+            return [_execute_single_spec((spec_paths[0], config, self.base_dir, self.runners_dir))]
 
         # Optimize worker count - no point having more workers than tasks
         effective_workers = min(self.max_workers, len(spec_paths))
@@ -141,8 +151,8 @@ class ParallelTestExecutor:
         completed_count = 0
         total_count = len(spec_paths)
 
-        # Prepare work items
-        work_items = [(spec_path, config, self.base_dir) for spec_path in spec_paths]
+        # Prepare work items - include runners_dir calculated in main process
+        work_items = [(spec_path, config, self.base_dir, self.runners_dir) for spec_path in spec_paths]
 
         # Execute in parallel with optimized worker count
         with ProcessPoolExecutor(max_workers=effective_workers) as executor:
