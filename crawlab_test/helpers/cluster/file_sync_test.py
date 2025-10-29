@@ -16,8 +16,8 @@ import time
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from helpers.infrastructure.api_client import CrawlabAPIClient
-from helpers.infrastructure.docker import docker_utils
+from crawlab_test.helpers.infrastructure.api_client import CrawlabAPIClient
+from crawlab_test.helpers.infrastructure.docker import docker_utils
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -59,7 +59,7 @@ class FileSyncTester:
         for i in range(concurrent_tasks):
             task_id = self.client.create_task(self.test_spider_id)
             task_ids.append(task_id)
-            logger.info(f"Created task {i+1}/{concurrent_tasks}: {task_id}")
+            logger.info(f"Created task {i + 1}/{concurrent_tasks}: {task_id}")
 
         # Wait for completion
         results = self._wait_for_tasks(task_ids, timeout=300)
@@ -206,7 +206,7 @@ class FileSyncTester:
         grpc_results = []
 
         for i in range(iterations):
-            logger.info(f"\n--- Iteration {i+1}/{iterations} ---")
+            logger.info(f"\n--- Iteration {i + 1}/{iterations} ---")
 
             # Test HTTP mode
             logger.info("Testing HTTP mode...")

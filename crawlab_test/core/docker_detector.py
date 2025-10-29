@@ -4,17 +4,11 @@ Docker Detection Module
 This module provides functionality to detect and interact with Docker environments.
 """
 
-import sys
-from pathlib import Path
 from typing import Dict, Optional
 
 # Try to import Docker utilities
 try:
-    # Add helpers/common to path
-    helpers_path = Path(__file__).parent.parent / "helpers" / "common"
-    if str(helpers_path) not in sys.path:
-        sys.path.append(str(helpers_path))
-    from docker_utils import docker_utils
+    from crawlab_test.helpers.infrastructure.docker import docker_utils
 except ImportError:
     docker_utils = None
 

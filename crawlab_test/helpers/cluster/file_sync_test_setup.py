@@ -8,7 +8,7 @@ Finds or creates a real spider for file sync testing.
 import sys
 
 # Add parent directory to path
-from helpers.infrastructure.docker import docker_utils
+from crawlab_test.helpers.infrastructure.docker import docker_utils
 
 
 def get_test_data_path():
