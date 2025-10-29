@@ -35,14 +35,14 @@ class ScriptBackend(TestBackend):
             base_dir = package_dir
 
         self.base_dir = Path(base_dir)
-        
+
         # Runners are always in the package directory
         # Allow override for subprocess context (passed from main process)
         if runners_dir is not None:
             self.runners_dir = Path(runners_dir)
         else:
             self.runners_dir = package_dir / "runners"
-            
+
         self.helpers_dir = package_dir / "helpers"
 
     def get_name(self) -> str:

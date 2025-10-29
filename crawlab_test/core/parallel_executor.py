@@ -107,7 +107,7 @@ class ParallelTestExecutor:
         self.base_dir = Path(base_dir)
         # Default to CPU count but allow override for I/O-bound tests
         self.max_workers = max_workers or multiprocessing.cpu_count()
-        
+
         # Calculate runners_dir in main process for reliable subprocess access
         # Always use package location for runners (they're always bundled)
         package_dir = Path(__file__).parent.parent
