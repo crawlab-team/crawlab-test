@@ -601,16 +601,33 @@ jobs:
             # Include all individual test summaries with their own expandable sections
             for SUMMARY_FILE in results/summary_*.md; do
               if [ -f "$SUMMARY_FILE" ]; then
-                # Extract test spec ID from the summary file content
-                SPEC_ID=$(grep -oP '(?<=Specification.*: ).*' "$SUMMARY_FILE" | head -1 || echo "Unknown")
-                TEST_STATUS=$(grep -oP '(?<=Status.*: ).*' "$SUMMARY_FILE" | head -1 || echo "Unknown")
+                # Extract test spec ID from the summary file content using awk for better compatibility
+                SPEC_ID=$(awk -F': ' '/^\*\*Specification\*\*:/ {print $2; exit}' "$SUMMARY_FILE" | xargs)
+                TEST_STATUS=$(awk -F': ' '/^\*\*Status\*\*:/ {print $2; exit}' "$SUMMARY_FILE" | xargs)
+                
+                # Fallback to filename if extraction fails
+                if [ -z "$SPEC_ID" ] || [ "$SPEC_ID" = "-" ]; then
+                  SPEC_ID=$(basename "$SUMMARY_FILE" .md)
+                fi
+                
+                if [ -z "$TEST_STATUS" ] || [ "$TEST_STATUS" = "-" ]; then
+                  TEST_STATUS="❓ UNKNOWN"
+                fi
                 
                 # Extract just the spec filename for cleaner display
                 SPEC_NAME=$(basename "$SPEC_ID" .md 2>/dev/null || echo "$SPEC_ID")
                 
+                # Clean up the spec name - extract just the test ID if it's a path
+                if [[ "$SPEC_NAME" == *"/"* ]]; then
+                  SPEC_NAME=$(basename "$SPEC_NAME")
+                fi
+                
+                # Create a more readable summary line
+                SUMMARY_LINE="Test: ${SPEC_NAME} | Status: ${TEST_STATUS}"
+                
                 # Create expandable section for this test
                 echo "<details>" >> $GITHUB_STEP_SUMMARY
-                echo "<summary>$TEST_STATUS - $SPEC_NAME</summary>" >> $GITHUB_STEP_SUMMARY
+                echo "<summary>${SUMMARY_LINE}</summary>" >> $GITHUB_STEP_SUMMARY
                 echo "" >> $GITHUB_STEP_SUMMARY
                 cat "$SUMMARY_FILE" >> $GITHUB_STEP_SUMMARY
                 echo "" >> $GITHUB_STEP_SUMMARY

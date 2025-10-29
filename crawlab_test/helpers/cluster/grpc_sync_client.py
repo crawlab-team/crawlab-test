@@ -10,7 +10,7 @@ from typing import Dict
 import grpc
 
 # Add paths for imports
-from services import sync_service_pb2, sync_service_pb2_grpc
+from crawlab_test.helpers.cluster.services import sync_service_pb2, sync_service_pb2_grpc
 
 
 def verify_grpc_server_accessible(

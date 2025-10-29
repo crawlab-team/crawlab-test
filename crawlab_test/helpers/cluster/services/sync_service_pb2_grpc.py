@@ -3,7 +3,7 @@
 
 import grpc
 
-from services import sync_service_pb2 as services_dot_sync__service__pb2
+from crawlab_test.helpers.cluster.services import sync_service_pb2 as services_dot_sync__service__pb2
 
 GRPC_GENERATED_VERSION = "1.75.1"
 GRPC_VERSION = grpc.__version__
