@@ -631,8 +631,11 @@ jobs:
                   SPEC_NAME=$(basename "$SPEC_NAME")
                 fi
                 
-                # Create a more readable summary line
-                SUMMARY_LINE="Test: ${SPEC_NAME} | Status: ${TEST_STATUS}"
+                # Extract just emoji and status text (e.g., "✅ PASSED" or "❌ FAILED")
+                STATUS_DISPLAY=$(echo "$TEST_STATUS" | awk '{print $1, $2}')
+                
+                # Create a clean, readable summary line with emoji at the start
+                SUMMARY_LINE="${STATUS_DISPLAY} ${SPEC_NAME}"
                 
                 # Create expandable section for this test
                 echo "<details>" >> $GITHUB_STEP_SUMMARY
