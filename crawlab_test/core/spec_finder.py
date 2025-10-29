@@ -21,15 +21,19 @@ class SpecFinder:
             base_dir: Base directory for tests (defaults to workspace root)
         """
         if base_dir is None:
-            # First, check if current working directory has specs/ directory
-            # This handles pip-installed packages where specs/ is in the repo root
+            # Check CWD first (development/repo mode)
             cwd = Path.cwd()
             if (cwd / "specs").exists():
                 base_dir = cwd
             else:
-                # Fall back to calculating from package location (development mode)
-                # From crawlab_test/core/spec_finder.py, go up 2 levels to repo root
-                base_dir = Path(__file__).parent.parent.parent
+                # Check package location for bundled specs
+                # From crawlab_test/core/spec_finder.py, go up 2 levels to package root
+                package_dir = Path(__file__).parent.parent
+                if (package_dir / "specs").exists():
+                    base_dir = package_dir
+                else:
+                    # Default to CWD
+                    base_dir = cwd
 
         self.base_dir = Path(base_dir)
         self.specs_dir = self.base_dir / "specs"

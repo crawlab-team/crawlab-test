@@ -92,29 +92,26 @@ class ParallelTestExecutor:
             max_workers: Maximum number of parallel workers (defaults to CPU count)
         """
         if base_dir is None:
-            # First, check if current working directory has specs/ directory
-            # This handles pip-installed packages where specs/ is in the repo root
+            # Check CWD first (development/repo mode)
             cwd = Path.cwd()
             if (cwd / "specs").exists():
                 base_dir = cwd
             else:
-                # Fall back to calculating from package location (development mode)
-                # From crawlab_test/core/parallel_executor.py, go up 2 levels to repo root
-                base_dir = Path(__file__).parent.parent.parent
+                # Check package location for bundled specs
+                package_dir = Path(__file__).parent.parent
+                if (package_dir / "specs").exists():
+                    base_dir = package_dir
+                else:
+                    base_dir = cwd
 
         self.base_dir = Path(base_dir)
         # Default to CPU count but allow override for I/O-bound tests
         self.max_workers = max_workers or multiprocessing.cpu_count()
         
-        # Calculate runners_dir in main process to avoid __file__ resolution issues in subprocesses
-        # When package is installed via pip, __file__ in subprocess may not resolve correctly
-        try:
-            import crawlab_test
-            package_dir = Path(crawlab_test.__file__).parent
-            self.runners_dir = package_dir / "runners"
-        except (ImportError, AttributeError):
-            # Fallback: assume runners is adjacent to base_dir (development mode)
-            self.runners_dir = self.base_dir / "crawlab_test" / "runners"
+        # Calculate runners_dir in main process for reliable subprocess access
+        # Always use package location for runners (they're always bundled)
+        package_dir = Path(__file__).parent.parent
+        self.runners_dir = package_dir / "runners"
 
     def execute_specs(self, spec_paths: List[Path], config: Dict) -> List[Dict]:
         """

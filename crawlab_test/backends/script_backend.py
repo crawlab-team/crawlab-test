@@ -23,34 +23,27 @@ class ScriptBackend(TestBackend):
         Initialize ScriptBackend
 
         Args:
-            base_dir: Base directory for tests (repo root for specs, not package dir)
+            base_dir: Base directory for tests (defaults to package location)
             runners_dir: Directory containing runner scripts (defaults to package's runners/)
         """
-        # For runners, we always use package location since runners/ is part of the package
+        # Everything is relative to package location - simple and reliable
         # From crawlab_test/backends/script_backend.py, go up one level to crawlab_test/
         package_dir = Path(__file__).parent.parent
 
-        # base_dir is repo root (where specs/ lives)
+        # Default to package directory
         if base_dir is None:
-            # Check if current working directory has specs/ directory
-            cwd = Path.cwd()
-            if (cwd / "specs").exists():
-                base_dir = cwd
-            else:
-                # Fall back to calculating from package location (development mode)
-                # Package is at /repo/crawlab_test, so repo root is one level up
-                base_dir = package_dir.parent
+            base_dir = package_dir
 
         self.base_dir = Path(base_dir)
         
-        # Runners are always in the package directory, not repo root
-        # Allow override for subprocess context where __file__ may not resolve correctly
+        # Runners are always in the package directory
+        # Allow override for subprocess context (passed from main process)
         if runners_dir is not None:
             self.runners_dir = Path(runners_dir)
-            self.helpers_dir = self.runners_dir.parent / "helpers"
         else:
             self.runners_dir = package_dir / "runners"
-            self.helpers_dir = package_dir / "helpers"
+            
+        self.helpers_dir = package_dir / "helpers"
 
     def get_name(self) -> str:
         """Get backend name"""

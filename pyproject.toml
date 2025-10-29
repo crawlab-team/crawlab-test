@@ -64,6 +64,9 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["crawlab_test"]  # Package the crawlab_test module
 
+[tool.hatch.build.targets.wheel.force-include]
+"specs" = "crawlab_test/specs"  # Bundle specs/ into package for pip installations
+
 [tool.uv]
 dev-dependencies = []
 # Enable package mode for proper pip install -e .

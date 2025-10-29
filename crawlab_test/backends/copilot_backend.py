@@ -23,21 +23,22 @@ class CopilotBackend(TestBackend):
         Initialize CopilotBackend
 
         Args:
-            base_dir: Base directory for tests (repo root)
+            base_dir: Base directory for tests (defaults to auto-detection)
         """
         if base_dir is None:
-            # Check if current working directory has specs/ directory
+            # Check CWD first (development/repo mode)
             cwd = Path.cwd()
             if (cwd / "specs").exists():
                 base_dir = cwd
             else:
-                # Fall back to calculating from package location (development mode)
-                # Package is at /repo/crawlab_test, so repo root is one level up
+                # Check package location for bundled specs
                 package_dir = Path(__file__).parent.parent
-                base_dir = package_dir.parent
+                if (package_dir / "specs").exists():
+                    base_dir = package_dir
+                else:
+                    base_dir = cwd
 
         self.base_dir = Path(base_dir)
-        # Copilot works from repo root
         self.repo_root = self.base_dir
 
     def get_name(self) -> str:

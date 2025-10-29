@@ -26,28 +26,24 @@ from .core import Config, DockerDetector, ParallelTestExecutor, ResultHandler, S
 def get_base_dir() -> Path:
     """
     Get the base directory for the test framework.
-    This should be the repository root, not the package directory.
-
-    When installed via pip, the package could be in site-packages,
-    but specs/ and runners/ are in the working directory (repo root).
+    
+    Checks in order:
+    1. Current working directory (for development/repo use)
+    2. Package directory (for bundled specs in pip install)
     """
     # First, check if current working directory has specs/ directory
-    # This handles pip-installed packages where specs/ is in the repo root
+    # This handles development mode and running from repo root
     cwd = Path.cwd()
     if (cwd / "specs").exists():
         return cwd
 
-    # Fall back to calculating from package location (development mode)
-    # The package is at: /path/to/repo/crawlab_test/
-    # So we go up one level to get: /path/to/repo/
+    # Check package location for bundled specs
+    # When installed via pip, specs/ is bundled into crawlab_test/specs/
     package_dir = Path(__file__).parent
-    repo_root = package_dir.parent
+    if (package_dir / "specs").exists():
+        return package_dir
 
-    # Verify specs/ exists at calculated location
-    if (repo_root / "specs").exists():
-        return repo_root
-
-    # If neither worked, return cwd as last resort
+    # Fall back to CWD if neither location has specs
     return cwd
 
 
@@ -92,25 +88,25 @@ def select_backend(spec_path: Path, backend_arg: str, config: Config, docker_det
 
     # For UI tests, prefer Copilot backend if available (more flexible and autonomous)
     if category == "ui":
-        copilot_backend = CopilotBackend(base_dir)
+        copilot_backend = CopilotBackend()
         if copilot_backend.check_prerequisites():
             print("Auto-selected backend: copilot (preferred for UI tests)")
             return copilot_backend
 
     # 1. Check for script backend (runner scripts)
-    script_backend = ScriptBackend(base_dir)
+    script_backend = ScriptBackend()
     if script_backend.supports_spec(spec_path):
         print("Auto-selected backend: script")
         return script_backend
 
     # 2. Check for UI/Playwright specs
-    playwright_backend = PlaywrightBackend(base_dir)
+    playwright_backend = PlaywrightBackend()
     if playwright_backend.supports_spec(spec_path) and playwright_backend.check_prerequisites():
         print("Auto-selected backend: playwright")
         return playwright_backend
 
     # 3. Default to Copilot if available
-    copilot_backend = CopilotBackend(base_dir)
+    copilot_backend = CopilotBackend()
     if copilot_backend.check_prerequisites():
         print("Auto-selected backend: copilot")
         return copilot_backend
