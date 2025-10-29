@@ -571,14 +571,23 @@ jobs:
               FAILED=$((TOTAL - PASSED))
             fi
             
-            echo "### 📈 Summary" >> $GITHUB_STEP_SUMMARY
+            # Determine overall status emoji
+            if [ $FAILED -eq 0 ]; then
+              STATUS_EMOJI="✅"
+            elif [ $PASSED -eq 0 ]; then
+              STATUS_EMOJI="❌"
+            else
+              STATUS_EMOJI="⚠️"
+            fi
+            
+            echo "### ${STATUS_EMOJI} Summary" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
             echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-            echo "| **Total Tests** | $TOTAL |" >> $GITHUB_STEP_SUMMARY
-            echo "| **✅ Passed** | $PASSED |" >> $GITHUB_STEP_SUMMARY
-            echo "| **❌ Failed** | $FAILED |" >> $GITHUB_STEP_SUMMARY
-            echo "| **Success Rate** | $(awk "BEGIN {printf \"%.1f%%\", ($PASSED/$TOTAL)*100}") |" >> $GITHUB_STEP_SUMMARY
+            echo "| Total Tests | $TOTAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| Passed | $PASSED |" >> $GITHUB_STEP_SUMMARY
+            echo "| Failed | $FAILED |" >> $GITHUB_STEP_SUMMARY
+            echo "| Success Rate | $(awk "BEGIN {printf \"%.1f%%\", ($PASSED/$TOTAL)*100}") |" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             
             # Display test results table if we have detailed results
