@@ -21,22 +21,31 @@ def verify_grpc_available(logger) -> bool:
     """Verify gRPC service is accessible using container-friendly methods"""
     logger.info("Step 1: Verifying gRPC Service Availability")
 
-    # Detect container name dynamically
-    master_result = docker_utils.exec_command("crawlab_master", "echo test", timeout=2)
-    if master_result["exit_code"] != 0:
-        # Try dev naming
-        master_result = docker_utils.exec_command("crawlab_dev_master", "echo test", timeout=2)
-        if master_result["exit_code"] == 0:
-            master = "crawlab_dev_master"
-            worker = "crawlab_dev_worker_01"
-        else:
-            logger.error("  ✗ Could not find crawlab master container")
-            return False
-    else:
-        master = "crawlab_master"
-        worker = "crawlab_worker"
+    # Use docker_utils to find containers dynamically
+    docker_helper = docker_utils.DockerHelper()
 
+    master_container = docker_helper.find_master_container()
+    if not master_container:
+        logger.error("  ✗ Could not find crawlab master container")
+        return False
+
+    master = master_container["Names"]
     logger.debug(f"  Using master container: {master}")
+
+    # Find worker container
+    containers = docker_helper.find_crawlab_containers()
+    worker = None
+    for container in containers:
+        names = container.get("Names", "")
+        if "worker" in names.lower():
+            worker = names
+            break
+
+    if not worker:
+        logger.error("  ✗ Could not find crawlab worker container")
+        return False
+
+    logger.debug(f"  Using worker container: {worker}")
 
     # Method 1: Use Python to check port (works in sh and bash)
     # The crawlab containers have Python installed
@@ -204,13 +213,16 @@ def verify_files_on_master(spider_id: str, logger) -> bool:
     """Verify files exist on master node"""
     logger.info("\nStep 5: Verifying Files on Master Node")
 
-    # Detect container name dynamically
-    master_result = docker_utils.exec_command("crawlab_master", "echo test", timeout=2)
-    if master_result["exit_code"] != 0:
-        master_result = docker_utils.exec_command("crawlab_dev_master", "echo test", timeout=2)
-        master = "crawlab_dev_master" if master_result["exit_code"] == 0 else "crawlab_master"
-    else:
-        master = "crawlab_master"
+    # Use docker_utils to find master container dynamically
+    docker_helper = docker_utils.DockerHelper()
+    master_container = docker_helper.find_master_container()
+
+    if not master_container:
+        logger.error("  ✗ Could not find crawlab master container")
+        return False
+
+    master = master_container["Names"]
+    logger.debug(f"  Using master container: {master}")
 
     # Spider files are stored in ~/crawlab_workspace/{spider_id}/
     # Try multiple possible paths
@@ -357,18 +369,26 @@ def validate_task_results(token: str, task_result: Dict, task_helper: TaskHelper
 
     # Check master logs for gRPC activity
     logger.info("  Checking master logs for gRPC sync activity...")
-    master = "crawlab_master"
-    master_logs = docker_utils.exec_command(
-        master,
-        "tail -100 /proc/1/fd/1 2>/dev/null | grep -E 'StreamFileScan|file scan request|file synchronization'",
-        timeout=5,
-    )
 
-    if master_logs["exit_code"] == 0 and master_logs["output"].strip():
-        logger.info("  ✓ Master logs show gRPC sync activity")
-        logger.debug(f"\n{master_logs['output'][:500]}")
+    # Use docker_utils to find master container dynamically
+    docker_helper = docker_utils.DockerHelper()
+    master_container = docker_helper.find_master_container()
+
+    if not master_container:
+        logger.warning("  ⚠️  Could not find master container for log check")
     else:
-        logger.warning("  ⚠️  Could not confirm gRPC sync activity in master logs")
+        master = master_container["Names"]
+        master_logs = docker_utils.exec_command(
+            master,
+            "tail -100 /proc/1/fd/1 2>/dev/null | grep -E 'StreamFileScan|file scan request|file synchronization'",
+            timeout=5,
+        )
+
+        if master_logs["exit_code"] == 0 and master_logs["output"].strip():
+            logger.info("  ✓ Master logs show gRPC sync activity")
+            logger.debug(f"\n{master_logs['output'][:500]}")
+        else:
+            logger.warning("  ⚠️  Could not confirm gRPC sync activity in master logs")
 
     return True
 

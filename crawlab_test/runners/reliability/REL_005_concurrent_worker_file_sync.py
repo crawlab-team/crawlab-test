@@ -113,13 +113,16 @@ def verify_files_on_master(spider_id: str, logger) -> bool:
     """Verify all files exist on master node"""
     logger.info("\nStep 5: Verifying Files on Master")
 
-    # Detect container name dynamically
-    master_result = docker_utils.exec_command("crawlab_master", "echo test", timeout=2)
-    if master_result["exit_code"] != 0:
-        master_result = docker_utils.exec_command("crawlab_dev_master", "echo test", timeout=2)
-        master = "crawlab_dev_master" if master_result["exit_code"] == 0 else "crawlab_master"
-    else:
-        master = "crawlab_master"
+    # Use docker_utils to find master container dynamically
+    docker_helper = docker_utils.DockerHelper()
+    master_container = docker_helper.find_master_container()
+
+    if not master_container:
+        logger.error("  ✗ Could not find crawlab master container")
+        return False
+
+    master = master_container["Names"]
+    logger.debug(f"  Using master container: {master}")
 
     # Spider files are stored in ~/crawlab_workspace/{spider_id}/
     # Try multiple possible paths
@@ -295,13 +298,16 @@ def check_grpc_activity(spider_id: str, logger):
     """Check master logs for gRPC sync activity"""
     logger.info("\nStep 10: Checking gRPC Sync Server Activity")
 
-    # Detect container name dynamically
-    master_result = docker_utils.exec_command("crawlab_master", "echo test", timeout=2)
-    if master_result["exit_code"] != 0:
-        master_result = docker_utils.exec_command("crawlab_dev_master", "echo test", timeout=2)
-        master = "crawlab_dev_master" if master_result["exit_code"] == 0 else "crawlab_master"
-    else:
-        master = "crawlab_master"
+    # Use docker_utils to find master container dynamically
+    docker_helper = docker_utils.DockerHelper()
+    master_container = docker_helper.find_master_container()
+
+    if not master_container:
+        logger.warning("  ⚠️  Could not find master container for log check")
+        return
+
+    master = master_container["Names"]
+    logger.debug(f"  Using master container: {master}")
 
     logs_cmd = (
         "tail -200 /proc/1/fd/1 2>/dev/null | "
