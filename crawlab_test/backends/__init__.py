@@ -8,8 +8,8 @@ from .playwright_backend import PlaywrightBackend
 from .script_backend import ScriptBackend
 
 __all__ = [
-    "TestBackend",
-    "ScriptBackend",
     "CopilotBackend",
     "PlaywrightBackend",
+    "ScriptBackend",
+    "TestBackend",
 ]

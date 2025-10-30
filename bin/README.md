@@ -146,7 +146,7 @@ The tool enforces these naming patterns:
 - Location: `specs/{category}/`
 
 **Runner files:**
-- Format: `{PREFIX}-{NNN}_{slug}.py`
+- Format: `{PREFIX}_{NNN}_{slug}.py`
 - Example: `API_001_task_execution_with_file_sync.py`
 - Location: `crawlab_test/runners/{category}/`
 

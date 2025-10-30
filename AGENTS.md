@@ -51,13 +51,13 @@
 
 Choose the right category and backend:
 
-| Category | Backend | Best For |
-|----------|---------|----------|
-| **API** | script | Backend validation, endpoint testing (fast: ~10s) |
-| **Cluster** | script | Distributed system, node operations |
-| **Database** | script | DB integration, connection management |
-| **Scheduler** | script | Task execution, process verification |
-| **UI** | playwright | End-to-end workflows (slow: ~10-15min) |
+| Category | Suites | Backend | Best For |
+|----------|--------|---------|----------|
+| **API** | auth, spider, task, database, dependency, git, system | script | Backend validation, endpoint testing (fast: ~10s) |
+| **Integration** | database, dependency, locale, task-lifecycle | script | Cross-system integration |
+| **Performance** | file-sync, task-execution, concurrent-operations | script | Load testing, pressure tests |
+| **Reliability** | node-recovery, network-resilience, file-sync-stability | script | Resilience testing |
+| **UI** | end-to-end-workflows | playwright | End-to-end workflows (slow: ~10-15min) |
 
 ### Creating Tests
 

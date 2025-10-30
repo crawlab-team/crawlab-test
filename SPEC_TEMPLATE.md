@@ -8,7 +8,7 @@ This template defines the unified format for writing test case specifications. E
 # [Test ID] - [Test Title]
 
 ## Metadata
-- **Category**: [api|cluster|database|dependencies|scheduler|system|ui]
+- **Category**: [api|integration|performance|reliability|ui]
 - **Priority**: [critical|high|medium|low]
 - **Complexity**: [simple|moderate|complex]
 - **Duration**: [estimated time]
@@ -83,7 +83,7 @@ Additional information, known issues, or context that might be helpful.
 ## Field Descriptions
 
 ### Metadata
-- **Category**: Groups related tests for organization
+- **Category**: High-level test type (api, integration, performance, reliability, ui)
 - **Priority**: Importance level for execution scheduling
 - **Complexity**: Effort estimation for planning
 - **Duration**: Expected time to complete

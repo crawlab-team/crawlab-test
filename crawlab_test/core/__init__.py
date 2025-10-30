@@ -9,9 +9,9 @@ from .result_handler import ResultHandler
 from .spec_finder import SpecFinder
 
 __all__ = [
-    "SpecFinder",
     "Config",
     "DockerDetector",
-    "ResultHandler",
     "ParallelTestExecutor",
+    "ResultHandler",
+    "SpecFinder",
 ]

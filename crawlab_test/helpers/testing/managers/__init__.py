@@ -11,9 +11,9 @@ from .process_killer import ProcessKiller
 from .task_manager import TaskManager
 
 __all__ = [
-    "TaskManager",
-    "NodeManager",
     "DockerManager",
+    "NodeManager",
     "ProcessKiller",
+    "TaskManager",
     "collect_diagnostics",
 ]

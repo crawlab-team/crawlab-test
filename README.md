@@ -197,15 +197,16 @@ crawlab-test/
 
 ## Test Categories
 
+Tests are organized by **category** (high-level test type):
+
 - **API**: Backend endpoints, authentication, data validation
-- **Cluster**: Node management, distributed system stability
-- **Database**: MongoDB, MySQL, PostgreSQL, Elasticsearch integration
-- **Dependencies**: Package installation, environment management
-- **Scheduler**: Task execution, status reconciliation
-- **System**: Configuration, locale support, system resources
+- **Integration**: Cross-system integration tests
+- **Performance**: Load testing and pressure tests
+- **Reliability**: Resilience and recovery testing
 - **UI**: Web interface workflows, browser automation
 
-List available tests: `./cli.py --list-specs`
+List available tests: `./cli.py --list-specs` (organized by category and suite)
+Filter by category: `./cli.py --list-specs --category api`
 
 ## Documentation
 

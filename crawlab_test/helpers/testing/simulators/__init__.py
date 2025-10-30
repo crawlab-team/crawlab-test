@@ -8,6 +8,6 @@ from .pressure_test import PressureTest
 from .system_simulator import SystemSimulator
 
 __all__ = [
-    "SystemSimulator",
     "PressureTest",
+    "SystemSimulator",
 ]

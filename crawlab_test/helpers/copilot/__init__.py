@@ -265,12 +265,12 @@ Execute all steps automatically and provide a summary report with:
 
 # Convenience exports
 __all__ = [
+    "build_copilot_command",
+    "check_copilot_extension",
+    "format_spec_prompt",
+    "get_safe_tool_config",
+    "install_copilot_extension",
     "is_copilot_available",
     "is_gh_cli_available",
-    "check_copilot_extension",
-    "install_copilot_extension",
     "setup_copilot",
-    "build_copilot_command",
-    "get_safe_tool_config",
-    "format_spec_prompt",
 ]
