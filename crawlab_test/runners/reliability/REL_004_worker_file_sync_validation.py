@@ -23,15 +23,26 @@ def verify_grpc_available(logger) -> bool:
 
     # Check gRPC port on master
     master = "crawlab_master"
+    # Try multiple methods to check if port 9666 is listening
     port_check = docker_utils.exec_command(
-        master, "netstat -tlnp 2>/dev/null | grep ':9666' || ss -tlnp 2>/dev/null | grep ':9666'", timeout=5
+        master, "(netstat -tlnp 2>/dev/null || ss -tlnp 2>/dev/null || true) | grep ':9666'", timeout=5
     )
 
     if port_check["exit_code"] == 0 and "9666" in port_check["output"]:
         logger.info("  ✓ gRPC server listening on port 9666")
     else:
-        logger.error("  ✗ gRPC server not accessible on port 9666")
-        return False
+        # Fallback: try direct connection test
+        logger.warning("  ⚠️  Could not detect port via netstat/ss, trying connection test...")
+        conn_test = docker_utils.exec_command(
+            master,
+            "timeout 2 bash -c 'cat < /dev/null > /dev/tcp/localhost/9666' 2>&1 && echo 'open' || echo 'closed'",
+            timeout=5,
+        )
+        if "open" in conn_test["output"]:
+            logger.info("  ✓ gRPC server accessible on port 9666 (connection test)")
+        else:
+            logger.error("  ✗ gRPC server not accessible on port 9666")
+            return False
 
     # Check worker can reach master
     worker = "crawlab_worker"
@@ -51,12 +62,11 @@ def create_test_spider_with_files(token: str, spider_helper: SpiderHelper, logge
     """Create spider and upload test files"""
     logger.info("\nStep 2-4: Creating Spider and Uploading Files")
 
-    # Create spider
+    # Create spider (omit project_id as it must be a valid ObjectID or empty)
     spider_id, response = spider_helper.create_spider(
         token,
         name="rel-004-file-sync-test",
         cmd="python main.py",
-        project_id="default",
         description="REL-004: Tests file sync to worker nodes",
     )
 

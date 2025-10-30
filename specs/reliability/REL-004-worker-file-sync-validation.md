@@ -79,7 +79,6 @@ SPIDER_ID=$(curl -s -X POST http://localhost:8080/api/spiders \
   -d '{
     "name": "rel-004-file-sync-test",
     "cmd": "python main.py",
-    "project_id": "default",
     "description": "REL-004: Tests file sync to worker nodes"
   }' | jq -r '.data._id')
 

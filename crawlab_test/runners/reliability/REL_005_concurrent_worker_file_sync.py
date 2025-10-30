@@ -46,12 +46,11 @@ def create_spider_with_multiple_files(token: str, spider_helper: SpiderHelper, l
     """Create spider with multiple files for concurrent sync testing"""
     logger.info("\nStep 2-4: Creating Spider with Multiple Files")
 
-    # Create spider
+    # Create spider (omit project_id as it must be a valid ObjectID or empty)
     spider_id, response = spider_helper.create_spider(
         token,
         name="rel-005-concurrent-sync-test",
         cmd="python main.py",
-        project_id="default",
         description="REL-005: Tests concurrent file sync to multiple workers",
     )
 
