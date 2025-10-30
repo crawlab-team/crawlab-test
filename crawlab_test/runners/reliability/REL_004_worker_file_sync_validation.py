@@ -10,9 +10,9 @@ import sys
 import time
 from typing import Dict
 
-from crawlab_test.helpers.api.auth import get_auth_token
-from crawlab_test.helpers.api.spider import create_spider, delete_spider, upload_spider_file
-from crawlab_test.helpers.api.task import create_task, get_task_info, get_task_logs
+from crawlab_test.helpers.api.auth import AuthHelper
+from crawlab_test.helpers.api.spider import SpiderHelper
+from crawlab_test.helpers.api.task import TaskHelper
 from crawlab_test.helpers.infrastructure.docker import docker_utils
 from crawlab_test.helpers.infrastructure.utils import setup_logging
 
@@ -47,19 +47,22 @@ def verify_grpc_available(logger) -> bool:
         return False
 
 
-def create_test_spider_with_files(token: str, logger) -> str:
+def create_test_spider_with_files(token: str, spider_helper: SpiderHelper, logger) -> str:
     """Create spider and upload test files"""
     logger.info("\nStep 2-4: Creating Spider and Uploading Files")
 
     # Create spider
-    spider_data = {
-        "name": "rel-004-file-sync-test",
-        "cmd": "python main.py",
-        "project_id": "default",
-        "description": "REL-004: Tests file sync to worker nodes",
-    }
+    spider_id, response = spider_helper.create_spider(
+        token,
+        name="rel-004-file-sync-test",
+        cmd="python main.py",
+        project_id="default",
+        description="REL-004: Tests file sync to worker nodes",
+    )
 
-    spider_id = create_spider(token, spider_data)
+    if not spider_id:
+        raise RuntimeError(f"Failed to create spider: {response}")
+
     logger.info(f"  ✓ Created spider: {spider_id}")
 
     # File 1: main.py - validation script
@@ -91,16 +94,20 @@ else:
     print("Spider execution complete.")
 """
 
-    upload_spider_file(token, spider_id, "main.py", main_py_content)
+    success, _ = spider_helper.save_file(token, spider_id, "main.py", main_py_content)
+    if not success:
+        raise RuntimeError("Failed to upload main.py")
     logger.info("  ✓ Uploaded main.py")
 
     # File 2: config.json
     config_content = '{"test": "rel-004", "version": "1.0.0", "sync_mode": "grpc"}'
-    upload_spider_file(token, spider_id, "config.json", config_content)
+    success, _ = spider_helper.save_file(token, spider_id, "config.json", config_content)
+    if not success:
+        raise RuntimeError("Failed to upload config.json")
     logger.info("  ✓ Uploaded config.json")
 
     # File 3: utils.py
-    utils_content = '''"""Utility functions for REL-001 test"""
+    utils_content = '''"""Utility functions for REL-004 test"""
 
 def validate_files():
     return True
@@ -108,12 +115,16 @@ def validate_files():
 def get_version():
     return "1.0.0"
 '''
-    upload_spider_file(token, spider_id, "utils.py", utils_content)
+    success, _ = spider_helper.save_file(token, spider_id, "utils.py", utils_content)
+    if not success:
+        raise RuntimeError("Failed to upload utils.py")
     logger.info("  ✓ Uploaded utils.py")
 
     # File 4: requirements.txt
     requirements_content = "# No external dependencies for this test"
-    upload_spider_file(token, spider_id, "requirements.txt", requirements_content)
+    success, _ = spider_helper.save_file(token, spider_id, "requirements.txt", requirements_content)
+    if not success:
+        raise RuntimeError("Failed to upload requirements.txt")
     logger.info("  ✓ Uploaded requirements.txt")
 
     logger.info("  ✓ Total: 4 files uploaded")
@@ -154,14 +165,14 @@ def verify_files_on_master(spider_id: str, logger) -> bool:
         return False
 
 
-def run_task_and_wait(token: str, spider_id: str, logger) -> Dict:
+def run_task_and_wait(token: str, spider_id: str, task_helper: TaskHelper, logger) -> Dict:
     """Create task and wait for completion"""
     logger.info("\nStep 6-7: Creating and Monitoring Task")
 
     # Create task
-    task_ids = create_task(token, spider_id)
+    task_ids, response = task_helper.create_task(token, spider_id)
     if not task_ids or len(task_ids) == 0:
-        logger.error("  ✗ Failed to create task")
+        logger.error(f"  ✗ Failed to create task: {response}")
         return {"success": False, "error": "Task creation failed"}
 
     task_id = task_ids[0]
@@ -174,21 +185,25 @@ def run_task_and_wait(token: str, spider_id: str, logger) -> Dict:
     for attempt in range(1, max_attempts + 1):
         time.sleep(2)
 
-        task_info = get_task_info(token, task_id)
-        status = task_info.get("status", "unknown")
+        task_data, _ = task_helper.get_task(token, task_id)
+        if not task_data:
+            logger.warning(f"  Could not fetch task info (attempt {attempt})")
+            continue
+
+        status = task_data.get("status", "unknown")
 
         logger.debug(f"  [{attempt}/{max_attempts}] Task status: {status}")
 
         if status in ["finished", "error"]:
             duration = attempt * 2
             logger.info(f"  ✓ Task completed in {duration} seconds with status: {status}")
-            return {"success": True, "task_id": task_id, "status": status, "duration": duration, "task_info": task_info}
+            return {"success": True, "task_id": task_id, "status": status, "duration": duration, "task_info": task_data}
 
     logger.error("  ✗ Task did not complete within 60 seconds")
     return {"success": False, "task_id": task_id, "error": "Timeout", "status": "timeout"}
 
 
-def validate_task_results(token: str, task_result: Dict, logger) -> bool:
+def validate_task_results(token: str, task_result: Dict, task_helper: TaskHelper, logger) -> bool:
     """Validate task completed successfully with all files synced"""
     logger.info("\nStep 8-10: Validating Task Results")
 
@@ -207,7 +222,7 @@ def validate_task_results(token: str, task_result: Dict, logger) -> bool:
     logger.info(f"  ✓ Task status: {status}")
 
     # Get and analyze logs
-    logs = get_task_logs(token, task_id)
+    logs, _ = task_helper.get_task_logs(token, task_id)
 
     if not logs:
         logger.error("  ✗ Could not retrieve task logs")
@@ -269,6 +284,11 @@ def run() -> bool:
     logger.info("REL-004: Worker Node File Sync Validation")
     logger.info("=" * 60)
 
+    # Initialize helpers
+    auth_helper = AuthHelper()
+    spider_helper = SpiderHelper()
+    task_helper = TaskHelper()
+
     token = None
     spider_id = None
 
@@ -280,11 +300,14 @@ def run() -> bool:
 
         # Authenticate
         logger.info("\nAuthenticating...")
-        token = get_auth_token("admin", "admin")
+        token, response = auth_helper.login("admin", "admin")
+        if not token:
+            logger.error(f"  ✗ Authentication failed: {response}")
+            return False
         logger.info("  ✓ Authentication successful")
 
         # Steps 2-4: Create spider and upload files
-        spider_id = create_test_spider_with_files(token, logger)
+        spider_id = create_test_spider_with_files(token, spider_helper, logger)
 
         # Step 5: Verify files on master
         if not verify_files_on_master(spider_id, logger):
@@ -292,10 +315,10 @@ def run() -> bool:
             return False
 
         # Steps 6-7: Run task
-        task_result = run_task_and_wait(token, spider_id, logger)
+        task_result = run_task_and_wait(token, spider_id, task_helper, logger)
 
         # Steps 8-10: Validate results
-        if not validate_task_results(token, task_result, logger):
+        if not validate_task_results(token, task_result, task_helper, logger):
             logger.error("\n❌ TEST FAILED: Task validation failed")
             return False
 
@@ -310,11 +333,14 @@ def run() -> bool:
 
     finally:
         # Cleanup
-        if token and spider_id:
+        if token and spider_id and "spider_helper" in locals():
             try:
                 logger.info("\nCleaning up...")
-                delete_spider(token, spider_id)
-                logger.info("  ✓ Deleted test spider")
+                success, _ = spider_helper.delete_spider(token, spider_id)
+                if success:
+                    logger.info("  ✓ Deleted test spider")
+                else:
+                    logger.warning("  ⚠️  Failed to delete test spider")
             except Exception as e:
                 logger.warning(f"  ⚠️  Cleanup failed: {e}")
 
