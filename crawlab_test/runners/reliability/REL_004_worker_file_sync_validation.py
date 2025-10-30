@@ -21,10 +21,8 @@ def verify_grpc_available(logger) -> bool:
     """Verify gRPC service is accessible using container-friendly methods"""
     logger.info("Step 1: Verifying gRPC Service Availability")
 
-    # Use docker_utils to find containers dynamically
-    docker_helper = docker_utils.DockerHelper()
-
-    master_container = docker_helper.find_master_container()
+    # Use docker_utils to find containers dynamically (docker_utils is already an instance)
+    master_container = docker_utils.find_master_container()
     if not master_container:
         logger.error("  ✗ Could not find crawlab master container")
         return False
@@ -33,7 +31,7 @@ def verify_grpc_available(logger) -> bool:
     logger.debug(f"  Using master container: {master}")
 
     # Find worker container
-    containers = docker_helper.find_crawlab_containers()
+    containers = docker_utils.find_crawlab_containers()
     worker = None
     for container in containers:
         names = container.get("Names", "")
@@ -213,9 +211,8 @@ def verify_files_on_master(spider_id: str, logger) -> bool:
     """Verify files exist on master node"""
     logger.info("\nStep 5: Verifying Files on Master Node")
 
-    # Use docker_utils to find master container dynamically
-    docker_helper = docker_utils.DockerHelper()
-    master_container = docker_helper.find_master_container()
+    # Use docker_utils to find master container dynamically (docker_utils is already an instance)
+    master_container = docker_utils.find_master_container()
 
     if not master_container:
         logger.error("  ✗ Could not find crawlab master container")
@@ -370,9 +367,8 @@ def validate_task_results(token: str, task_result: Dict, task_helper: TaskHelper
     # Check master logs for gRPC activity
     logger.info("  Checking master logs for gRPC sync activity...")
 
-    # Use docker_utils to find master container dynamically
-    docker_helper = docker_utils.DockerHelper()
-    master_container = docker_helper.find_master_container()
+    # Use docker_utils to find master container dynamically (docker_utils is already an instance)
+    master_container = docker_utils.find_master_container()
 
     if not master_container:
         logger.warning("  ⚠️  Could not find master container for log check")

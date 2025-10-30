@@ -113,9 +113,8 @@ def verify_files_on_master(spider_id: str, logger) -> bool:
     """Verify all files exist on master node"""
     logger.info("\nStep 5: Verifying Files on Master")
 
-    # Use docker_utils to find master container dynamically
-    docker_helper = docker_utils.DockerHelper()
-    master_container = docker_helper.find_master_container()
+    # Use docker_utils to find master container dynamically (docker_utils is already an instance)
+    master_container = docker_utils.find_master_container()
 
     if not master_container:
         logger.error("  ✗ Could not find crawlab master container")
@@ -298,9 +297,8 @@ def check_grpc_activity(spider_id: str, logger):
     """Check master logs for gRPC sync activity"""
     logger.info("\nStep 10: Checking gRPC Sync Server Activity")
 
-    # Use docker_utils to find master container dynamically
-    docker_helper = docker_utils.DockerHelper()
-    master_container = docker_helper.find_master_container()
+    # Use docker_utils to find master container dynamically (docker_utils is already an instance)
+    master_container = docker_utils.find_master_container()
 
     if not master_container:
         logger.warning("  ⚠️  Could not find master container for log check")
