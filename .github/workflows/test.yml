@@ -11,11 +11,19 @@ on:
       - develop
   workflow_dispatch:
     inputs:
+      regression_type:
+        description: 'Regression type'
+        required: false
+        type: choice
+        options:
+          - 'full'
+          - 'essential'
+        default: 'full'
       category:
-        description: 'Test categories to run (space-separated: "api integration performance reliability ui" or "all")'
+        description: 'Test categories to run (space-separated: "api integration performance reliability ui" or "all"). Overrides regression_type if specified.'
         required: false
         type: string
-        default: 'all'
+        default: ''
       backend:
         description: 'Backend to use'
         required: false
@@ -64,38 +72,60 @@ jobs:
           # For manual dispatch, use specified category/categories
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             INPUT_CATEGORY="${{ inputs.category }}"
+            REGRESSION_TYPE="${{ inputs.regression_type }}"
             
-            # Trim whitespace and convert to lowercase
-            INPUT_CATEGORY=$(echo "$INPUT_CATEGORY" | xargs | tr '[:upper:]' '[:lower:]')
-            
-            if [ "$INPUT_CATEGORY" = "all" ] || [ -z "$INPUT_CATEGORY" ]; then
-              echo "categories=[\"api\",\"integration\",\"performance\",\"reliability\",\"ui\"]" >> $GITHUB_OUTPUT
-              echo "Running all categories"
-            else
-              # Parse space-separated categories
-              VALID_CATEGORIES=("api" "integration" "performance" "reliability" "ui")
-              SELECTED_CATEGORIES=()
+            # If specific category provided, use it (overrides regression_type)
+            if [ -n "$INPUT_CATEGORY" ]; then
+              # Trim whitespace and convert to lowercase
+              INPUT_CATEGORY=$(echo "$INPUT_CATEGORY" | xargs | tr '[:upper:]' '[:lower:]')
               
-              for CAT in $INPUT_CATEGORY; do
-                # Validate category
-                if [[ " ${VALID_CATEGORIES[@]} " =~ " ${CAT} " ]]; then
-                  SELECTED_CATEGORIES+=("$CAT")
-                  echo "✓ Valid category: $CAT"
-                else
-                  echo "⚠ Warning: Invalid category '$CAT' (skipping)"
-                fi
-              done
-              
-              if [ ${#SELECTED_CATEGORIES[@]} -eq 0 ]; then
-                echo "❌ No valid categories specified, using 'all'"
+              if [ "$INPUT_CATEGORY" = "all" ]; then
                 echo "categories=[\"api\",\"integration\",\"performance\",\"reliability\",\"ui\"]" >> $GITHUB_OUTPUT
+                echo "Running all categories (user specified 'all')"
               else
-                # Convert to JSON array
-                CATEGORIES_JSON=$(printf '%s\n' "${SELECTED_CATEGORIES[@]}" | jq -R . | jq -s -c .)
-                echo "categories=$CATEGORIES_JSON" >> $GITHUB_OUTPUT
-                echo "Running categories: ${SELECTED_CATEGORIES[@]}"
+                # Parse space-separated categories
+                VALID_CATEGORIES=("api" "integration" "performance" "reliability" "ui")
+                SELECTED_CATEGORIES=()
+                
+                for CAT in $INPUT_CATEGORY; do
+                  # Validate category
+                  if [[ " ${VALID_CATEGORIES[@]} " =~ " ${CAT} " ]]; then
+                    SELECTED_CATEGORIES+=("$CAT")
+                    echo "✓ Valid category: $CAT"
+                  else
+                    echo "⚠ Warning: Invalid category '$CAT' (skipping)"
+                  fi
+                done
+                
+                if [ ${#SELECTED_CATEGORIES[@]} -eq 0 ]; then
+                  echo "❌ No valid categories specified, using regression_type"
+                  
+                  # Fallback to regression_type
+                  if [ "$REGRESSION_TYPE" = "essential" ]; then
+                    echo "categories=[\"api\",\"integration\",\"performance\",\"reliability\"]" >> $GITHUB_OUTPUT
+                    echo "Running essential regression (all except UI)"
+                  else
+                    echo "categories=[\"api\",\"integration\",\"performance\",\"reliability\",\"ui\"]" >> $GITHUB_OUTPUT
+                    echo "Running full regression (all categories)"
+                  fi
+                else
+                  # Convert to JSON array
+                  CATEGORIES_JSON=$(printf '%s\n' "${SELECTED_CATEGORIES[@]}" | jq -R . | jq -s -c .)
+                  echo "categories=$CATEGORIES_JSON" >> $GITHUB_OUTPUT
+                  echo "Running categories: ${SELECTED_CATEGORIES[@]}"
+                fi
+              fi
+            else
+              # No specific category, use regression_type
+              if [ "$REGRESSION_TYPE" = "essential" ]; then
+                echo "categories=[\"api\",\"integration\",\"performance\",\"reliability\"]" >> $GITHUB_OUTPUT
+                echo "Running essential regression (all except UI)"
+              else
+                echo "categories=[\"api\",\"integration\",\"performance\",\"reliability\",\"ui\"]" >> $GITHUB_OUTPUT
+                echo "Running full regression (all categories)"
               fi
             fi
+            
             echo "run_tests=true" >> $GITHUB_OUTPUT
             exit 0
           fi
@@ -191,7 +221,12 @@ jobs:
           
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "**Trigger**: Manual workflow dispatch" >> $GITHUB_STEP_SUMMARY
-            echo "**Categories**: \`${{ inputs.category }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "**Regression Type**: \`${{ inputs.regression_type }}\`" >> $GITHUB_STEP_SUMMARY
+            
+            if [ -n "${{ inputs.category }}" ]; then
+              echo "**Categories (override)**: \`${{ inputs.category }}\`" >> $GITHUB_STEP_SUMMARY
+            fi
+            
             echo "**Backend**: \`${{ inputs.backend }}\`" >> $GITHUB_STEP_SUMMARY
             echo "**Image Tag**: \`${{ env.CRAWLAB_IMAGE_TAG }}\`" >> $GITHUB_STEP_SUMMARY
             if [ -n "${{ inputs.spec_id }}" ]; then
