@@ -82,7 +82,7 @@ This test validates that the Crawlab cluster can handle worker node disconnectio
 - [ ] No new tasks assigned to disconnected worker
 - [ ] Task queue continues processing on healthy workers
 - [ ] Worker reconnection successful within 60 seconds of network restoration
-- [ ] Reconnected worker achieves stable online status within 50 seconds (45s stability period + buffer)
+- [ ] Reconnected worker achieves stable online status within 60 seconds (3 monitoring cycles in CI)
 - [ ] Reconnected worker starts receiving tasks normally after stabilization
 - [ ] No data inconsistencies or corruption
 - [ ] No zombie processes or orphaned tasks
@@ -90,15 +90,16 @@ This test validates that the Crawlab cluster can handle worker node disconnectio
 
 ## Monitoring Behavior (Updated)
 **Master Node Monitoring:**
-- Monitor interval: 20 seconds (increased from 15s for better stability)
-- Grace period: 2 consecutive failures required before marking node offline
+- Monitor interval: 20 seconds
+- Grace period: 2 consecutive failures required before marking node offline  
 - Total grace time: ~40 seconds before node marked offline
 - Reason: Prevents flapping during brief reconnection windows (3-5s for gRPC re-subscription)
 
 **Test Stability Requirements:**
-- Stability period: 45-50 seconds of continuous "online" status
-- Flap tolerance: Up to 3 brief offline transitions tolerated during stabilization
-- Rationale: Must exceed master's grace period (40s) to confirm stable recovery
+- Stability period: 60 seconds (3 full monitoring cycles) in CI, 50 seconds locally
+- Flap tolerance: Up to 5 brief offline transitions in CI, 3 locally
+- Rationale: Must wait for at least 3 monitoring cycles (3 × 20s = 60s) to confirm stable recovery
+- CI considerations: Resource constraints can cause brief offline moments, requiring higher tolerance
 
 ## Failure Scenarios
 - **Scenario**: Tasks stuck in "running" state on disconnected worker

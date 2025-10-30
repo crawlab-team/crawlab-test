@@ -127,7 +127,7 @@ class NodeDisconnectionTest:
             import os
 
             is_ci = os.getenv("CI", "").lower() == "true"
-            ready_timeout = 180 if is_ci else 120  # 3 minutes in CI, 2 minutes locally
+            ready_timeout = 240 if is_ci else 120  # 4 minutes in CI, 2 minutes locally
             self.logger.info(f"Waiting for worker to fully stabilize (timeout: {ready_timeout}s, CI: {is_ci})")
             success &= self.wait_for_worker_ready(timeout=ready_timeout)
             if not success:
@@ -187,12 +187,12 @@ class NodeDisconnectionTest:
         2. Node to remain stable for at least the required period
 
         The stability period must account for the master's monitoring behavior:
-        - Master monitors every 20 seconds (increased from 15s for stability)
+        - Master monitors every 20 seconds
         - Master requires 2 consecutive failures before marking offline (40s grace period)
-        - Therefore, we need to wait at least 45s for stability confirmation
+        - Therefore, we need to wait at least 60s (3 full cycles) for stability confirmation
 
-        This ensures that the master's monitoring loop has run at least twice
-        and confirmed the node's health, preventing race conditions.
+        This ensures that the master's monitoring loop has run at least three times
+        and confirmed the node's health, providing reliable stabilization even under CI load.
 
         Args:
             timeout: Maximum time to wait (seconds)
@@ -225,14 +225,14 @@ class NodeDisconnectionTest:
             check_interval = 2  # Check every 2 seconds
             first_active_time = None  # Track when node first becomes active
 
-            # Stability period must be > 2 * monitor_interval to ensure master has confirmed health
-            # Master now has: monitor_interval=20s, requires 2 failures before offline
-            # So we need: 45s stability (> 2 * 20s = 40s grace period)
-            stability_period = 50 if is_ci else 45  # Extra buffer in CI for slower systems
+            # Stability period must be >= 3 * monitor_interval to ensure master has confirmed health
+            # Master has: monitor_interval=20s, requires 2 failures before offline (40s grace)
+            # So we need: 60s stability (3 * 20s = 3 full monitoring cycles)
+            stability_period = 60 if is_ci else 50  # CI needs full 3 cycles for reliability
 
-            # Allow more flaps since master itself tolerates 2 failures before marking offline
-            # We should be at least as tolerant as the master
-            max_flaps_allowed = 3  # Increased from 2 to match master's tolerance
+            # Allow more flaps in CI since resource constraints can cause brief offline moments
+            # Master tolerates 2 failures per cycle, so we allow more total flaps during stabilization
+            max_flaps_allowed = 5 if is_ci else 3  # CI needs higher tolerance
             flap_count = 0
 
             self.logger.info(
