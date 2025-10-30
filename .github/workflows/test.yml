@@ -16,9 +16,9 @@ on:
         required: false
         type: choice
         options:
-          - 'full'
           - 'essential'
-        default: 'full'
+          - 'full'
+        default: 'essential'
       category:
         description: 'Test categories to run (space-separated: "api integration performance reliability ui" or "all"). Overrides regression_type if specified.'
         required: false
