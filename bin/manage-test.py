@@ -39,12 +39,9 @@ class TestManager:
     # Category prefixes
     CATEGORY_PREFIXES: ClassVar[Dict[str, str]] = {
         "api": "API",
-        "cluster": "CLS",
-        "database": "DB",
         "integration": "INT",
         "performance": "PERF",
         "reliability": "REL",
-        "system": "SYS",
         "ui": "UI",
     }
 

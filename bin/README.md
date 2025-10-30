@@ -12,7 +12,7 @@ A comprehensive tool for creating, listing, validating, and managing test specs 
 - **Format control**: Enforces consistent naming and structure
 - **Validation**: Checks specs for required sections and proper format
 - **Dual creation**: Can create both spec and runner in one command
-- **Category support**: Handles all test categories (api, ui, cluster, etc.)
+- **Category support**: Handles all test categories (api, integration, performance, reliability, ui)
 
 ### Quick Start
 
@@ -43,7 +43,7 @@ A comprehensive tool for creating, listing, validating, and managing test specs 
 Create a new test specification with proper formatting.
 
 **Required:**
-- `--category`: Test category (api, cluster, database, integration, performance, reliability, system, ui)
+- `--category`: Test category (api, integration, performance, reliability, ui)
 - `--title`: Human-readable test title
 
 **Optional:**
@@ -152,12 +152,9 @@ The tool enforces these naming patterns:
 
 **Category prefixes:**
 - api → API
-- cluster → CLS
-- database → DB
 - integration → INT
 - performance → PERF
 - reliability → REL
-- system → SYS
 - ui → UI
 
 ### ID Assignment
@@ -223,7 +220,7 @@ This tool provides **controlled test creation** for AI agents:
 - Use different ID or let it auto-assign
 
 **Error: "Invalid category"**
-- Check available categories: api, cluster, database, integration, performance, reliability, system, ui
+- Check available categories: api, integration, performance, reliability, ui
 - Use lowercase
 
 **Validation fails on existing spec**

@@ -33,12 +33,9 @@
 | Category | Prefix | Usage |
 |----------|--------|-------|
 | api | API | Backend API tests |
-| cluster | CLS | Cluster/distributed tests |
-| database | DB | Database tests |
 | integration | INT | Integration tests |
 | performance | PERF | Performance tests |
 | reliability | REL | Reliability/resilience tests |
-| system | SYS | System-level tests |
 | ui | UI | UI/frontend tests |
 
 ## Options
