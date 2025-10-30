@@ -113,11 +113,43 @@ def verify_files_on_master(spider_id: str, logger) -> bool:
     """Verify all files exist on master node"""
     logger.info("\nStep 5: Verifying Files on Master")
 
-    master = "crawlab_master"
+    # Detect container name dynamically
+    master_result = docker_utils.exec_command("crawlab_master", "echo test", timeout=2)
+    if master_result["exit_code"] != 0:
+        master_result = docker_utils.exec_command("crawlab_dev_master", "echo test", timeout=2)
+        master = "crawlab_dev_master" if master_result["exit_code"] == 0 else "crawlab_master"
+    else:
+        master = "crawlab_master"
+
+    # Spider files are stored in ~/crawlab_workspace/{spider_id}/
+    # Try multiple possible paths
+    paths_to_check = [
+        f"/root/crawlab_workspace/{spider_id}/",
+        f"~/crawlab_workspace/{spider_id}/",
+        f"/app/tmp/{spider_id}/",
+        f"/app/.crawlab/tmp/{spider_id}/",
+    ]
+
+    spider_dir = None
+    for path in paths_to_check:
+        test_result = docker_utils.exec_command(
+            master,
+            f"test -d {path} && echo 'exists' || echo 'not found'",
+            timeout=5,
+        )
+        if "exists" in test_result["output"]:
+            spider_dir = path
+            logger.debug(f"  Found spider directory: {spider_dir}")
+            break
+
+    if not spider_dir:
+        logger.error("  ✗ Spider directory not found on master")
+        logger.debug(f"  Tried paths: {paths_to_check}")
+        return False
+
     count_result = docker_utils.exec_command(
         master,
-        f"find /app/tmp/{spider_id}/ -type f 2>/dev/null | wc -l || "
-        f"find /app/.crawlab/tmp/{spider_id}/ -type f 2>/dev/null | wc -l",
+        f"find {spider_dir} -type f 2>/dev/null | wc -l",
         timeout=5,
     )
 
@@ -125,9 +157,15 @@ def verify_files_on_master(spider_id: str, logger) -> bool:
 
     if file_count == 11:
         logger.info("  ✓ All 11 files present on master")
+        # List files for debugging
+        ls_result = docker_utils.exec_command(master, f"ls -1 {spider_dir}", timeout=5)
+        logger.debug(f"  Files: {ls_result['output'].strip()}")
         return True
     else:
         logger.error(f"  ✗ Expected 11 files, found {file_count}")
+        # Show what's in the directory
+        ls_result = docker_utils.exec_command(master, f"ls -lha {spider_dir}", timeout=5)
+        logger.debug(f"  Directory contents:\n{ls_result['output']}")
         return False
 
 
@@ -257,7 +295,14 @@ def check_grpc_activity(spider_id: str, logger):
     """Check master logs for gRPC sync activity"""
     logger.info("\nStep 10: Checking gRPC Sync Server Activity")
 
-    master = "crawlab_master"
+    # Detect container name dynamically
+    master_result = docker_utils.exec_command("crawlab_master", "echo test", timeout=2)
+    if master_result["exit_code"] != 0:
+        master_result = docker_utils.exec_command("crawlab_dev_master", "echo test", timeout=2)
+        master = "crawlab_dev_master" if master_result["exit_code"] == 0 else "crawlab_master"
+    else:
+        master = "crawlab_master"
+
     logs_cmd = (
         "tail -200 /proc/1/fd/1 2>/dev/null | "
         f"grep -E 'StreamFileScan|file scan request|cached|deduplication|{spider_id}' | "

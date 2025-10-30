@@ -18,44 +18,102 @@ from crawlab_test.helpers.infrastructure.utils import setup_logging
 
 
 def verify_grpc_available(logger) -> bool:
-    """Verify gRPC service is accessible"""
+    """Verify gRPC service is accessible using container-friendly methods"""
     logger.info("Step 1: Verifying gRPC Service Availability")
 
-    # Check gRPC port on master
-    master = "crawlab_master"
-    # Try multiple methods to check if port 9666 is listening
-    port_check = docker_utils.exec_command(
-        master, "(netstat -tlnp 2>/dev/null || ss -tlnp 2>/dev/null || true) | grep ':9666'", timeout=5
+    # Detect container name dynamically
+    master_result = docker_utils.exec_command("crawlab_master", "echo test", timeout=2)
+    if master_result["exit_code"] != 0:
+        # Try dev naming
+        master_result = docker_utils.exec_command("crawlab_dev_master", "echo test", timeout=2)
+        if master_result["exit_code"] == 0:
+            master = "crawlab_dev_master"
+            worker = "crawlab_dev_worker_01"
+        else:
+            logger.error("  ✗ Could not find crawlab master container")
+            return False
+    else:
+        master = "crawlab_master"
+        worker = "crawlab_worker"
+
+    logger.debug(f"  Using master container: {master}")
+
+    # Method 1: Use Python to check port (works in sh and bash)
+    # The crawlab containers have Python installed
+    python_check = docker_utils.exec_command(
+        master,
+        "python3 -c 'import socket; s=socket.socket(); s.settimeout(2); s.connect((\"localhost\",9666)); s.close(); print(\"open\")' 2>/dev/null || echo 'closed'",
+        timeout=5,
     )
 
-    if port_check["exit_code"] == 0 and "9666" in port_check["output"]:
-        logger.info("  ✓ gRPC server listening on port 9666")
+    if "open" in python_check["output"]:
+        logger.info("  ✓ gRPC server accessible on port 9666")
     else:
-        # Fallback: try direct connection test
-        logger.warning("  ⚠️  Could not detect port via netstat/ss, trying connection test...")
-        conn_test = docker_utils.exec_command(
+        # Method 2: Try bash if available (for systems with bash)
+        bash_check = docker_utils.exec_command(
             master,
-            "timeout 2 bash -c 'cat < /dev/null > /dev/tcp/localhost/9666' 2>&1 && echo 'open' || echo 'closed'",
+            "bash -c 'timeout 2 cat < /dev/null > /dev/tcp/localhost/9666 2>&1' && echo 'open' || echo 'closed'",
             timeout=5,
         )
-        if "open" in conn_test["output"]:
-            logger.info("  ✓ gRPC server accessible on port 9666 (connection test)")
+
+        if "open" in bash_check["output"]:
+            logger.info("  ✓ gRPC server accessible on port 9666 (bash test)")
         else:
-            logger.error("  ✗ gRPC server not accessible on port 9666")
-            return False
+            # Method 3: Check process list for port 9666
+            ps_check = docker_utils.exec_command(
+                master,
+                "ps aux | grep -E 'server.*9666|:9666' | grep -v grep",
+                timeout=5,
+            )
+
+            if "9666" in ps_check["output"]:
+                logger.info("  ✓ gRPC server process found (port 9666)")
+            else:
+                logger.error("  ✗ gRPC server not accessible on port 9666")
+                logger.debug(f"    Python check: {python_check['output']}")
+                logger.debug(f"    Bash check: {bash_check['output']}")
+                logger.debug(f"    Process check: {ps_check['output']}")
+                return False
 
     # Check worker can reach master
-    worker = "crawlab_worker"
-    conn_check = docker_utils.exec_command(
-        worker, "nc -zv master 9666 2>&1 || timeout 2 bash -c 'cat < /dev/null > /dev/tcp/master/9666' 2>&1", timeout=5
+    logger.debug(f"  Using worker container: {worker}")
+
+    # Method 1: Python socket test (most reliable across containers)
+    worker_python = docker_utils.exec_command(
+        worker,
+        "python3 -c 'import socket; s=socket.socket(); s.settimeout(2); s.connect((\"master\",9666)); s.close(); print(\"connected\")' 2>/dev/null || echo 'failed'",
+        timeout=5,
     )
 
-    if conn_check["exit_code"] == 0:
+    if "connected" in worker_python["output"]:
         logger.info("  ✓ Worker can connect to master:9666")
         return True
     else:
-        logger.error(f"  ✗ Worker cannot connect to master:9666: {conn_check['output']}")
-        return False
+        # Method 2: Try bash TCP test if available
+        worker_bash = docker_utils.exec_command(
+            worker,
+            "bash -c 'timeout 2 cat < /dev/null > /dev/tcp/master/9666 2>&1' && echo 'connected' || echo 'failed'",
+            timeout=5,
+        )
+
+        if "connected" in worker_bash["output"] or worker_bash["exit_code"] == 0:
+            logger.info("  ✓ Worker can connect to master:9666 (bash test)")
+            return True
+        else:
+            # Method 3: Try netcat if available
+            nc_check = docker_utils.exec_command(
+                worker, "nc -zv master 9666 2>&1 || echo 'netcat not available'", timeout=5
+            )
+
+            if "succeeded" in nc_check["output"] or ("open" in nc_check["output"] and nc_check["exit_code"] == 0):
+                logger.info("  ✓ Worker can connect to master:9666 (netcat)")
+                return True
+            else:
+                logger.error("  ✗ Worker cannot connect to master:9666")
+                logger.debug(f"    Python test: {worker_python['output']}")
+                logger.debug(f"    Bash test: {worker_bash['output']}")
+                logger.debug(f"    Netcat test: {nc_check['output']}")
+                return False
 
 
 def create_test_spider_with_files(token: str, spider_helper: SpiderHelper, logger) -> str:
@@ -146,21 +204,44 @@ def verify_files_on_master(spider_id: str, logger) -> bool:
     """Verify files exist on master node"""
     logger.info("\nStep 5: Verifying Files on Master Node")
 
-    master = "crawlab_master"
-    ls_result = docker_utils.exec_command(
-        master,
-        f"ls -lh /app/tmp/{spider_id}/ 2>/dev/null || ls -lh /app/.crawlab/tmp/{spider_id}/ 2>/dev/null",
-        timeout=5,
-    )
+    # Detect container name dynamically
+    master_result = docker_utils.exec_command("crawlab_master", "echo test", timeout=2)
+    if master_result["exit_code"] != 0:
+        master_result = docker_utils.exec_command("crawlab_dev_master", "echo test", timeout=2)
+        master = "crawlab_dev_master" if master_result["exit_code"] == 0 else "crawlab_master"
+    else:
+        master = "crawlab_master"
 
-    if ls_result["exit_code"] != 0:
+    # Spider files are stored in ~/crawlab_workspace/{spider_id}/
+    # Try multiple possible paths
+    paths_to_check = [
+        f"/root/crawlab_workspace/{spider_id}/",
+        f"~/crawlab_workspace/{spider_id}/",
+        f"/app/tmp/{spider_id}/",
+        f"/app/.crawlab/tmp/{spider_id}/",
+    ]
+
+    spider_dir = None
+    for path in paths_to_check:
+        ls_result = docker_utils.exec_command(
+            master,
+            f"ls -lh {path} 2>/dev/null",
+            timeout=5,
+        )
+        if ls_result["exit_code"] == 0:
+            spider_dir = path
+            logger.debug(f"  Found spider directory: {spider_dir}")
+            break
+
+    if not spider_dir:
         logger.error("  ✗ Spider directory not found on master")
+        logger.debug(f"  Tried paths: {paths_to_check}")
         return False
 
     # Count files
     count_result = docker_utils.exec_command(
         master,
-        f"find /app/tmp/{spider_id}/ -type f 2>/dev/null | wc -l || find /app/.crawlab/tmp/{spider_id}/ -type f 2>/dev/null | wc -l",
+        f"find {spider_dir} -type f 2>/dev/null | wc -l",
         timeout=5,
     )
 
@@ -168,10 +249,15 @@ def verify_files_on_master(spider_id: str, logger) -> bool:
 
     if file_count == 4:
         logger.info("  ✓ All 4 files present on master")
+        # List files for debugging
+        ls_result = docker_utils.exec_command(master, f"ls -lh {spider_dir}", timeout=5)
         logger.debug(f"\n{ls_result['output']}")
         return True
     else:
         logger.error(f"  ✗ Expected 4 files, found {file_count}")
+        # Show what's in the directory
+        ls_result = docker_utils.exec_command(master, f"ls -lha {spider_dir}", timeout=5)
+        logger.debug(f"  Directory contents:\n{ls_result['output']}")
         return False
 
 
