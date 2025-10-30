@@ -1,4 +1,6 @@
 {
+  "python.defaultInterpreterPath": "/home/marvin/.pyenv/shims/python",
+  "ruff.path": ["/home/marvin/.pyenv/shims/ruff"],
   "[python]": {
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
