@@ -173,26 +173,69 @@ class GracefulShutdownTest:
 
             # Create test spider if not exists
             if not self.test_spider_id:
-                spider = self.api_client.create_spider(
-                    {
-                        "name": "test-long-running",
-                        "cmd": "sleep 120",  # 2 minutes
-                        "type": "customized",
-                    }
-                )
-                self.test_spider_id = spider["_id"]
-                self.logger.info(f"Created test spider: {self.test_spider_id}")
+                try:
+                    spider = self.api_client.create_spider(
+                        {
+                            "name": "test-long-running",
+                            "cmd": "python main.py",
+                            "type": "customized",
+                        }
+                    )
+                    if not spider or "_id" not in spider:
+                        self.logger.error(f"Spider creation failed: {spider}")
+                        return False
+                    self.test_spider_id = spider["_id"]
+                    self.logger.info(f"Created test spider: {self.test_spider_id}")
+
+                    # Create a main.py file for the spider to run
+                    script_content = """#!/usr/bin/env python3
+import os
+import time
+import sys
+
+print("Long running task started")
+print(f"PID: {os.getpid()}", flush=True)
+
+# Sleep for 2 minutes to allow cancellation testing
+for i in range(120):
+    print(f"Running... {i+1}/120", flush=True)
+    time.sleep(1)
+
+print("Task completed")
+"""
+                    # Save the script to the spider
+                    try:
+                        save_response = self.api_client.session.post(
+                            f"{self.api_client.base_url}/api/spiders/{self.test_spider_id}/files/save",
+                            json={"path": "main.py", "data": script_content},
+                            headers={"Authorization": f"Bearer {self.api_client.api_token}"},
+                        )
+                        if save_response.status_code != 200:
+                            self.logger.warning(f"Failed to save main.py: {save_response.text}")
+                    except Exception as e:
+                        self.logger.warning(f"Could not save main.py: {e}")
+
+                except Exception as e:
+                    self.logger.error(f"Spider creation failed with exception: {e}")
+                    return False
 
             # Create task
-            task = self.api_client.create_task(
-                {
-                    "spider_id": self.test_spider_id,
-                    "mode": "random",
-                }
-            )
-            task_id = task["_id"]
-            self.test_task_ids.append(task_id)
-            self.logger.info(f"Created task: {task_id}")
+            try:
+                task = self.api_client.create_task(
+                    {
+                        "spider_id": self.test_spider_id,
+                        "mode": "random",
+                    }
+                )
+                if not task or "_id" not in task:
+                    self.logger.error(f"Task creation failed: {task}")
+                    return False
+                task_id = task["_id"]
+                self.test_task_ids.append(task_id)
+                self.logger.info(f"Created task: {task_id}")
+            except Exception as e:
+                self.logger.error(f"Task creation failed with exception: {e}")
+                return False
 
             # Wait for task to start running
             self.logger.info("Waiting for task to start running...")
@@ -202,12 +245,29 @@ class GracefulShutdownTest:
 
             while time.time() - start_time < timeout:
                 task_status = self.api_client.get_task_by_id(task_id)
+                if not task_status:
+                    self.logger.error("Could not retrieve task status")
+                    return False
                 status = task_status.get("status")
+                self.logger.debug(f"Task status: {status}")
                 if status == "running":
                     task_running = True
                     break
                 elif status in ["error", "cancelled"]:
-                    self.logger.error(f"Task failed to start: status={status}")
+                    error_msg = task_status.get("error", "No error message")
+                    self.logger.error(f"Task failed to start: status={status}, error={error_msg}")
+                    # Try to get logs for more details
+                    try:
+                        logs_response = self.api_client.session.get(
+                            f"{self.api_client.base_url}/api/tasks/{task_id}/logs"
+                        )
+                        if logs_response.status_code == 200:
+                            logs_data = logs_response.json()
+                            logs = logs_data.get("data", "")
+                            if logs:
+                                self.logger.error(f"Task logs: {logs}")
+                    except Exception as e:
+                        self.logger.debug(f"Could not get task logs: {e}")
                     return False
                 time.sleep(1)
 
@@ -507,8 +567,10 @@ class GracefulShutdownTest:
                 # Clean up test spider
                 if self.test_spider_id:
                     try:
-                        self.api_client.delete_spider(self.test_spider_id)
-                        self.logger.debug(f"Deleted test spider: {self.test_spider_id}")
+                        if self.api_client.delete_spider(self.test_spider_id):
+                            self.logger.debug(f"Deleted test spider: {self.test_spider_id}")
+                        else:
+                            self.logger.debug(f"Failed to delete test spider: {self.test_spider_id}")
                     except Exception as e:
                         self.logger.debug(f"Could not delete spider: {e}")
         except Exception as e:

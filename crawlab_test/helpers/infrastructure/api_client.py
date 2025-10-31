@@ -269,7 +269,9 @@ class CrawlabAPIClient:
 
     def create_spider(self, spider_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new spider"""
-        response = self._request("POST", "/spiders", json=spider_data)
+        # Wrap spider data in expected format
+        payload = {"data": spider_data}
+        response = self._request("POST", "/spiders", json=payload)
         data = self._get_json_response(response)
         return data.get("data")
 
@@ -284,6 +286,11 @@ class CrawlabAPIClient:
         response = self._request("POST", f"/spiders/{spider_id!s}/run", json=run_data)
         data = self._get_json_response(response)
         return data.get("data")
+
+    def delete_spider(self, spider_id: Union[str, ObjectId]) -> bool:
+        """Delete a spider"""
+        response = self._request("DELETE", f"/spiders/{spider_id!s}")
+        return response.status_code == 200
 
     # System operations
     def get_system_info(self) -> Dict[str, Any]:
