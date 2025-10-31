@@ -201,7 +201,7 @@ class GracefulShutdownTest:
             task_running = False
 
             while time.time() - start_time < timeout:
-                task_status = self.api_client.get_task(task_id)
+                task_status = self.api_client.get_task_by_id(task_id)
                 status = task_status.get("status")
                 if status == "running":
                     task_running = True
@@ -218,7 +218,7 @@ class GracefulShutdownTest:
             self.logger.info("Task is running, attempting to get process PID")
 
             # Get the worker node that's running the task
-            task_status = self.api_client.get_task(task_id)
+            task_status = self.api_client.get_task_by_id(task_id)
             node_id = task_status.get("node_id")
             if not node_id:
                 self.logger.warning("Could not determine worker node, checking all workers")
@@ -275,7 +275,7 @@ class GracefulShutdownTest:
             status_check_start = time.time()
 
             for _ in range(10):  # Check for up to 10 seconds
-                task_status = self.api_client.get_task(task_id)
+                task_status = self.api_client.get_task_by_id(task_id)
                 if task_status.get("status") == "cancelled":
                     status_changed = True
                     status_change_time = time.time() - status_check_start
