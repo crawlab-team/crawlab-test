@@ -419,7 +419,7 @@ class LongTermStabilityTest:
     def _create_task(self):
         """Create a single task."""
         try:
-            task = self.api_client.create_task(
+            self.api_client.create_task(
                 {
                     "spider_id": self.test_spider_id,
                     "mode": "random",
