@@ -61,11 +61,11 @@ class AuthActions:
             self.logger.error(f"Page content length: {len(page_content)}")
             self.logger.error(f"Page content preview: {page_content[:500]}")
             raise RuntimeError(
-                f"Login page did not load properly. No login form elements found.\\n"
-                f"Current URL: {current_url}\\n"
-                f"Expected: {self.base_url}/#/login\\n"
+                f"Login page did not load properly. No login form elements found.\n"
+                f"Current URL: {current_url}\n"
+                f"Expected: {self.base_url}/#/login\n"
                 f"Error: {e}"
-            )
+            ) from e
 
         self.logger.info("Login page loaded successfully")
 
@@ -93,7 +93,7 @@ class AuthActions:
 
             self.logger.info("Login form filled successfully")
         except Exception as e:
-            raise RuntimeError(f"Could not fill login form: {e}")
+            raise RuntimeError(f"Could not fill login form: {e}") from e
 
     async def submit_login(self):
         """Submit the login form."""
@@ -105,7 +105,7 @@ class AuthActions:
             await submit_button.click()
             self.logger.info("Login form submitted")
         except Exception as e:
-            raise RuntimeError(f"Could not submit login form: {e}")
+            raise RuntimeError(f"Could not submit login form: {e}") from e
 
     async def verify_login_success(self, timeout: int = 10000):
         """Verify that login was successful.
@@ -261,7 +261,7 @@ class AuthActions:
                     break
 
             if not success:
-                raise RuntimeError("Could not verify logout success")
+                raise RuntimeError("Could not verify logout success") from None
 
     async def logout(self):
         """Complete logout flow."""

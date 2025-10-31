@@ -39,7 +39,6 @@ from crawlab_test.helpers.infrastructure.docker import docker_utils
 
 # Try importing pymongo for direct MongoDB access
 try:
-    import pymongo
     from pymongo import MongoClient
 
     PYMONGO_AVAILABLE = True
@@ -119,7 +118,7 @@ class DatabaseLoadProfiler:
                         self.logger.error(f"Failed to login after {max_retries} attempts: {e}")
                         raise
         except Exception as e:
-            raise RuntimeError(f"Could not initialize API client: {e}")
+            raise RuntimeError(f"Could not initialize API client: {e}") from e
 
         # Get MongoDB connection URI
         self.mongo_uri = self._detect_mongo_uri()
@@ -673,8 +672,17 @@ def main():
         action="store_true",
         help="Quick mode: baseline + report only (1 minute)",
     )
+    parser.add_argument(
+        "--ci",
+        action="store_true",
+        help="CI mode: run with CI-friendly settings (implies --quick)",
+    )
 
     args = parser.parse_args()
+
+    # CI mode implies quick mode
+    if args.ci:
+        args.quick = True
 
     # Adjust for quick mode
     if args.quick:

@@ -117,9 +117,9 @@ def main():
             raise Exception(f"Failed to get user {user1_id}")
         assert user_data["username"] == "test_user_api003", "Username mismatch"
         # Verify password is not in response
-        assert "password" not in user_data or user_data.get("password") == "", (
-            "Password should not be returned in response"
-        )
+        assert (
+            "password" not in user_data or user_data.get("password") == ""
+        ), "Password should not be returned in response"
         print(f"✓ User retrieved: {user_data['username']}")
 
         # Test 7: Attempt to get non-existent user

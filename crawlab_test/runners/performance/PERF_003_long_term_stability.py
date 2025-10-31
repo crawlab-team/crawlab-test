@@ -147,9 +147,9 @@ class LongTermStabilityTest:
                         time.sleep(2)
                     else:
                         self.logger.error(f"Failed to login after {max_retries} attempts: {e}")
-                        raise RuntimeError(f"Could not authenticate with API: {e}")
+                        raise RuntimeError(f"Could not authenticate with API: {e}") from e
         except Exception as e:
-            raise RuntimeError(f"Could not initialize API client: {e}")
+            raise RuntimeError(f"Could not initialize API client: {e}") from e
 
     def run(self) -> bool:
         """Execute the full test suite."""

@@ -148,7 +148,7 @@ class GracefulShutdownTest:
                 # Not failing here as these might be from previous tests
 
             # Check container health
-            for container in [self.master_container] + self.worker_containers:
+            for container in [self.master_container, *self.worker_containers]:
                 inspect = self.docker.get_container_inspect(container)
                 if not inspect:
                     self.logger.error(f"Container {container} not found")
@@ -380,7 +380,7 @@ class GracefulShutdownTest:
             max_wait = 20
             exited = False
 
-            for i in range(max_wait):
+            for _i in range(max_wait):
                 inspect = self.docker.get_container_inspect(worker)
                 if not inspect or not inspect.get("State", {}).get("Running", False):
                     exited = True
@@ -456,7 +456,7 @@ class GracefulShutdownTest:
             max_wait = 30
             exited = False
 
-            for i in range(max_wait):
+            for _i in range(max_wait):
                 inspect = self.docker.get_container_inspect(self.master_container)
                 if not inspect or not inspect.get("State", {}).get("Running", False):
                     exited = True

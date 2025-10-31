@@ -26,7 +26,7 @@ from .core import Config, DockerDetector, ParallelTestExecutor, ResultHandler, S
 def get_base_dir() -> Path:
     """
     Get the base directory for the test framework.
-    
+
     Checks in order:
     1. Current working directory (for development/repo use)
     2. Package directory (for bundled specs in pip install)

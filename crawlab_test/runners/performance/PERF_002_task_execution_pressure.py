@@ -12,7 +12,7 @@ import json
 import sys
 import time
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import ClassVar, Dict, List, Optional, Tuple
 
 from crawlab_test.helpers.api.auth import AuthHelper
 from crawlab_test.helpers.api.node import NodeHelper
@@ -24,7 +24,7 @@ class PressureTestRunner:
     """Runner for task execution pressure tests."""
 
     # Load level configurations
-    LOAD_CONFIGS = {
+    LOAD_CONFIGS: ClassVar[Dict[str, Dict[str, int]]] = {
         "light": {"tasks": 100, "workers": 5, "batch_size": 20},
         "medium": {"tasks": 500, "workers": 10, "batch_size": 50},
         "heavy": {"tasks": 1000, "workers": 20, "batch_size": 100},
