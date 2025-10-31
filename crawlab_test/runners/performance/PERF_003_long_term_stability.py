@@ -134,6 +134,20 @@ class LongTermStabilityTest:
         # Initialize API client
         try:
             self.api_client = CrawlabAPIClient()
+            # Login to get authentication token
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    self.api_client.login()
+                    self.logger.info("Successfully authenticated with API")
+                    break
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        self.logger.warning(f"Login attempt {attempt+1} failed: {e}, retrying...")
+                        time.sleep(2)
+                    else:
+                        self.logger.error(f"Failed to login after {max_retries} attempts: {e}")
+                        raise RuntimeError(f"Could not authenticate with API: {e}")
         except Exception as e:
             raise RuntimeError(f"Could not initialize API client: {e}")
 
