@@ -201,12 +201,30 @@ Tests are organized by **category** (high-level test type):
 
 - **API**: Backend endpoints, authentication, data validation
 - **Integration**: Cross-system integration tests
-- **Performance**: Load testing and pressure tests
-- **Reliability**: Resilience and recovery testing
+- **Performance**: Load testing, pressure tests, long-term stability
+- **Reliability**: Resilience, recovery, graceful shutdown testing
 - **UI**: Web interface workflows, browser automation
 
 List available tests: `./cli.py --list-specs` (organized by category and suite)
 Filter by category: `./cli.py --list-specs --category api`
+
+### Recently Added Tests (2025-10-31)
+
+**REL-006: Graceful Shutdown and Process Termination** ✅
+- Validates master/worker graceful shutdown with SIGTERM
+- Tests task cancellation process termination
+- Detects zombie processes
+- Addresses bugs #1609 (task killing) and #1584 (master shutdown)
+- Run: `uv run ./cli.py --spec REL-006`
+
+**PERF-003: Long-Term Stability and Memory Leak Detection** ✅
+- 24-48 hour continuous monitoring
+- Memory growth analysis using linear regression
+- Goroutine and connection pool leak detection
+- Automated baseline establishment and cleanup validation
+- Addresses bug #1600 (memory leaks)
+- Run: `uv run python crawlab_test/runners/performance/PERF_003_long_term_stability.py --duration 24h`
+- **Note**: This is a long-running test (24+ hours), run with caution
 
 ## Documentation
 
