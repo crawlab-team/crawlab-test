@@ -5,6 +5,7 @@
 - **Priority**: high
 - **Complexity**: complex
 - **Duration**: 30-45 minutes
+- **CI Skip**: true
 - **Environment**: local/staging
 - **Dependencies**: MongoDB, MySQL, PostgreSQL, Elasticsearch, Crawlab backend
 

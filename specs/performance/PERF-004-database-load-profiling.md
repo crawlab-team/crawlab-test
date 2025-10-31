@@ -5,6 +5,7 @@
 - **Priority**: low
 - **Complexity**: moderate
 - **Duration**: 30-60 minutes
+- **CI Skip**: true
 - **Environment**: local/staging
 - **Dependencies**: crawlab-master, crawlab-worker(s), mongodb
 - **Target Release**: 0.7.1

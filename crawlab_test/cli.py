@@ -125,6 +125,10 @@ def list_specs_command(args):
     spec_finder = SpecFinder(get_base_dir())
     specs = spec_finder.list_specs(categories=args.category)
 
+    # Filter out CI skip tests unless explicitly requested
+    if args.ci_skip and not args.include_long_running:
+        specs = [s for s in specs if not s.get("ci_skip", False)]
+
     if not specs:
         if args.category:
             print(f"No specifications found for categories: {', '.join(args.category)}")
@@ -135,6 +139,9 @@ def list_specs_command(args):
     # Show filter info if categories specified
     if args.category:
         print(f"\nFiltered by categories: {', '.join(args.category)}")
+
+    if args.ci_skip and not args.include_long_running:
+        print("Excluding CI skip tests (use --include-long-running to show all)")
 
     print(f"\nAvailable Test Specifications ({len(specs)}):")
     print("=" * 80)
@@ -149,8 +156,10 @@ def list_specs_command(args):
         title = spec["title"]
         priority = spec.get("priority", "unknown")
         duration = spec.get("duration", "unknown")
+        ci_skip = spec.get("ci_skip", False)
+        ci_skip_indicator = " [CI_SKIP]" if ci_skip else ""
 
-        print(f"  [{spec_id}] {title}")
+        print(f"  [{spec_id}] {title}{ci_skip_indicator}")
         print(f"      Priority: {priority}, Duration: {duration}")
         print(f"      File: {spec['file']}")
 
@@ -206,6 +215,14 @@ def run_parallel_command(args):
 
     # Find all specs in category
     all_specs = spec_finder.list_specs(categories=[category])
+
+    # Filter out CI skip tests unless explicitly requested
+    if args.ci_skip and not args.include_long_running:
+        original_count = len(all_specs)
+        all_specs = [s for s in all_specs if not s.get("ci_skip", False)]
+        skipped_count = original_count - len(all_specs)
+        if skipped_count > 0:
+            result_handler.log_info(f"Skipped {skipped_count} CI skip test(s) (use --include-long-running to include)")
 
     if not all_specs:
         result_handler.log_error(f"No specs found for category: {category}")
@@ -519,6 +536,18 @@ Examples:
     parser.add_argument("--dry-run", action="store_true", help="Show what would be executed without actually running")
 
     parser.add_argument("--ci", action="store_true", help="Run in CI mode")
+
+    parser.add_argument(
+        "--ci-skip",
+        action="store_true",
+        help="Skip tests marked with 'CI Skip: true' in metadata (useful for CI environments to exclude long-running tests)",
+    )
+
+    parser.add_argument(
+        "--include-long-running",
+        action="store_true",
+        help="Include long-running tests marked with 'CI Skip: true' (overrides --ci-skip)",
+    )
 
     parser.add_argument("--timeout", type=int, help="Test timeout in minutes")
 

@@ -12,6 +12,7 @@ This template defines the unified format for writing test case specifications. E
 - **Priority**: [critical|high|medium|low]
 - **Complexity**: [simple|moderate|complex]
 - **Duration**: [estimated time]
+- **CI Skip**: [true|false] (optional, default: false)
 - **Environment**: [local|staging|production|any]
 - **Dependencies**: [list of required components]
 
@@ -87,6 +88,7 @@ Additional information, known issues, or context that might be helpful.
 - **Priority**: Importance level for execution scheduling
 - **Complexity**: Effort estimation for planning
 - **Duration**: Expected time to complete
+- **CI Skip**: Whether to skip this test in default CI runs (set to `true` for long-running tests like 24h+ stability tests, load tests, or resource-intensive tests that should only run manually or on-demand)
 - **Environment**: Where this test can/should be run
 - **Dependencies**: Other tests, components, or state required
 

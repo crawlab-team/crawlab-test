@@ -47,6 +47,11 @@ on:
         required: false
         type: string
         default: 'develop'
+      include_long_running:
+        description: 'Include long-running tests (24h+ stability tests, etc.)'
+        required: false
+        type: boolean
+        default: false
 
 env:
   PYTHON_VERSION: '3.9'
@@ -232,6 +237,7 @@ jobs:
             if [ -n "${{ inputs.spec_id }}" ]; then
               echo "**Spec ID**: \`${{ inputs.spec_id }}\`" >> $GITHUB_STEP_SUMMARY
             fi
+            echo "**Include Long-Running Tests**: \`${{ inputs.include_long_running }}\`" >> $GITHUB_STEP_SUMMARY
           else
             echo "**Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
             echo "**Branch**: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
@@ -496,11 +502,27 @@ jobs:
               if [ $PARALLEL_WORKERS -gt 1 ]; then
                 # Use parallel execution
                 echo "Using parallel execution mode"
-                uv run ./cli.py --category ${{ matrix.category }} --parallel $PARALLEL_WORKERS --ci
+                
+                # Add --ci-skip flag unless long-running tests are explicitly included
+                if [ "${{ inputs.include_long_running }}" = "true" ]; then
+                  echo "Including long-running tests"
+                  uv run ./cli.py --category ${{ matrix.category }} --parallel $PARALLEL_WORKERS --ci --include-long-running
+                else
+                  echo "Excluding long-running tests (use include_long_running=true to include)"
+                  uv run ./cli.py --category ${{ matrix.category }} --parallel $PARALLEL_WORKERS --ci --ci-skip
+                fi
               else
                 # Use sequential execution for single worker
                 echo "Using sequential execution mode (1 worker)"
-                uv run ./cli.py --category ${{ matrix.category }} --parallel 1 --ci
+                
+                # Add --ci-skip flag unless long-running tests are explicitly included
+                if [ "${{ inputs.include_long_running }}" = "true" ]; then
+                  echo "Including long-running tests"
+                  uv run ./cli.py --category ${{ matrix.category }} --parallel 1 --ci --include-long-running
+                else
+                  echo "Excluding long-running tests (use include_long_running=true to include)"
+                  uv run ./cli.py --category ${{ matrix.category }} --parallel 1 --ci --ci-skip
+                fi
               fi
             fi
           fi

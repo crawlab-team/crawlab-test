@@ -90,6 +90,7 @@ class SpecFinder:
                         "priority": metadata.get("priority", "unknown"),
                         "duration": metadata.get("duration", "unknown"),
                         "complexity": metadata.get("complexity", "unknown"),
+                        "ci_skip": metadata.get("ci_skip", "false").lower() in ("true", "yes", "1"),
                     }
                 )
 

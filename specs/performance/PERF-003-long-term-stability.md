@@ -5,6 +5,7 @@
 - **Priority**: critical
 - **Complexity**: complex
 - **Duration**: 24-48 hours
+- **CI Skip**: true
 - **Environment**: local/staging (production-like)
 - **Dependencies**: crawlab-master, crawlab-worker(s), mongodb, redis, monitoring tools
 

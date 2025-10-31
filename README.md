@@ -81,11 +81,19 @@ uv run ./cli.py --search docker
 uv run ./cli.py --spec API-001 --backend script
 uv run ./cli.py --spec UI-001 --backend copilot --model gpt-4o
 
-# CI mode
+# CI mode (excludes long-running tests by default)
 uv run ./cli.py --spec CLS-001 --ci --timeout 30
+
+# Exclude long-running tests (30min+, 24h+ stability tests)
+uv run ./cli.py --category performance --parallel --ci-skip
+
+# Include all tests (override CI skip)
+uv run ./cli.py --category performance --parallel --include-long-running
 ```
 
 **Note**: Scripts work without `uv run` prefix if dependencies are installed via pip.
+
+📖 **CI Skip Feature**: Long-running tests can be excluded from CI runs. See [docs/ci-skip-tests.md](docs/ci-skip-tests.md) for details.
 
 ## Architecture
 
