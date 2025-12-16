@@ -337,13 +337,14 @@ def main():
 
         # 9.1 Delete single node group (keep others for batch delete)
         if len(test_groups) >= 3:
-            success, response = node_group_helper.delete_node_group(token, test_groups[2])
+            group_to_delete = test_groups[2]
+            success, response = node_group_helper.delete_node_group(token, group_to_delete)
             if success:
-                print(f"✓ TC9.1: Deleted single node group: {test_groups[2]}")
-                test_groups.remove(test_groups[2])
+                print(f"✓ TC9.1: Deleted single node group: {group_to_delete}")
+                test_groups.remove(group_to_delete)
 
                 # Verify deletion
-                deleted_group, _ = node_group_helper.get_node_group(token, test_groups[2])
+                deleted_group, _ = node_group_helper.get_node_group(token, group_to_delete)
                 if deleted_group is None:
                     print("✓ TC9.1: Verified group no longer exists")
             else:
@@ -354,7 +355,8 @@ def main():
             # Ensure group has nodes
             node_group_helper.add_node_to_group(token, test_groups[0], node_ids[0])
 
-            success, response = node_group_helper.delete_node_group(token, test_groups[0])
+            group_to_delete = test_groups[0]
+            success, response = node_group_helper.delete_node_group(token, group_to_delete)
             if success:
                 print("✓ TC9.2: Deleted group with nodes")
 
@@ -365,7 +367,7 @@ def main():
                 else:
                     print("⚠ TC9.2: Node may have been affected")
 
-                test_groups.remove(test_groups[0])
+                test_groups.remove(group_to_delete)
             else:
                 print(f"⚠ TC9.2: Failed to delete group: {response}")
 
