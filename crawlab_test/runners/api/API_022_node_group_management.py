@@ -77,10 +77,10 @@ def main():
             return 1
         test_groups.append(group1["_id"])
         print(f"✓ TC2.1: Created basic node group: {group1['_id']}")
-        assertions.assert_field_exists(group1, "_id", "group has _id")
+        assertions.assert_has_field(group1, "_id", "group has _id")
         assertions.assert_field_equals(group1, "name", "Production Servers")
         assertions.assert_field_equals(group1, "description", "Production environment nodes")
-        assertions.assert_field_exists(group1, "node_ids", "group has node_ids")
+        assertions.assert_has_field(group1, "node_ids", "group has node_ids")
 
         # 2.2 Create node group with initial nodes
         if len(node_ids) >= 2:
@@ -148,9 +148,9 @@ def main():
             print(f"❌ TC4.1 failed: {response}")
             return 1
         print(f"✓ TC4.1: Retrieved group details: {group_detail.get('name')}")
-        assertions.assert_field_exists(group_detail, "_id", "group has _id")
-        assertions.assert_field_exists(group_detail, "name", "group has name")
-        assertions.assert_field_exists(group_detail, "node_ids", "group has node_ids")
+        assertions.assert_has_field(group_detail, "_id", "group has _id")
+        assertions.assert_has_field(group_detail, "name", "group has name")
+        assertions.assert_has_field(group_detail, "node_ids", "group has node_ids")
 
         # 4.2 Get group with populated nodes (if group has nodes)
         if len(test_groups) >= 2:
