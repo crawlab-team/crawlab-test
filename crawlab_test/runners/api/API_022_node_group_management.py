@@ -8,7 +8,6 @@ with node groups (spec 041 node grouping feature).
 
 import sys
 import time
-from typing import List, Optional
 
 from crawlab_test.helpers.api import APIAssertions, AuthHelper, CleanupHelper
 from crawlab_test.helpers.api.node import NodeHelper
@@ -19,7 +18,7 @@ from crawlab_test.helpers.api.task import TaskHelper
 
 def print_step(step_num: int, description: str):
     """Print test step header."""
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(f"Step {step_num}: {description}")
     print("=" * 80)
 
@@ -48,7 +47,7 @@ def main():
         if not token:
             print(f"❌ Authentication failed: {response}")
             return 1
-        print(f"✓ Authenticated successfully")
+        print("✓ Authenticated successfully")
 
         # Get available nodes
         nodes, response = node_helper.list_nodes(token, page=1, size=100)
@@ -136,7 +135,7 @@ def main():
             return 1
         prod_found = any(g.get("name") == "Production Servers" for g in groups)
         if prod_found:
-            print(f"✓ TC3.3: Filter works, found 'Production Servers'")
+            print("✓ TC3.3: Filter works, found 'Production Servers'")
         else:
             print(f"⚠ TC3.3: Filter returned {len(groups)} groups but 'Production Servers' not found")
 
@@ -161,7 +160,7 @@ def main():
                 return 1
             has_nodes = "nodes" in group_detail or len(group_detail.get("node_ids", [])) > 0
             if has_nodes:
-                print(f"✓ TC4.2: Group has node associations")
+                print("✓ TC4.2: Group has node associations")
             else:
                 print("⚠ TC4.2: No nodes found in group")
 
@@ -177,37 +176,31 @@ def main():
 
         if len(node_ids) >= 1:
             # 5.1 Add single node to group
-            updated_group, response = node_group_helper.add_node_to_group(
-                token, test_groups[0], node_ids[0]
-            )
+            updated_group, response = node_group_helper.add_node_to_group(token, test_groups[0], node_ids[0])
             if not updated_group:
                 print(f"❌ TC5.1 failed: {response}")
                 return 1
-            print(f"✓ TC5.1: Added node to group")
+            print("✓ TC5.1: Added node to group")
 
             # Verify node added
             group_detail, _ = node_group_helper.get_node_group(token, test_groups[0])
             if group_detail and node_ids[0] in group_detail.get("node_ids", []):
-                print(f"✓ TC5.1: Verified node in group's node_ids")
+                print("✓ TC5.1: Verified node in group's node_ids")
             else:
                 print("⚠ TC5.1: Node may not be in group yet")
 
             # 5.2 Add another node if available
             if len(node_ids) >= 2:
-                updated_group, response = node_group_helper.add_node_to_group(
-                    token, test_groups[0], node_ids[1]
-                )
+                updated_group, response = node_group_helper.add_node_to_group(token, test_groups[0], node_ids[1])
                 if updated_group:
-                    print(f"✓ TC5.2: Added second node to group")
+                    print("✓ TC5.2: Added second node to group")
                 else:
                     print(f"⚠ TC5.2: Failed to add second node: {response}")
 
             # 5.3 Test duplicate assignment (should be idempotent)
-            updated_group, response = node_group_helper.add_node_to_group(
-                token, test_groups[0], node_ids[0]
-            )
+            updated_group, response = node_group_helper.add_node_to_group(token, test_groups[0], node_ids[0])
             if updated_group:
-                print(f"✓ TC5.3: Duplicate assignment handled (idempotent)")
+                print("✓ TC5.3: Duplicate assignment handled (idempotent)")
             else:
                 print(f"⚠ TC5.3: Duplicate assignment failed: {response}")
         else:
@@ -218,18 +211,16 @@ def main():
 
         if len(node_ids) >= 1:
             # 6.1 Remove single node
-            updated_group, response = node_group_helper.remove_node_from_group(
-                token, test_groups[0], node_ids[0]
-            )
+            updated_group, response = node_group_helper.remove_node_from_group(token, test_groups[0], node_ids[0])
             if updated_group is not None:
-                print(f"✓ TC6.1: Removed node from group")
+                print("✓ TC6.1: Removed node from group")
             else:
                 print(f"⚠ TC6.1: Failed to remove node: {response}")
 
             # Verify node removed
             group_detail, _ = node_group_helper.get_node_group(token, test_groups[0])
             if group_detail and node_ids[0] not in group_detail.get("node_ids", []):
-                print(f"✓ TC6.1: Verified node removed from group")
+                print("✓ TC6.1: Verified node removed from group")
             else:
                 print("⚠ TC6.1: Node may still be in group")
 
@@ -238,7 +229,7 @@ def main():
                 token, test_groups[0], "nonexistent_node_id"
             )
             # Expect this to succeed (no-op) or return appropriate error
-            print(f"✓ TC6.2: Remove non-existent node handled")
+            print("✓ TC6.2: Remove non-existent node handled")
         else:
             print("⚠ TC6: Skipped - no nodes available")
 
@@ -254,7 +245,7 @@ def main():
         if not updated_group:
             print(f"❌ TC7.1 failed: {response}")
             return 1
-        print(f"✓ TC7.1: Updated node group")
+        print("✓ TC7.1: Updated node group")
         assertions.assert_field_equals(updated_group, "name", "Production Cluster")
         assertions.assert_field_equals(updated_group, "description", "Updated production environment")
 
@@ -264,16 +255,14 @@ def main():
                 token, test_groups[0], {"node_ids": [node_ids[0]]}
             )
             if updated_group:
-                print(f"✓ TC7.2: Updated node assignments")
+                print("✓ TC7.2: Updated node assignments")
             else:
                 print(f"⚠ TC7.2: Failed to update node assignments: {response}")
 
         # 7.3 Clear all nodes
-        updated_group, response = node_group_helper.update_node_group(
-            token, test_groups[0], {"node_ids": []}
-        )
+        updated_group, response = node_group_helper.update_node_group(token, test_groups[0], {"node_ids": []})
         if updated_group:
-            print(f"✓ TC7.3: Cleared all nodes from group")
+            print("✓ TC7.3: Cleared all nodes from group")
             if len(updated_group.get("node_ids", [])) == 0:
                 print("✓ TC7.3: Verified group has no nodes")
         else:
@@ -303,7 +292,7 @@ def main():
                 # Verify task has node_group_ids
                 task_detail, _ = task_helper.get_task(token, task_id)
                 if task_detail and "node_group_ids" in task_detail:
-                    print(f"✓ TC8.1: Task has node_group_ids field")
+                    print("✓ TC8.1: Task has node_group_ids field")
                 else:
                     print("⚠ TC8.1: Task may not have node_group_ids field")
 
@@ -322,7 +311,7 @@ def main():
                 )
                 if task_ids and len(task_ids) > 0:
                     cleanup.track_task(task_ids[0])
-                    print(f"✓ TC8.2: Task created with multiple node groups")
+                    print("✓ TC8.2: Task created with multiple node groups")
                 else:
                     print(f"⚠ TC8.2: Failed to create task with multiple groups: {response}")
 
@@ -337,7 +326,7 @@ def main():
                 )
                 if task_ids and len(task_ids) > 0:
                     cleanup.track_task(task_ids[0])
-                    print(f"✓ TC8.3: Task created with group + node intersection")
+                    print("✓ TC8.3: Task created with group + node intersection")
                 else:
                     print(f"⚠ TC8.3: Failed to create task with intersection: {response}")
         else:
@@ -356,7 +345,7 @@ def main():
                 # Verify deletion
                 deleted_group, _ = node_group_helper.get_node_group(token, test_groups[2])
                 if deleted_group is None:
-                    print(f"✓ TC9.1: Verified group no longer exists")
+                    print("✓ TC9.1: Verified group no longer exists")
             else:
                 print(f"⚠ TC9.1: Failed to delete group: {response}")
 
@@ -367,12 +356,12 @@ def main():
 
             success, response = node_group_helper.delete_node_group(token, test_groups[0])
             if success:
-                print(f"✓ TC9.2: Deleted group with nodes")
+                print("✓ TC9.2: Deleted group with nodes")
 
                 # Verify nodes still exist
                 node_detail, _ = node_helper.get_node(token, node_ids[0])
                 if node_detail:
-                    print(f"✓ TC9.2: Verified nodes not deleted")
+                    print("✓ TC9.2: Verified nodes not deleted")
                 else:
                     print("⚠ TC9.2: Node may have been affected")
 
@@ -392,7 +381,7 @@ def main():
         # 9.4 Try deleting non-existent group
         success, response = node_group_helper.delete_node_group(token, "nonexistent_group_id")
         if not success:
-            print(f"✓ TC9.4: Non-existent group deletion handled correctly")
+            print("✓ TC9.4: Non-existent group deletion handled correctly")
         else:
             print("⚠ TC9.4: Expected error for non-existent group")
 

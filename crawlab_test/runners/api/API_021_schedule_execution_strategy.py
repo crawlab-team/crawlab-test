@@ -14,7 +14,7 @@ from crawlab_test.helpers.api import AuthHelper, CleanupHelper, ScheduleHelper, 
 
 def print_step(step_num: int, description: str):
     """Print test step header."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Step {step_num}: {description}")
     print("=" * 60)
 
@@ -57,7 +57,7 @@ def wait_for_task_status(task_helper: TaskHelper, token: str, task_id: str, expe
 def count_running_tasks(task_helper: TaskHelper, token: str, schedule_id: str) -> int:
     """
     Count running tasks for a specific schedule.
-    
+
     Note: Backend considers tasks with status pending, assigned, or running
     as "running tasks" for execution strategy purposes.
 
@@ -78,8 +78,7 @@ def count_running_tasks(task_helper: TaskHelper, token: str, schedule_id: str) -
     running_count = sum(
         1
         for task in all_tasks
-        if task.get("schedule_id") == schedule_id
-        and task.get("status") in ["pending", "assigned", "running"]
+        if task.get("schedule_id") == schedule_id and task.get("status") in ["pending", "assigned", "running"]
     )
     return running_count
 
@@ -120,7 +119,7 @@ def main():
         test_spider_id, response = spider_helper.create_spider(
             token=token,
             name=f"test-spider-execution-strategy-{int(time.time())}",
-            cmd="python -c 'import time; print(\"Task starting\"); time.sleep(30); print(\"Task completed\")'",
+            cmd='python -c \'import time; print("Task starting"); time.sleep(30); print("Task completed")\'',
         )
 
         results.append(print_result(test_spider_id is not None, f"Spider created: {test_spider_id}"))
@@ -143,7 +142,9 @@ def main():
             enabled=True,
         )
 
-        results.append(print_result(default_schedule_id is not None, f"Default schedule created: {default_schedule_id}"))
+        results.append(
+            print_result(default_schedule_id is not None, f"Default schedule created: {default_schedule_id}")
+        )
 
         if default_schedule_id:
             schedule_ids.append(default_schedule_id)
@@ -222,7 +223,13 @@ def main():
                     first_task_data, _ = task_helper.get_task(token, first_task_id)
                     if first_task_data:
                         first_status = first_task_data.get("status")
-                        is_cancelled = first_status in ["cancelled", "cancelling", "pending-cancel", "error", "abnormal"]
+                        is_cancelled = first_status in [
+                            "cancelled",
+                            "cancelling",
+                            "pending-cancel",
+                            "error",
+                            "abnormal",
+                        ]
                         results.append(
                             print_result(
                                 is_cancelled,
@@ -310,12 +317,12 @@ def main():
                 if task_ids_result2 is None or len(task_ids_result2) == 0:
                     results.append(print_result(True, "Ignore strategy skipped execution (no task IDs returned)"))
                 elif tasks_after == tasks_before:
-                    results.append(
-                        print_result(True, "Ignore strategy skipped execution (task count unchanged)")
-                    )
+                    results.append(print_result(True, "Ignore strategy skipped execution (task count unchanged)"))
                 else:
                     results.append(
-                        print_result(False, f"Ignore strategy failed (tasks increased from {tasks_before} to {tasks_after})")
+                        print_result(
+                            False, f"Ignore strategy failed (tasks increased from {tasks_before} to {tasks_after})"
+                        )
                     )
 
                 # Verify original task still running
@@ -375,7 +382,7 @@ def main():
                 always_task_ids.append(task_ids_result[0])
                 task_ids.append(task_ids_result[0])
                 cleanup.track_task(task_ids_result[0])
-                results.append(print_result(True, f"Always task {i+1} created: {task_ids_result[0]}"))
+                results.append(print_result(True, f"Always task {i + 1} created: {task_ids_result[0]}"))
             time.sleep(1)  # Brief delay between triggers
 
         # Verify all tasks exist and are running or pending
@@ -439,7 +446,7 @@ def main():
             results.append(
                 print_result(
                     True,
-                    f"Two schedules for same spider with different strategies exist",
+                    "Two schedules for same spider with different strategies exist",
                 )
             )
 
