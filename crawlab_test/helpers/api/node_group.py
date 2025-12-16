@@ -230,7 +230,8 @@ class NodeGroupHelper:
             Tuple of (updated_group, response_data)
         """
         try:
-            payload = {"data": {"node_id": node_id}}
+            # No data wrapper for this endpoint - direct JSON body
+            payload = {"node_id": node_id}
 
             response = requests.post(
                 f"{self.base_url}/node-groups/{group_id}/nodes",
