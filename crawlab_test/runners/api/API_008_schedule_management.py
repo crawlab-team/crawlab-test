@@ -80,6 +80,7 @@ def main():
             enabled=True,
             mode="random",
             priority=5,
+            execution_strategy="always",
         )
 
         results.append(print_result(schedule_id is not None, f"Schedule created: {schedule_id}"))
@@ -110,6 +111,12 @@ def main():
             )
             results.append(
                 print_result(schedule_data.get("enabled") is True, f"Schedule enabled: {schedule_data.get('enabled')}")
+            )
+            results.append(
+                print_result(
+                    schedule_data.get("execution_strategy") == "always",
+                    f"Execution strategy: {schedule_data.get('execution_strategy')}",
+                )
             )
         else:
             results.append(print_result(False, "Failed to retrieve schedule"))
@@ -158,7 +165,9 @@ def main():
         step += 1
 
         updated_schedule, response = schedule_helper.update_schedule(
-            token=token, schedule_id=schedule_id, updates={"name": "Updated Schedule Name", "cron": "0 12 * * *"}
+            token=token,
+            schedule_id=schedule_id,
+            updates={"name": "Updated Schedule Name", "cron": "0 12 * * *", "execution_strategy": "ignore"},
         )
 
         if updated_schedule:
@@ -175,6 +184,12 @@ def main():
                     updated_schedule.get("cron") == "0 12 * * *", f"Cron updated: {updated_schedule.get('cron')}"
                 )
             )
+            results.append(
+                print_result(
+                    updated_schedule.get("execution_strategy") == "ignore",
+                    f"Execution strategy updated: {updated_schedule.get('execution_strategy')}",
+                )
+            )
         else:
             results.append(print_result(False, "Update failed"))
 
@@ -189,6 +204,7 @@ def main():
             # Modify the schedule - keep spider_id intact
             current_schedule["name"] = "Fully Replaced Schedule"
             current_schedule["priority"] = 10
+            current_schedule["execution_strategy"] = "override"
 
             # Debug: verify spider_id is present
             print(f"  Spider ID in schedule: {current_schedule.get('spider_id')}")
@@ -209,6 +225,12 @@ def main():
                     print_result(
                         replaced_schedule.get("priority") == 10,
                         f"Priority replaced: {replaced_schedule.get('priority')}",
+                    )
+                )
+                results.append(
+                    print_result(
+                        replaced_schedule.get("execution_strategy") == "override",
+                        f"Execution strategy replaced: {replaced_schedule.get('execution_strategy')}",
                     )
                 )
                 # Verify spider_id wasn't lost
