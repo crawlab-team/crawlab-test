@@ -250,6 +250,7 @@ Validate schedule execution strategy behavior (override, ignore, always) when sc
 - Default strategy is "always" for backward compatibility
 - Override strategy waits for cancellation confirmation
 - Ignore strategy checks both running and pending tasks
+- **Backend considers tasks with status `pending`, `assigned`, OR `running` as "running tasks"** for execution strategy purposes
 - Test requires scheduler service to be running
 - Long-running tasks recommended for testing (10+ seconds)
 - Task cancellation may take time depending on implementation

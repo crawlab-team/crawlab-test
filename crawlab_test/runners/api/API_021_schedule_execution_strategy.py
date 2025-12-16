@@ -47,7 +47,7 @@ def wait_for_task_status(task_helper: TaskHelper, token: str, task_id: str, expe
             current_status = task_data.get("status")
             if current_status == expected_status:
                 return True
-            # Also check for terminal statuses
+            # Also check for terminal statuses when expecting cancellation
             if expected_status == "cancelled" and current_status in ["cancelled", "error", "abnormal"]:
                 return True
         time.sleep(1)
@@ -57,6 +57,9 @@ def wait_for_task_status(task_helper: TaskHelper, token: str, task_id: str, expe
 def count_running_tasks(task_helper: TaskHelper, token: str, schedule_id: str) -> int:
     """
     Count running tasks for a specific schedule.
+    
+    Note: Backend considers tasks with status pending, assigned, or running
+    as "running tasks" for execution strategy purposes.
 
     Args:
         task_helper: TaskHelper instance
@@ -64,14 +67,19 @@ def count_running_tasks(task_helper: TaskHelper, token: str, schedule_id: str) -
         schedule_id: Schedule ID to filter
 
     Returns:
-        int: Number of running tasks
+        int: Number of running/pending/assigned tasks
     """
     all_tasks, _ = task_helper.list_tasks(token)
     if not all_tasks:
         return 0
 
+    # Backend checks for pending, assigned, AND running tasks
+    # See: crawlab/core/schedule/service.go getRunningTasksBySchedule
     running_count = sum(
-        1 for task in all_tasks if task.get("schedule_id") == schedule_id and task.get("status") == "running"
+        1
+        for task in all_tasks
+        if task.get("schedule_id") == schedule_id
+        and task.get("status") in ["pending", "assigned", "running"]
     )
     return running_count
 
@@ -282,9 +290,9 @@ def main():
                 print_step(step, "Test ignore - with running task")
                 step += 1
 
-                # Count tasks before trigger
+                # Count tasks before trigger (pending/assigned/running)
                 tasks_before = count_running_tasks(task_helper, token, ignore_schedule_id)
-                print(f"  Running tasks before: {tasks_before}")
+                print(f"  Running/pending/assigned tasks before: {tasks_before}")
 
                 # Trigger schedule again while task is running
                 task_ids_result2, response2 = schedule_helper.run_schedule(token, ignore_schedule_id)
@@ -292,9 +300,9 @@ def main():
                 # Give system time to process
                 time.sleep(2)
 
-                # Count tasks after trigger
+                # Count tasks after trigger (pending/assigned/running)
                 tasks_after = count_running_tasks(task_helper, token, ignore_schedule_id)
-                print(f"  Running tasks after: {tasks_after}")
+                print(f"  Running/pending/assigned tasks after: {tasks_after}")
 
                 # Verify no new task was created (should be skipped)
                 # Note: Backend may or may not return task IDs for ignored execution
@@ -377,13 +385,14 @@ def main():
             task_data, _ = task_helper.get_task(token, task_id)
             if task_data:
                 status = task_data.get("status")
-                if status in ["running", "pending"]:
+                # Match backend's definition of "running tasks"
+                if status in ["pending", "assigned", "running"]:
                     running_or_pending += 1
 
         results.append(
             print_result(
                 running_or_pending >= 2,
-                f"Always strategy allows concurrent execution: {running_or_pending}/3 tasks running/pending",
+                f"Always strategy allows concurrent execution: {running_or_pending}/3 tasks running/pending/assigned",
             )
         )
 
