@@ -217,7 +217,7 @@ class NodeGroupHelper:
 
     def add_node_to_group(
         self, token: str, group_id: str, node_id: str
-    ) -> Tuple[Optional[Dict], Optional[Dict]]:
+    ) -> Tuple[bool, Optional[Dict]]:
         """
         Add a node to a node group.
 
@@ -227,7 +227,7 @@ class NodeGroupHelper:
             node_id: Node ID to add
 
         Returns:
-            Tuple of (updated_group, response_data)
+            Tuple of (success, response_data)
         """
         try:
             # No data wrapper for this endpoint - direct JSON body
@@ -241,20 +241,19 @@ class NodeGroupHelper:
             )
 
             if response.status_code == 200:
-                data = response.json()
-                return data.get("data"), data
+                return True, response.json()
             else:
-                return None, {
+                return False, {
                     "error": f"Add node to group failed with status {response.status_code}",
                     "response": response.text,
                 }
 
         except Exception as e:
-            return None, {"error": str(e)}
+            return False, {"error": str(e)}
 
     def remove_node_from_group(
         self, token: str, group_id: str, node_id: str
-    ) -> Tuple[Optional[Dict], Optional[Dict]]:
+    ) -> Tuple[bool, Optional[Dict]]:
         """
         Remove a node from a node group.
 
@@ -264,7 +263,7 @@ class NodeGroupHelper:
             node_id: Node ID to remove
 
         Returns:
-            Tuple of (updated_group, response_data)
+            Tuple of (success, response_data)
         """
         try:
             response = requests.delete(
@@ -274,10 +273,9 @@ class NodeGroupHelper:
             )
 
             if response.status_code == 200:
-                data = response.json()
-                return data.get("data"), data
+                return True, response.json()
             else:
-                return None, {"error": f"Remove node from group failed with status {response.status_code}"}
+                return False, {"error": f"Remove node from group failed with status {response.status_code}"}
 
         except Exception as e:
-            return None, {"error": str(e)}
+            return False, {"error": str(e)}

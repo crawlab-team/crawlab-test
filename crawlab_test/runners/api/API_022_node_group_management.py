@@ -176,8 +176,8 @@ def main():
 
         if len(node_ids) >= 1:
             # 5.1 Add single node to group
-            updated_group, response = node_group_helper.add_node_to_group(token, test_groups[0], node_ids[0])
-            if not updated_group:
+            success, response = node_group_helper.add_node_to_group(token, test_groups[0], node_ids[0])
+            if not success:
                 print(f"❌ TC5.1 failed: {response}")
                 return 1
             print("✓ TC5.1: Added node to group")
@@ -191,15 +191,15 @@ def main():
 
             # 5.2 Add another node if available
             if len(node_ids) >= 2:
-                updated_group, response = node_group_helper.add_node_to_group(token, test_groups[0], node_ids[1])
-                if updated_group:
+                success, response = node_group_helper.add_node_to_group(token, test_groups[0], node_ids[1])
+                if success:
                     print("✓ TC5.2: Added second node to group")
                 else:
                     print(f"⚠ TC5.2: Failed to add second node: {response}")
 
             # 5.3 Test duplicate assignment (should be idempotent)
-            updated_group, response = node_group_helper.add_node_to_group(token, test_groups[0], node_ids[0])
-            if updated_group:
+            success, response = node_group_helper.add_node_to_group(token, test_groups[0], node_ids[0])
+            if success:
                 print("✓ TC5.3: Duplicate assignment handled (idempotent)")
             else:
                 print(f"⚠ TC5.3: Duplicate assignment failed: {response}")
@@ -211,11 +211,11 @@ def main():
 
         if len(node_ids) >= 1:
             # 6.1 Remove single node
-            updated_group, response = node_group_helper.remove_node_from_group(token, test_groups[0], node_ids[0])
-            if updated_group is not None:
-                print("✓ TC6.1: Removed node from group")
-            else:
+            success, response = node_group_helper.remove_node_from_group(token, test_groups[0], node_ids[0])
+            if not success:
                 print(f"⚠ TC6.1: Failed to remove node: {response}")
+            else:
+                print("✓ TC6.1: Removed node from group")
 
             # Verify node removed
             group_detail, _ = node_group_helper.get_node_group(token, test_groups[0])
@@ -225,7 +225,7 @@ def main():
                 print("⚠ TC6.1: Node may still be in group")
 
             # 6.2 Remove non-existent node (should not error)
-            updated_group, response = node_group_helper.remove_node_from_group(
+            success, response = node_group_helper.remove_node_from_group(
                 token, test_groups[0], "nonexistent_node_id"
             )
             # Expect this to succeed (no-op) or return appropriate error
