@@ -59,7 +59,7 @@ def main():
         node_ids = [n["_id"] for n in nodes if "_id" in n][:2]  # Use up to 2 nodes
 
         # Get a test spider
-        spiders, response = spider_helper.list_spiders(token, page=1, size=1)
+        spiders, response = spider_helper.list_spiders(token)
         if spiders and len(spiders) > 0:
             test_spider_id = spiders[0]["_id"]
             print(f"✓ Found test spider: {test_spider_id}")
@@ -297,7 +297,7 @@ def main():
             )
             if task_ids and len(task_ids) > 0:
                 task_id = task_ids[0]
-                cleanup.track_resource("task", task_id)
+                cleanup.track_task(task_id)
                 print(f"✓ TC8.1: Task created with node group: {task_id}")
 
                 # Verify task has node_group_ids
@@ -321,7 +321,7 @@ def main():
                     node_group_ids=[test_groups[1], test_groups[2]],
                 )
                 if task_ids and len(task_ids) > 0:
-                    cleanup.track_resource("task", task_ids[0])
+                    cleanup.track_task(task_ids[0])
                     print(f"✓ TC8.2: Task created with multiple node groups")
                 else:
                     print(f"⚠ TC8.2: Failed to create task with multiple groups: {response}")
@@ -336,7 +336,7 @@ def main():
                     node_ids=[node_ids[0]],
                 )
                 if task_ids and len(task_ids) > 0:
-                    cleanup.track_resource("task", task_ids[0])
+                    cleanup.track_task(task_ids[0])
                     print(f"✓ TC8.3: Task created with group + node intersection")
                 else:
                     print(f"⚠ TC8.3: Failed to create task with intersection: {response}")
@@ -424,7 +424,7 @@ def main():
                     print(f"⚠ Failed to cleanup group {group_id}: {e}")
 
             # Cleanup tracked resources (tasks)
-            cleanup.cleanup_resources(token)
+            cleanup.cleanup_all(token, task_helper=task_helper)
 
             # Logout
             auth.logout(token)
