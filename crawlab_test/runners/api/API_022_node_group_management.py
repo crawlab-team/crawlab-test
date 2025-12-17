@@ -277,7 +277,7 @@ def main():
                 node_group_helper.add_node_to_group(token, test_groups[1], node_ids[0])
 
             # 8.1 Run task with single node group
-            task_ids, response = task_helper.run_task(
+            task_ids, response = task_helper.create_task(
                 token,
                 spider_id=test_spider_id,
                 mode="selected-nodes",
@@ -303,7 +303,7 @@ def main():
 
             # 8.2 Run task with multiple node groups
             if len(test_groups) >= 3:
-                task_ids, response = task_helper.run_task(
+                task_ids, response = task_helper.create_task(
                     token,
                     spider_id=test_spider_id,
                     mode="selected-nodes",
@@ -317,7 +317,7 @@ def main():
 
             # 8.3 Run task with node groups + specific nodes (intersection)
             if len(node_ids) >= 1:
-                task_ids, response = task_helper.run_task(
+                task_ids, response = task_helper.create_task(
                     token,
                     spider_id=test_spider_id,
                     mode="selected-nodes",
