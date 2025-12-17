@@ -245,12 +245,14 @@ class DependencyReconnectionTest:
             return False
 
         # Wait for disconnection to be detected
+        # Note: Crawlab's heartbeat interval is ~90s, so we need to wait longer
+        # for the master to detect the worker as offline (typically 2-3 missed heartbeats)
         disconnected = wait_for_condition(
-            lambda: self._check_node_status(worker_name) == "offline", timeout=60, check_interval=2
+            lambda: self._check_node_status(worker_name) == "offline", timeout=180, check_interval=5
         )
 
         if not disconnected:
-            self.logger.error("Worker disconnection was not detected")
+            self.logger.error("Worker disconnection was not detected within 180 seconds")
             return False
 
         self.logger.info(f"Worker {worker_name} successfully disconnected")
