@@ -105,6 +105,18 @@ Validate schedule CRUD operations and schedule control endpoints (enable/disable
 - Verify response contains task ID(s)
 - Verify task was created for the scheduled spider
 
+**4.4 Run schedule with node groups (if available)**
+- Get list of node groups (Pro feature)
+- If node groups available:
+  - Select first node group
+  - Call `POST /api/schedules/{id}/run` with:
+    - `mode`: "selected-node-groups"
+    - `node_group_ids`: Array with selected group ID
+  - Verify response status code is 200
+  - Verify response contains task ID(s)
+  - Verify task was created with node_group_ids
+- If node groups not available, skip test gracefully
+
 ### Test Case 5: Batch Operations
 
 **5.1 Create additional schedules**

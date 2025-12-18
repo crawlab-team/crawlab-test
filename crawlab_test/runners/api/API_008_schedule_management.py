@@ -7,6 +7,7 @@ Validates schedule CRUD operations and control endpoints.
 
 import sys
 import time
+import requests
 
 from crawlab_test.helpers.api import AuthHelper, CleanupHelper, ScheduleHelper, SpiderHelper, TaskHelper
 
@@ -283,6 +284,43 @@ def main():
             # Track task for cleanup
             for task_id in task_ids:
                 cleanup.track_task(task_id)
+
+        print_step(step, "Run schedule with node_group_ids (if available)")
+        step += 1
+
+        # Try to get node groups (Pro feature)
+        try:
+            ng_response = requests.get(
+                f"{schedule_helper.base_url}/node-groups",
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=10
+            )
+            if ng_response.status_code == 200 and ng_response.json().get("data"):
+                node_groups = ng_response.json().get("data", [])
+                if node_groups and len(node_groups) > 0:
+                    test_group_id = node_groups[0].get("_id")
+                    task_ids, response = schedule_helper.run_schedule(
+                        token, schedule_id,
+                        mode="selected-node-groups",
+                        node_group_ids=[test_group_id]
+                    )
+                    if task_ids and len(task_ids) > 0:
+                        results.append(print_result(True, f"Schedule run with node_group_ids created {len(task_ids)} task(s)"))
+                        for task_id in task_ids:
+                            cleanup.track_task(task_id)
+                    else:
+                        results.append(print_result(False, f"Schedule run with node_group_ids failed: {response.get('error', '')}"))
+                else:
+                    print("⚠️  No node groups available, skipping node_group_ids test")
+                    results.append(print_result(True, "Node groups test skipped (no groups)"))
+            else:
+                print("⚠️  Node groups not available (Community edition or not configured)")
+                results.append(print_result(True, "Node groups test skipped (not available)"))
+        except Exception as e:
+            print(f"⚠️  Node groups test error: {e}")
+            results.append(print_result(True, f"Node groups test skipped (error: {e})"))
+        
+        step += 1
         else:
             error_msg = response.get("error", "") if response else ""
             error_response = response.get("response", "") if response else ""

@@ -5,7 +5,6 @@ Provides reusable functions for Crawlab schedule operations.
 """
 
 import os
-from typing import Dict, List, Optional, Tuple
 
 import requests
 
@@ -25,7 +24,7 @@ class ScheduleHelper:
 
     def create_schedule(
         self, token: str, spider_id: str, name: str, cron: str, enabled: bool = True, **kwargs
-    ) -> Tuple[Optional[str], Optional[Dict]]:
+    ) -> tuple[str | None, dict | None]:
         """
         Create a new schedule.
 
@@ -63,7 +62,7 @@ class ScheduleHelper:
         except Exception as e:
             return None, {"error": str(e)}
 
-    def get_schedule(self, token: str, schedule_id: str) -> Tuple[Optional[Dict], Optional[Dict]]:
+    def get_schedule(self, token: str, schedule_id: str) -> tuple[dict | None, dict | None]:
         """
         Get schedule details by ID.
 
@@ -89,8 +88,8 @@ class ScheduleHelper:
             return None, {"error": str(e)}
 
     def list_schedules(
-        self, token: str, spider_id: Optional[str] = None, page: int = 1, size: int = 10
-    ) -> Tuple[Optional[List], Optional[Dict]]:
+        self, token: str, spider_id: str | None = None, page: int = 1, size: int = 10
+    ) -> tuple[list | None, dict | None]:
         """
         List schedules with optional filtering.
 
@@ -124,7 +123,7 @@ class ScheduleHelper:
         except Exception as e:
             return None, {"error": str(e)}
 
-    def update_schedule(self, token: str, schedule_id: str, updates: Dict) -> Tuple[Optional[Dict], Optional[Dict]]:
+    def update_schedule(self, token: str, schedule_id: str, updates: dict) -> tuple[dict | None, dict | None]:
         """
         Update schedule (partial update).
 
@@ -156,9 +155,7 @@ class ScheduleHelper:
         except Exception as e:
             return None, {"error": str(e)}
 
-    def replace_schedule(
-        self, token: str, schedule_id: str, schedule_data: Dict
-    ) -> Tuple[Optional[Dict], Optional[Dict]]:
+    def replace_schedule(self, token: str, schedule_id: str, schedule_data: dict) -> tuple[dict | None, dict | None]:
         """
         Replace schedule (full update).
 
@@ -190,7 +187,7 @@ class ScheduleHelper:
         except Exception as e:
             return None, {"error": str(e)}
 
-    def delete_schedule(self, token: str, schedule_id: str) -> Tuple[bool, Optional[Dict]]:
+    def delete_schedule(self, token: str, schedule_id: str) -> tuple[bool, dict | None]:
         """
         Delete a schedule.
 
@@ -211,7 +208,7 @@ class ScheduleHelper:
         except Exception as e:
             return False, {"error": str(e)}
 
-    def enable_schedule(self, token: str, schedule_id: str) -> Tuple[bool, Optional[Dict]]:
+    def enable_schedule(self, token: str, schedule_id: str) -> tuple[bool, dict | None]:
         """
         Enable a schedule.
 
@@ -234,7 +231,7 @@ class ScheduleHelper:
         except Exception as e:
             return False, {"error": str(e)}
 
-    def disable_schedule(self, token: str, schedule_id: str) -> Tuple[bool, Optional[Dict]]:
+    def disable_schedule(self, token: str, schedule_id: str) -> tuple[bool, dict | None]:
         """
         Disable a schedule.
 
@@ -257,14 +254,14 @@ class ScheduleHelper:
         except Exception as e:
             return False, {"error": str(e)}
 
-    def run_schedule(self, token: str, schedule_id: str, **kwargs) -> Tuple[Optional[List[str]], Optional[Dict]]:
+    def run_schedule(self, token: str, schedule_id: str, **kwargs) -> tuple[list[str] | None, dict | None]:
         """
         Run a schedule immediately (creates task).
 
         Args:
             token: JWT authentication token
             schedule_id: Schedule ID
-            **kwargs: Optional parameters (cmd, mode, priority, node_ids, param)
+            **kwargs: Optional parameters (cmd, mode, priority, node_ids, node_group_ids, param)
 
         Returns:
             Tuple of (task_ids, response_data)
@@ -274,7 +271,7 @@ class ScheduleHelper:
             payload = {}
             if kwargs:
                 # Only include valid fields
-                valid_fields = ["cmd", "mode", "priority", "node_ids", "param"]
+                valid_fields = ["cmd", "mode", "priority", "node_ids", "node_group_ids", "param"]
                 payload = {k: v for k, v in kwargs.items() if k in valid_fields}
 
             response = requests.post(
@@ -303,7 +300,7 @@ class ScheduleHelper:
         except Exception as e:
             return None, {"error": str(e)}
 
-    def batch_update_schedules(self, token: str, schedule_ids: List[str], updates: Dict) -> Tuple[bool, Optional[Dict]]:
+    def batch_update_schedules(self, token: str, schedule_ids: list[str], updates: dict) -> tuple[bool, dict | None]:
         """
         Batch update multiple schedules.
 
@@ -330,7 +327,7 @@ class ScheduleHelper:
         except Exception as e:
             return False, {"error": str(e)}
 
-    def delete_schedules(self, token: str, schedule_ids: List[str]) -> Tuple[bool, Optional[Dict]]:
+    def delete_schedules(self, token: str, schedule_ids: list[str]) -> tuple[bool, dict | None]:
         """
         Delete multiple schedules.
 
