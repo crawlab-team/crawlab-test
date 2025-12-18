@@ -101,7 +101,8 @@ class WorkerManager:
             if master_inspect and "Config" in master_inspect:
                 env_list = master_inspect["Config"].get("Env", [])
                 for env_var in env_list:
-                    if "CRAWLAB_MONGO" in env_var:
+                    # Extract MongoDB and license settings from master
+                    if "CRAWLAB_MONGO" in env_var or "CRAWLAB_LICENSE" in env_var:
                         key, _, value = env_var.partition("=")
                         master_env[key] = value
 
@@ -132,6 +133,10 @@ class WorkerManager:
 
             for key, value in mongo_settings.items():
                 cmd.extend(["-e", f"{key}={value}"])
+
+            # Add license from master if available (critical for Crawlab Pro)
+            if "CRAWLAB_LICENSE" in master_env:
+                cmd.extend(["-e", f"CRAWLAB_LICENSE={master_env['CRAWLAB_LICENSE']}"])
 
             # Add node groups and name
             cmd.extend(["-e", f"CRAWLAB_NODE_GROUPS={groups}", "-e", f"CRAWLAB_NODE_NAME={name}", self.image])
