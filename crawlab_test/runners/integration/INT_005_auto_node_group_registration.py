@@ -100,10 +100,18 @@ class WorkerManager:
             master_env = {}
             if master_inspect and "Config" in master_inspect:
                 env_list = master_inspect["Config"].get("Env", [])
+                keep_prefixes = (
+                    "CRAWLAB_MONGO",
+                    "CRAWLAB_LICENSE",
+                    "CRAWLAB_AUTH_KEY",
+                    "CRAWLAB_MASTER_HOST",
+                    "CRAWLAB_GRPC_PORT",
+                    "CRAWLAB_MASTER_PORT",
+                )
                 for env_var in env_list:
-                    # Extract MongoDB and license settings from master
-                    if "CRAWLAB_MONGO" in env_var or "CRAWLAB_LICENSE" in env_var:
-                        key, _, value = env_var.partition("=")
+                    # Extract relevant settings from master
+                    key, _, value = env_var.partition("=")
+                    if key.startswith(keep_prefixes):
                         master_env[key] = value
 
             # Build docker run command with inherited settings
@@ -120,6 +128,26 @@ class WorkerManager:
                 "-e",
                 f"CRAWLAB_NODE_MASTER_ADDRESS={self.master_name}:9666",
             ]
+
+            # Ensure gRPC client points to master container and uses correct auth key
+            master_host = master_env.get("CRAWLAB_MASTER_HOST", self.master_name)
+            grpc_port = master_env.get("CRAWLAB_GRPC_PORT", master_env.get("CRAWLAB_MASTER_PORT", "9666"))
+            auth_key = master_env.get("CRAWLAB_AUTH_KEY", "Crawlab2024!")
+
+            cmd.extend(
+                [
+                    "-e",
+                    f"CRAWLAB_MASTER_HOST={master_host}",
+                    "-e",
+                    f"CRAWLAB_MASTER_PORT={grpc_port}",
+                    "-e",
+                    f"CRAWLAB_GRPC_HOST={master_host}",
+                    "-e",
+                    f"CRAWLAB_GRPC_PORT={grpc_port}",
+                    "-e",
+                    f"CRAWLAB_AUTH_KEY={auth_key}",
+                ]
+            )
 
             # Add MongoDB settings from master or defaults
             mongo_settings = {
