@@ -408,6 +408,8 @@ Based on spec 041-node-grouping implementation:
 - Groups are stored in separate collection
 - Deleting a group doesn't affect nodes
 - Task scheduling resolves groups at controller layer
+- **Known Issue (Spec 045)**: Concurrent node registrations with same group name may create duplicates due to race condition. This is tested separately in INT-005 Test Case 5.
+- Name uniqueness should be enforced with case-insensitive database constraint (pending spec 045 implementation)
 - UI integration completed in spec 043
 - This test focuses on API/backend functionality
 

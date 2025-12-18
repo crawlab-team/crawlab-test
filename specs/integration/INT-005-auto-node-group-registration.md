@@ -79,6 +79,32 @@ Validate that worker nodes can automatically register themselves into node group
 - Verify the node is still in "auto-group-1"
 - Verify no duplicate entries in `node_ids`
 
+### Test Case 5: Concurrent Registration (Duplicate Prevention)
+
+**5.1 Start multiple workers simultaneously with same group name**
+- Start 3 worker containers at the same time with `CRAWLAB_NODE_GROUPS=concurrent-test`
+- Use background process execution to simulate race condition
+- Wait for all nodes to register (approx. 20-30 seconds)
+
+**5.2 Verify no duplicate groups created**
+- Call `GET /api/node-groups`
+- Filter for groups with name matching "concurrent-test" (case-insensitive)
+- **Assert**: Exactly 1 group exists (not 2 or 3)
+- **Assert**: Group has description containing "Auto-created"
+
+**5.3 Verify all nodes in single group**
+- Get all 3 worker node IDs
+- Call `GET /api/node-groups/{id}` for the "concurrent-test" group
+- **Assert**: All 3 node IDs are in the `node_ids` array
+- **Assert**: No duplicate node IDs in the array
+
+**5.4 Check for orphaned duplicate groups**
+- List all node groups
+- Count how many groups have names matching "concurrent-test" (case-insensitive)
+- **Assert**: Count equals 1 (no duplicates even with case variations)
+
+**Note**: This test validates the fix for spec 045 (Node Group Duplicate Prevention). If this test fails with multiple groups created, it indicates a race condition bug that needs fixing with database unique constraints and upsert operations.
+
 ### Cleanup
 1. Stop and remove all test worker containers
 2. Delete all auto-created node groups
@@ -91,4 +117,6 @@ Validate that worker nodes can automatically register themselves into node group
 - [ ] Multiple groups are supported (comma-separated)
 - [ ] Group name matching is case-insensitive
 - [ ] Registration is idempotent (no duplicate assignments on restart)
+- [ ] **Concurrent registrations do not create duplicate groups** (spec 045)
+- [ ] All nodes from concurrent registrations are properly assigned to single group
 - [ ] System remains stable during auto-registration
