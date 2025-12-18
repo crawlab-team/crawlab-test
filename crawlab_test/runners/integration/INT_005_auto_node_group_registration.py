@@ -446,11 +446,8 @@ def main():
         logger.info(f"Starting 3 workers simultaneously with group '{concurrent_group_name}'...")
 
         # Start all workers at nearly the same time (background)
-        for i in range(3):
+        for _ in range(3):
             worker_name = f"test-worker-concurrent-{uuid.uuid4().hex[:8]}"
-            # Use subprocess to start in background to maximize concurrency
-            import subprocess
-
             cmd = worker_manager.build_worker_command(worker_name, concurrent_group_name)
             subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             concurrent_workers.append(worker_name)
