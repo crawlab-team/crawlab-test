@@ -9,6 +9,7 @@
 - **Deterministic**: Same test → Same result every time
 - **DRY**: Reusable components over duplication
 - **No unnecessary docs**: Code and tests are the documentation
+- **Always ensure lint**: Run `ruff lint` to make sure all code is formatted 
 
 ### ⚠️ Documentation Policy
 
