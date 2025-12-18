@@ -269,6 +269,34 @@ class DockerUtils:
         except Exception:
             return False
 
+    def stop_container(self, container_name: str, timeout: int = 10) -> bool:
+        """Stop a Docker container"""
+        if not self._docker_available:
+            return False
+
+        try:
+            result = subprocess.run(
+                ["docker", "stop", "-t", str(timeout), container_name], capture_output=True, text=True, timeout=timeout + 5
+            )
+            return result.returncode == 0
+        except Exception:
+            return False
+
+    def remove_container(self, container_name: str, force: bool = False) -> bool:
+        """Remove a Docker container"""
+        if not self._docker_available:
+            return False
+
+        try:
+            cmd = ["docker", "rm"]
+            if force:
+                cmd.append("-f")
+            cmd.append(container_name)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            return result.returncode == 0
+        except Exception:
+            return False
+
     def get_container_stats(self, container_name: str) -> Optional[Dict[str, Any]]:
         """Get resource statistics for a Docker container"""
         if not self._docker_available:
