@@ -81,6 +81,91 @@ class WorkerManager:
         self.master_name = master["Names"].lstrip("/")
         self.logger.info(f"Using master container: {self.master_name}")
 
+        # Cache master environment values for reuse (gRPC, auth, Mongo, license)
+        master_inspect = self.docker.get_container_inspect(master["Names"])
+        self._load_master_env(master_inspect)
+
+    def _load_master_env(self, master_inspect=None) -> dict:
+        """Load master container environment and derived connection settings."""
+        master_env = {}
+
+        if master_inspect is None:
+            master = self.docker.find_master_container()
+            if master:
+                master_inspect = self.docker.get_container_inspect(master["Names"])
+
+        if master_inspect and "Config" in master_inspect:
+            env_list = master_inspect.get("Config", {}).get("Env", [])
+            keep_prefixes = (
+                "CRAWLAB_MONGO",
+                "CRAWLAB_LICENSE",
+                "CRAWLAB_AUTH_KEY",
+                "CRAWLAB_MASTER_HOST",
+                "CRAWLAB_GRPC_PORT",
+                "CRAWLAB_MASTER_PORT",
+            )
+            for env_var in env_list:
+                key, _, value = env_var.partition("=")
+                if key.startswith(keep_prefixes):
+                    master_env[key] = value
+
+        # Derived connection settings
+        self.master_env = master_env
+        self.master_host = master_env.get("CRAWLAB_MASTER_HOST", self.master_name)
+        self.grpc_port = master_env.get("CRAWLAB_GRPC_PORT", master_env.get("CRAWLAB_MASTER_PORT", "9666"))
+        self.grpc_address = f"{self.master_host}:{self.grpc_port}"
+        self.auth_key = master_env.get("CRAWLAB_AUTH_KEY", "Crawlab2024!")
+
+        # Mongo defaults allow workers to start even if master env is missing values
+        self.mongo_settings = {
+            "CRAWLAB_MONGO_HOST": master_env.get("CRAWLAB_MONGO_HOST", "crawlab_dev_mongo"),
+            "CRAWLAB_MONGO_PORT": master_env.get("CRAWLAB_MONGO_PORT", "27017"),
+            "CRAWLAB_MONGO_DB": master_env.get("CRAWLAB_MONGO_DB", "crawlab"),
+            "CRAWLAB_MONGO_USERNAME": master_env.get("CRAWLAB_MONGO_USERNAME", "dev_user"),
+            "CRAWLAB_MONGO_PASSWORD": master_env.get("CRAWLAB_MONGO_PASSWORD", "dev_password"),
+            "CRAWLAB_MONGO_AUTHSOURCE": master_env.get("CRAWLAB_MONGO_AUTHSOURCE", "admin"),
+        }
+
+        return master_env
+
+    def build_worker_command(self, name: str, groups: str) -> list[str]:
+        """Construct docker run command for a worker with inherited master settings."""
+        master_env = self._load_master_env()
+
+        cmd = [
+            "docker",
+            "run",
+            "-d",
+            "--name",
+            name,
+            "--network",
+            self.network,
+            "-e",
+            "CRAWLAB_NODE_MASTER=N",
+            "-e",
+            f"CRAWLAB_NODE_MASTER_ADDRESS={self.master_name}:9666",
+            "-e",
+            f"CRAWLAB_MASTER_HOST={self.master_host}",
+            "-e",
+            f"CRAWLAB_MASTER_PORT={self.grpc_port}",
+            "-e",
+            f"CRAWLAB_GRPC_HOST={self.master_host}",
+            "-e",
+            f"CRAWLAB_GRPC_PORT={self.grpc_port}",
+            "-e",
+            f"CRAWLAB_AUTH_KEY={self.auth_key}",
+        ]
+
+        for key, value in self.mongo_settings.items():
+            cmd.extend(["-e", f"{key}={value}"])
+
+        if "CRAWLAB_LICENSE" in master_env:
+            cmd.extend(["-e", f"CRAWLAB_LICENSE={master_env['CRAWLAB_LICENSE']}"])
+
+        cmd.extend(["-e", f"CRAWLAB_NODE_GROUPS={groups}", "-e", f"CRAWLAB_NODE_NAME={name}", self.image])
+
+        return cmd
+
     def start_worker(self, name: str, groups: str) -> bool:
         """Start a worker container with specified node groups.
 
@@ -94,80 +179,7 @@ class WorkerManager:
         self.logger.info(f"Starting worker {name} with groups: {groups}")
 
         try:
-            # Get master container env to replicate settings
-            master = self.docker.find_master_container()
-            master_inspect = self.docker.get_container_inspect(master["Names"])
-            master_env = {}
-            if master_inspect and "Config" in master_inspect:
-                env_list = master_inspect["Config"].get("Env", [])
-                keep_prefixes = (
-                    "CRAWLAB_MONGO",
-                    "CRAWLAB_LICENSE",
-                    "CRAWLAB_AUTH_KEY",
-                    "CRAWLAB_MASTER_HOST",
-                    "CRAWLAB_GRPC_PORT",
-                    "CRAWLAB_MASTER_PORT",
-                )
-                for env_var in env_list:
-                    # Extract relevant settings from master
-                    key, _, value = env_var.partition("=")
-                    if key.startswith(keep_prefixes):
-                        master_env[key] = value
-
-            # Build docker run command with inherited settings
-            cmd = [
-                "docker",
-                "run",
-                "-d",
-                "--name",
-                name,
-                "--network",
-                self.network,
-                "-e",
-                "CRAWLAB_NODE_MASTER=N",
-                "-e",
-                f"CRAWLAB_NODE_MASTER_ADDRESS={self.master_name}:9666",
-            ]
-
-            # Ensure gRPC client points to master container and uses correct auth key
-            master_host = master_env.get("CRAWLAB_MASTER_HOST", self.master_name)
-            grpc_port = master_env.get("CRAWLAB_GRPC_PORT", master_env.get("CRAWLAB_MASTER_PORT", "9666"))
-            auth_key = master_env.get("CRAWLAB_AUTH_KEY", "Crawlab2024!")
-
-            cmd.extend(
-                [
-                    "-e",
-                    f"CRAWLAB_MASTER_HOST={master_host}",
-                    "-e",
-                    f"CRAWLAB_MASTER_PORT={grpc_port}",
-                    "-e",
-                    f"CRAWLAB_GRPC_HOST={master_host}",
-                    "-e",
-                    f"CRAWLAB_GRPC_PORT={grpc_port}",
-                    "-e",
-                    f"CRAWLAB_AUTH_KEY={auth_key}",
-                ]
-            )
-
-            # Add MongoDB settings from master or defaults
-            mongo_settings = {
-                "CRAWLAB_MONGO_HOST": master_env.get("CRAWLAB_MONGO_HOST", "crawlab_dev_mongo"),
-                "CRAWLAB_MONGO_PORT": master_env.get("CRAWLAB_MONGO_PORT", "27017"),
-                "CRAWLAB_MONGO_DB": master_env.get("CRAWLAB_MONGO_DB", "crawlab"),
-                "CRAWLAB_MONGO_USERNAME": master_env.get("CRAWLAB_MONGO_USERNAME", "dev_user"),
-                "CRAWLAB_MONGO_PASSWORD": master_env.get("CRAWLAB_MONGO_PASSWORD", "dev_password"),
-                "CRAWLAB_MONGO_AUTHSOURCE": master_env.get("CRAWLAB_MONGO_AUTHSOURCE", "admin"),
-            }
-
-            for key, value in mongo_settings.items():
-                cmd.extend(["-e", f"{key}={value}"])
-
-            # Add license from master if available (critical for Crawlab Pro)
-            if "CRAWLAB_LICENSE" in master_env:
-                cmd.extend(["-e", f"CRAWLAB_LICENSE={master_env['CRAWLAB_LICENSE']}"])
-
-            # Add node groups and name
-            cmd.extend(["-e", f"CRAWLAB_NODE_GROUPS={groups}", "-e", f"CRAWLAB_NODE_NAME={name}", self.image])
+            cmd = self.build_worker_command(name, groups)
 
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
             if result.returncode == 0:
@@ -439,26 +451,8 @@ def main():
             # Use subprocess to start in background to maximize concurrency
             import subprocess
 
-            subprocess.Popen(
-                [
-                    "docker",
-                    "run",
-                    "-d",
-                    "--name",
-                    worker_name,
-                    "--network",
-                    worker_manager.network,
-                    "-e",
-                    f"CRAWLAB_GRPC_ADDRESS={worker_manager.grpc_address}",
-                    "-e",
-                    "CRAWLAB_NODE_MASTER=false",
-                    "-e",
-                    f"CRAWLAB_NODE_GROUPS={concurrent_group_name}",
-                    worker_manager.image,
-                ],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
+            cmd = worker_manager.build_worker_command(worker_name, concurrent_group_name)
+            subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             concurrent_workers.append(worker_name)
             logger.debug(f"Started worker {worker_name} in background")
 
