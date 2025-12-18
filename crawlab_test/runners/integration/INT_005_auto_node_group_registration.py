@@ -76,6 +76,11 @@ class WorkerManager:
         self.image = image or master.get("Image", "crawlabteam/crawlab-pro:develop")
         self.logger.info(f"Using image: {self.image}")
 
+        # Get master container name for worker connection
+        # Strip leading slash from container name (Docker adds it)
+        self.master_name = master["Names"].lstrip("/")
+        self.logger.info(f"Using master container: {self.master_name}")
+
     def start_worker(self, name: str, groups: str) -> bool:
         """Start a worker container with specified node groups.
 
@@ -112,7 +117,7 @@ class WorkerManager:
                 "-e",
                 "CRAWLAB_NODE_MASTER=N",
                 "-e",
-                "CRAWLAB_NODE_MASTER_ADDRESS=crawlab_dev_master:9666",
+                f"CRAWLAB_NODE_MASTER_ADDRESS={self.master_name}:9666",
             ]
 
             # Add MongoDB settings from master or defaults
@@ -220,10 +225,27 @@ def main():
 
         def check_group_created():
             groups, _ = node_group_helper.list_node_groups(token, filter_str="auto-group-1")
+            if groups:
+                logger.debug(f"Found {len(groups)} groups matching filter")
             return any(g["name"] == "auto-group-1" for g in groups)
 
         if not wait_for_condition(check_group_created, timeout=30, check_interval=2):
             logger.error("Timeout waiting for group 'auto-group-1' to be created")
+            # Log container logs for debugging
+            logger.info(f"Checking worker container logs for {worker1_name}...")
+            try:
+                result = subprocess.run(
+                    ["docker", "logs", "--tail", "50", worker1_name],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                if result.returncode == 0:
+                    logger.info(f"Worker logs:\n{result.stdout}")
+                    if result.stderr:
+                        logger.info(f"Worker stderr:\n{result.stderr}")
+            except Exception as e:
+                logger.warning(f"Failed to get worker logs: {e}")
             return 1
 
         # Verify node group creation
