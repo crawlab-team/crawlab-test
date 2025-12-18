@@ -7,6 +7,7 @@ Validates schedule CRUD operations and control endpoints.
 
 import sys
 import time
+
 import requests
 
 from crawlab_test.helpers.api import AuthHelper, CleanupHelper, ScheduleHelper, SpiderHelper, TaskHelper
@@ -14,7 +15,7 @@ from crawlab_test.helpers.api import AuthHelper, CleanupHelper, ScheduleHelper, 
 
 def print_step(step_num: int, description: str):
     """Print test step header."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Step {step_num}: {description}")
     print("=" * 60)
 
@@ -291,25 +292,25 @@ def main():
         # Try to get node groups (Pro feature)
         try:
             ng_response = requests.get(
-                f"{schedule_helper.base_url}/node-groups",
-                headers={"Authorization": f"Bearer {token}"},
-                timeout=10
+                f"{schedule_helper.base_url}/node-groups", headers={"Authorization": f"Bearer {token}"}, timeout=10
             )
             if ng_response.status_code == 200 and ng_response.json().get("data"):
                 node_groups = ng_response.json().get("data", [])
                 if node_groups and len(node_groups) > 0:
                     test_group_id = node_groups[0].get("_id")
                     task_ids, response = schedule_helper.run_schedule(
-                        token, schedule_id,
-                        mode="selected-node-groups",
-                        node_group_ids=[test_group_id]
+                        token, schedule_id, mode="selected-node-groups", node_group_ids=[test_group_id]
                     )
                     if task_ids and len(task_ids) > 0:
-                        results.append(print_result(True, f"Schedule run with node_group_ids created {len(task_ids)} task(s)"))
+                        results.append(
+                            print_result(True, f"Schedule run with node_group_ids created {len(task_ids)} task(s)")
+                        )
                         for task_id in task_ids:
                             cleanup.track_task(task_id)
                     else:
-                        results.append(print_result(False, f"Schedule run with node_group_ids failed: {response.get('error', '')}"))
+                        results.append(
+                            print_result(False, f"Schedule run with node_group_ids failed: {response.get('error', '')}")
+                        )
                 else:
                     print("⚠️  No node groups available, skipping node_group_ids test")
                     results.append(print_result(True, "Node groups test skipped (no groups)"))
@@ -319,21 +320,8 @@ def main():
         except Exception as e:
             print(f"⚠️  Node groups test error: {e}")
             results.append(print_result(True, f"Node groups test skipped (error: {e})"))
-        
-        step += 1
-        else:
-            error_msg = response.get("error", "") if response else ""
-            error_response = response.get("response", "") if response else ""
 
-            # Known issue: PATCH operation zeros spider_id field
-            if "no documents in result" in error_response or "no documents in result" in error_msg:
-                print("⚠️  Schedule run failed due to corrupted spider_id after PATCH (known backend issue)")
-                results.append(print_result(True, "Schedule run test skipped (PATCH corrupts spider_id)"))
-            else:
-                print(f"⚠️  Schedule run error: {error_msg}")
-                if error_response:
-                    print(f"    Response: {error_response[:200]}")
-                results.append(print_result(False, f"Schedule run failed: {error_msg}"))
+        step += 1
 
         # ===== Test Case 5: Batch Operations =====
         print_step(step, "Create additional schedules for batch operations")
@@ -341,15 +329,19 @@ def main():
 
         for i in range(2):
             sched_id, response = schedule_helper.create_schedule(
-                token=token, spider_id=test_spider_id, name=f"Batch Test Schedule {i+1}", cron="0 0 * * *", enabled=True
+                token=token,
+                spider_id=test_spider_id,
+                name=f"Batch Test Schedule {i + 1}",
+                cron="0 0 * * *",
+                enabled=True,
             )
 
             if sched_id:
                 schedule_ids.append(sched_id)
                 cleanup.track_schedule(sched_id)
-                results.append(print_result(True, f"Schedule {i+1} created"))
+                results.append(print_result(True, f"Schedule {i + 1} created"))
             else:
-                results.append(print_result(False, f"Schedule {i+1} creation failed"))
+                results.append(print_result(False, f"Schedule {i + 1} creation failed"))
 
         print_step(step, "Batch update schedules")
         step += 1
