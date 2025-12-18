@@ -1,13 +1,13 @@
-# API-023: Auto Node Group Registration on Startup
+# INT-005: Auto Node Group Registration on Startup
 
-**Category**: API Testing  
+**Category**: Integration Testing  
 **Priority**: P1 (Critical Feature)  
 **Estimated Time**: 10-15 minutes  
 **Backend**: script
 
 ## Objective
 
-Validate that worker nodes can automatically register themselves into node groups upon startup using the `CRAWLAB_NODE_GROUPS` environment variable. This ensures that in dynamic environments like Kubernetes, nodes are correctly categorized without manual intervention.
+Validate that worker nodes can automatically register themselves into node groups upon startup using the `CRAWLAB_NODE_GROUPS` environment variable. This integration test ensures that the complete workflow—from environment configuration through node registration to database state—works correctly in dynamic environments like Kubernetes.
 
 **Endpoints Covered**:
 - `GET /api/nodes` - List nodes

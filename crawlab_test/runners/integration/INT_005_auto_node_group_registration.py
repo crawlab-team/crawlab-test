@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 """
-API-023: Auto Node Group Registration on Startup Test Runner
+INT-005: Auto Node Group Registration on Startup Test Runner
 
-Validates that worker nodes can automatically register themselves into node groups
-upon startup using the CRAWLAB_NODE_GROUPS environment variable.
+Integration test that validates the complete workflow of worker nodes automatically
+registering themselves into node groups upon startup using the CRAWLAB_NODE_GROUPS
+environment variable. Tests node registration, group auto-creation, and cluster state.
 """
 
-import os
 import subprocess
 import sys
 import time
 import uuid
-from typing import List, Optional
 
-from crawlab_test.helpers.api import APIAssertions, AuthHelper, CleanupHelper
+from crawlab_test.helpers.api import APIAssertions, AuthHelper
 from crawlab_test.helpers.api.node import NodeHelper
 from crawlab_test.helpers.api.node_group import NodeGroupHelper
 
@@ -88,7 +87,7 @@ def main():
     node_helper = NodeHelper()
     worker_manager = WorkerManager()
 
-    print("API-023: Auto Node Group Registration Test")
+    print("INT-005: Auto Node Group Registration Test")
     print("=" * 80)
 
     token = None
@@ -224,7 +223,7 @@ def main():
         print("✓ Registration is idempotent, no duplicate assignments on restart")
 
         print("\n" + "=" * 80)
-        print("✅ API-023 Auto Node Group Registration Test PASSED")
+        print("✅ INT-005 Auto Node Group Registration Test PASSED")
         print("=" * 80)
         return 0
 
