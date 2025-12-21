@@ -8,7 +8,7 @@
 
 ## Objective
 
-Validate node group CRUD operations, node assignment/removal, and task execution with node groups. This tests the node grouping feature (spec 041) that allows organizing nodes into logical groups and scheduling tasks to specific groups.
+Validate node group CRUD operations, node assignment/removal, Active/Total availability counts, deletion safety when active nodes exist, and task execution with node groups that must exclude offline nodes. This tests the node grouping feature (spec 041) and regressions fixed in December 2025 (no deletion with active nodes, scheduler skips offline nodes, list surfaces Active/Total).
 
 **Endpoints Covered**:
 - `POST /api/node-groups` - Create node group
@@ -19,7 +19,7 @@ Validate node group CRUD operations, node assignment/removal, and task execution
 - `DELETE /api/node-groups` - Delete multiple node groups
 - `POST /api/node-groups/{id}/nodes` - Add node to group
 - `DELETE /api/node-groups/{id}/nodes/{nodeId}` - Remove node from group
-- `POST /api/tasks/run` - Run task with node group filtering
+- `POST /api/tasks/run` - Run task with node group filtering (selected-node-groups mode)
 
 ## Prerequisites
 
@@ -88,7 +88,7 @@ Validate node group CRUD operations, node assignment/removal, and task execution
 - Verify response status code is 200
 - Verify response contains data array
 - Verify at least 3 groups exist (from TC1)
-- Verify each group has required fields
+- Verify each group has required fields, including computed `active_count` and `total_count` (Active/Total should be ints; total matches `node_ids.length`)
 
 **2.2 Test pagination**
 - Call `GET /api/node-groups?page=1&size=2`
@@ -110,6 +110,7 @@ Validate node group CRUD operations, node assignment/removal, and task execution
 - Verify complete group details returned:
   - Basic info: `_id`, `name`, `description`
   - Node associations: `node_ids` array
+  - Availability summary: `active_count`, `total_count`
   - Timestamps: `created_at`, `updated_at`
 
 **3.2 Get group with populated nodes**
@@ -196,16 +197,16 @@ Validate node group CRUD operations, node assignment/removal, and task execution
 - Verify all nodes removed from group
 - Verify group still exists
 
-### Test Case 7: Task Execution with Node Groups
+### Test Case 7: Task Execution with Node Groups (online-only enforcement)
 
-**7.1 Run task with single node group**
+**7.1 Run task with single node group (online node available)**
 - Create or use existing spider
 - Get ID of "Test Group" (has nodes assigned)
-- Call `POST /api/tasks/run` with:
+- Call `POST /api/tasks/run` with mode `selected-node-groups`:
   ```json
   {
     "spider_id": "spider_id",
-    "mode": "selected-nodes",
+    "mode": "selected-node-groups",
     "node_group_ids": ["test_group_id"],
     "cmd": "python main.py",
     "priority": 5
@@ -214,6 +215,12 @@ Validate node group CRUD operations, node assignment/removal, and task execution
 - Verify task created successfully
 - Verify task scheduled to nodes in the group
 - Verify `node_group_ids` field is populated in task
+
+**7.1b Run task with offline-only node group (should fail fast)**
+- Disable all nodes in the target group (e.g., set `enabled=false` or `active=false`)
+- Call `POST /api/tasks/run` with mode `selected-node-groups` and that group ID
+- Verify request fails with clear error (e.g., "no online nodes available") and no task is created
+- Re-enable nodes after the check
 
 **7.2 Run task with multiple node groups**
 - Call `POST /api/tasks/run` with 2 group IDs
@@ -240,7 +247,7 @@ Validate node group CRUD operations, node assignment/removal, and task execution
 - Try running task with empty group
 - Verify appropriate error or fallback behavior
 
-### Test Case 8: Delete Node Groups
+### Test Case 8: Delete Node Groups (safe deletion)
 
 **8.1 Delete single node group**
 - Call `DELETE /api/node-groups/{id}`
@@ -248,9 +255,9 @@ Validate node group CRUD operations, node assignment/removal, and task execution
 - Verify group no longer in list
 - Call `GET /api/node-groups/{id}` to confirm deletion
 
-**8.2 Delete group with nodes**
-- Delete "Test Group" which has nodes assigned
-- Verify deletion succeeds
+- Delete "Test Group" while it still has active/online nodes assigned
+- Verify deletion is **blocked** with clear error (no task should succeed)
+- Remove or disable nodes, then delete succeeds
 - Verify nodes themselves are NOT deleted
 - Verify nodes still accessible via node API
 

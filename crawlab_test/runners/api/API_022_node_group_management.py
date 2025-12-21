@@ -39,6 +39,7 @@ def main():
     token = None
     test_groups = []
     test_spider_id = None
+    original_node_states = {}
 
     try:
         # Step 1: Authenticate
@@ -56,6 +57,13 @@ def main():
             return 1
         print(f"✓ Found {len(nodes)} node(s)")
         node_ids = [n["_id"] for n in nodes if "_id" in n][:2]  # Use up to 2 nodes
+
+        # Track original node enabled/active for cleanup
+        for n in nodes:
+            original_node_states[n["_id"]] = {
+                "enabled": n.get("enabled", True),
+                "active": n.get("active", True),
+            }
 
         # Get a test spider
         spiders, response = spider_helper.list_spiders(token)
@@ -120,6 +128,12 @@ def main():
         print(f"✓ TC3.1: Listed {len(groups)} node groups")
         if len(groups) < 3:
             print(f"⚠ Expected at least 3 groups, got {len(groups)}")
+        # Validate Active/Total counts present and consistent when available
+        if groups:
+            g0 = groups[0]
+            if "active_count" in g0 and "total_count" in g0:
+                if not isinstance(g0.get("total_count"), int) or not isinstance(g0.get("active_count"), int):
+                    print("⚠ TC3.1: active_count/total_count should be integers")
 
         # 3.2 Test pagination
         groups, response = node_group_helper.list_node_groups(token, page=1, size=2)
@@ -151,6 +165,9 @@ def main():
         assertions.assert_has_field(group_detail, "_id", "group has _id")
         assertions.assert_has_field(group_detail, "name", "group has name")
         assertions.assert_has_field(group_detail, "node_ids", "group has node_ids")
+        if "active_count" in group_detail and "total_count" in group_detail:
+            if group_detail["total_count"] != len(group_detail.get("node_ids", [])):
+                print("⚠ TC4.1: total_count not equal to node_ids length")
 
         # 4.2 Get group with populated nodes (if group has nodes)
         if len(test_groups) >= 2:
@@ -269,7 +286,7 @@ def main():
             print(f"⚠ TC7.3: Failed to clear nodes: {response}")
 
         # Step 8: Task Execution with Node Groups
-        print_step(8, "Task Execution with Node Groups")
+        print_step(8, "Task Execution with Node Groups (online enforcement)")
 
         if test_spider_id and len(test_groups) >= 2:
             # Re-add nodes to test group for task execution
@@ -280,7 +297,7 @@ def main():
             task_ids, response = task_helper.create_task(
                 token,
                 spider_id=test_spider_id,
-                mode="selected-nodes",
+                mode="selected-node-groups",
                 node_group_ids=[test_groups[1]],
                 priority=5,
             )
@@ -306,7 +323,7 @@ def main():
                 task_ids, response = task_helper.create_task(
                     token,
                     spider_id=test_spider_id,
-                    mode="selected-nodes",
+                    mode="selected-node-groups",
                     node_group_ids=[test_groups[1], test_groups[2]],
                 )
                 if task_ids and len(task_ids) > 0:
@@ -320,7 +337,7 @@ def main():
                 task_ids, response = task_helper.create_task(
                     token,
                     spider_id=test_spider_id,
-                    mode="selected-nodes",
+                    mode="selected-node-groups",
                     node_group_ids=[test_groups[1]],
                     node_ids=[node_ids[0]],
                 )
@@ -329,6 +346,27 @@ def main():
                     print("✓ TC8.3: Task created with group + node intersection")
                 else:
                     print(f"⚠ TC8.3: Failed to create task with intersection: {response}")
+
+            # 8.4 Offline-only group should fail
+            if len(node_ids) >= 1:
+                offline_node_id = node_ids[0]
+                # disable node
+                updated_node, response = node_helper.update_node(token, offline_node_id, {"enabled": False})
+                if updated_node is None:
+                    print(f"⚠ TC8.4: Could not disable node: {response}")
+                else:
+                    task_ids, response = task_helper.create_task(
+                        token,
+                        spider_id=test_spider_id,
+                        mode="selected-node-groups",
+                        node_group_ids=[test_groups[1]],
+                    )
+                    if task_ids is None:
+                        print("✓ TC8.4: Task creation blocked for offline-only group")
+                    else:
+                        print("⚠ TC8.4: Expected failure when all nodes offline")
+                    # re-enable
+                    node_helper.update_node(token, offline_node_id, {"enabled": True})
         else:
             print("⚠ TC8: Skipped - no spider or groups available")
 
@@ -350,26 +388,25 @@ def main():
             else:
                 print(f"⚠ TC9.1: Failed to delete group: {response}")
 
-        # 9.2 Delete group with nodes (verify nodes not deleted)
+        # 9.2 Delete group with nodes should be blocked, then succeeds after removal
         if len(test_groups) >= 1 and len(node_ids) >= 1:
-            # Ensure group has nodes
             node_group_helper.add_node_to_group(token, test_groups[0], node_ids[0])
 
             group_to_delete = test_groups[0]
             success, response = node_group_helper.delete_node_group(token, group_to_delete)
             if success:
-                print("✓ TC9.2: Deleted group with nodes")
+                print("⚠ TC9.2: Deletion should have been blocked while nodes are active")
+            else:
+                print("✓ TC9.2: Deletion blocked when active nodes present")
 
-                # Verify nodes still exist
-                node_detail, _ = node_helper.get_node(token, node_ids[0])
-                if node_detail:
-                    print("✓ TC9.2: Verified nodes not deleted")
-                else:
-                    print("⚠ TC9.2: Node may have been affected")
-
+            # remove nodes then delete
+            node_group_helper.update_node_group(token, group_to_delete, {"node_ids": []})
+            success, response = node_group_helper.delete_node_group(token, group_to_delete)
+            if success:
+                print("✓ TC9.2: Deleted group after clearing nodes")
                 test_groups.remove(group_to_delete)
             else:
-                print(f"⚠ TC9.2: Failed to delete group: {response}")
+                print(f"⚠ TC9.2: Failed to delete group after clearing nodes: {response}")
 
         # 9.3 Batch delete remaining groups
         if len(test_groups) >= 2:
@@ -413,6 +450,13 @@ def main():
                     print(f"✓ Cleaned up node group: {group_id}")
                 except Exception as e:
                     print(f"⚠ Failed to cleanup group {group_id}: {e}")
+
+            # Restore node states
+            try:
+                for node_id, state in original_node_states.items():
+                    node_helper.update_node(token, node_id, state)
+            except Exception as e:
+                print(f"⚠ Failed to restore node states: {e}")
 
             # Cleanup tracked resources (tasks)
             cleanup.cleanup_all(token, task_helper=task_helper)
