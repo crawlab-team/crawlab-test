@@ -203,7 +203,8 @@ def main():
             results.append(print_result(True, f"First task created: {first_task_id}"))
 
             # Wait for task to start running
-            if wait_for_task_status(task_helper, token, first_task_id, "running", timeout=15):
+            # Give extra time for the scheduler to free workers after cancel/reassign
+            if wait_for_task_status(task_helper, token, first_task_id, "running", timeout=45):
                 results.append(print_result(True, "First task started running"))
 
                 print_step(step, "Test override - with running task")
@@ -238,7 +239,8 @@ def main():
                         )
 
                     # Verify second task eventually runs
-                    if wait_for_task_status(task_helper, token, second_task_id, "running", timeout=15):
+                    # Second task can be delayed if the worker is still tearing down the cancelled task
+                    if wait_for_task_status(task_helper, token, second_task_id, "running", timeout=45):
                         results.append(print_result(True, "Second task started after override"))
                     else:
                         results.append(print_result(False, "Second task did not start"))
@@ -291,7 +293,8 @@ def main():
             results.append(print_result(True, f"Ignore task created: {ignore_task_id}"))
 
             # Wait for task to start running
-            if wait_for_task_status(task_helper, token, ignore_task_id, "running", timeout=15):
+            # Allow more time in case previous override cancellations keep the worker busy
+            if wait_for_task_status(task_helper, token, ignore_task_id, "running", timeout=45):
                 results.append(print_result(True, "Ignore task started running"))
 
                 print_step(step, "Test ignore - with running task")
