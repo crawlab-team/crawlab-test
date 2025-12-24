@@ -415,6 +415,20 @@ class TaskHelper:
         except Exception as e:
             return False, {"error": str(e)}
 
+    def batch_delete_tasks(self, token: str, task_ids: List[str]) -> bool:
+        """
+        Batch delete tasks (alias for delete_tasks).
+
+        Args:
+            token: JWT authentication token
+            task_ids: List of task IDs to delete
+
+        Returns:
+            True if deletion request succeeded
+        """
+        success, _ = self.delete_tasks(token, task_ids)
+        return success
+
     def list_tasks_paginated(
         self, token: str, page: int = 1, size: int = 10, filter_dict: Optional[Dict] = None, sort: str = "-_id"
     ) -> Tuple[Optional[List], Optional[Dict]]:
